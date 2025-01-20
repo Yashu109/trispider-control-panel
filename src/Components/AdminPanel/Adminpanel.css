@@ -1,0 +1,492 @@
+/* AdminPanel.css */
+:root {
+    --primary-color: #4a6cf7;
+    --primary-hover: #3355d6;
+    --text-color: #333;
+    --text-light: #666;
+    --success-color: #10b981;
+    --error-color: #ef4444;
+    --bg-color: #ffffff;
+    --card-bg: #ffffff;
+    --border-color: #e2e8f0;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Reset & Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        line-height: 1.5;
+        color: var(--text-color);
+    } */
+
+/* Container Layout */
+.admin-container {
+    /* padding: 2rem; */
+    background-color: var(--bg-color);
+    max-height: 90vh;
+    /* Adjust the max height as needed */
+    overflow-y: auto;
+    width: 54%;
+    margin-left: 22.5%;
+    /* padding: 2rem; */
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1)
+}
+
+.scrollable-content {
+    flex-grow: 1;
+    /* Takes the remaining space */
+    overflow-y: auto;
+    /* Enables vertical scrolling */
+    padding: 1rem;
+}
+
+/* Header Styles */
+.admin-header {
+    position: relative;
+    background-color: var(--card-bg);
+    padding: 1rem;
+    /* border-radius: 1rem; */
+    /* box-shadow: var(--shadow-md); */
+    margin-bottom: 2rem;
+    text-align: center;
+    height: 170px;
+    /* width: 55rem;     */
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    /* Keeps the header on top of the scrollable content */
+    padding: 1rem;
+}
+
+.admin-header h1 {
+    font-size: 2.5rem;
+    color: green;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.admin-header h3 {
+    color: #4a6cf7;
+}
+
+.admin-header p {
+    color: var(--text-light);
+    font-size: 1.1rem;
+}
+
+/* Sign Out Button */
+.sign-out-button {
+    position: absolute;
+    top: 7.5rem;
+    /* right: 6.5rem; */
+    margin-left: -50px;
+    padding: 0.5rem 1rem;
+    background-color: #fee2e2;
+    color: #dc2626;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.sign-out-button:hover {
+    background-color: #fecaca;
+}
+
+/* Form Styles */
+.project-form {
+    background-color: var(--card-bg);
+    padding: 1rem;
+    /* border-radius: 1rem; */
+    /* box-shadow: var(--shadow-md); */
+    max-width: 865px;
+    margin: 0 auto;
+    width: 100%;
+    margin-top: -30px   ;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+.form-group-Project-Title {
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+.form-group-Project-Title label {
+    display: flex;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 1rem;
+}
+
+.form-group label {
+    display: flex;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 1rem;
+}
+
+.form-group-Project-Title input {
+    width: 81%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background-color: #fff;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 72%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background-color: #fff;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+    width: 100%;
+}
+
+/* Scope of Work Specific Styles */
+.scope-of-work {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.input-mode-toggle {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.mode-button {
+    padding: 0.75rem 1.5rem;
+    border: 2px solid var(--primary-color);
+    border-radius: 0.5rem;
+    background: none;
+    color: var(--primary-color);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex: 1;
+    max-width: 118px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mode-button.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.mode-button:hover:not(.active) {
+    background-color: rgba(74, 108, 247, 0.1);
+}
+
+/* Canvas Styles */
+.canvas-container {
+    position: relative;
+    width: 100%;
+    background-color: white;
+    border: 2px solid var(--border-color);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.drawing-canvas {
+    width: 100%;
+    height: 200px;
+    touch-action: none;
+    cursor: crosshair;
+    background-color: #fff;
+}
+
+.clear-canvas {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.5rem 1rem;
+    background-color: #fee2e2;
+    color: #dc2626;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0.8;
+    z-index: 10;
+}
+
+.clear-canvas:hover {
+    opacity: 1;
+    background-color: #fecaca;
+}
+
+/* Button Styles */
+.button-group {
+    display: flex;
+    gap: 1rem;
+    /* margin-top: 2rem; */
+}
+
+.submit-button,
+.cancel-button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    font-size: 1rem;
+    border: none;
+}
+
+.submit-button {
+    background-color: var(--primary-color);
+    color: white;
+    flex: 2;
+    /* font-family: inherit; */
+    width: 130px;
+}
+
+.submit-button:hover:not(:disabled) {
+    background-color: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+.submit-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.cancel-button {
+    background-color: #f3f4f6;
+    color: var(--text-color);
+    flex: 1;
+}
+
+.cancel-button:hover {
+    background-color: #e5e7eb;
+}
+
+/* Message Styles */
+.message {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+    font-weight: 500;
+    text-align: center;
+}
+
+.message.success {
+    color: #b93810;
+}
+
+.message.error {
+    /* background-color: #fef2f2; */
+    color: #b93810;
+    /* border: 1px solid #fecaca; */
+}
+
+.stage-button {
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: 0.6em 1.2em;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: #c2730b;
+    cursor: pointer;
+    transition: border-color 0.25s;
+    width: 100%;
+}
+
+.radio-group {
+    display: flex;
+    justify-content: space-around;
+    gap: 30px;
+}
+
+.radio-group input {
+    width: 35px;
+    height: 20px;
+}
+
+.save-drawing {
+    background-color: #28a745;
+    color: white;
+}
+
+.save-drawing:hover {
+    background-color: #218838;
+}
+.nextpage{
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: 0.6em 1.2em;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: #2e74d7;
+    color: #fff;
+    cursor: pointer;
+    transition: border-color 0.25s;
+    /* width: 100%; */
+}
+.adminpanel-buttons{
+    display: flex;
+    justify-content: space-around;
+    height: 50px;
+    text-align: center;
+}
+/* Responsive Design */
+@media screen and (max-width: 1024px) {
+    .admin-container {
+        padding: 1.5rem;
+    }
+
+    .project-form {
+        padding: 1.5rem;
+    }
+
+    .drawing-canvas {
+        height: 250px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .admin-container {
+        padding: 1rem;
+    }
+
+    .admin-header h1 {
+        font-size: 2rem;
+    }
+
+    .project-form {
+        padding: 1rem;
+    }
+
+    .button-group {
+        flex-direction: column;
+    }
+
+    .submit-button,
+    .cancel-button {
+        width: 100%;
+    }
+
+    .mode-button {
+        padding: 0.5rem 1rem;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .admin-header h1 {
+        font-size: 1.75rem;
+    }
+
+    .admin-header p {
+        font-size: 1rem;
+    }
+
+    .form-group label {
+        font-size: 0.9rem;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        font-size: 0.9rem;
+        padding: 0.6rem 0.8rem;
+    }
+
+    .drawing-canvas {
+        height: 200px;
+    }
+
+    .mode-button {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.8rem;
+    }
+
+    .clear-canvas {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+    }
+
+    .sign-out-button {
+        position: static;
+        width: 100%;
+        margin-top: 1rem;
+    }
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) {
+    .drawing-canvas {
+        touch-action: none;
+    }
+
+    .clear-canvas {
+        opacity: 1;
+        padding: 0.75rem 1.5rem;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .admin-container {
+        padding: 0;
+        background: white;
+    }
+
+    .sign-out-button,
+    .button-group,
+    .clear-canvas,
+    .input-mode-toggle {
+        display: none;
+    }
+
+    .project-form {
+        box-shadow: none;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+    }
+}

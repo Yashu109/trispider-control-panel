@@ -1,0 +1,336 @@
+/* src/Components/AdminProfile/ProtectedPayments.css */
+.protected-payments {
+    min-height: calc(115vh - 100px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8fafc;
+    padding: 20px;
+}
+
+/* Password Form Container */
+.password-container {
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: 450px;
+    transition: transform 0.2s;
+}
+
+.password-container:hover {
+    transform: translateY(-2px);
+}
+
+/* Password Form Header */
+.password-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.lock-icon {
+    width: 56px;
+    height: 56px;
+    color: #4f46e5;
+    margin-bottom: 20px;
+    padding: 12px;
+    background: #f3f4f6;
+    border-radius: 50%;
+}
+
+.password-header h2 {
+    font-size: 28px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 12px;
+}
+
+.password-header p {
+    color: #64748b;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+/* Password Form */
+.password-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.password-input-group {
+    position: relative;
+}
+
+.password-input {
+    width: 100%;
+    padding: 14px 45px 14px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.2s;
+    background-color: #ffffff;
+}
+
+.password-input:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.toggle-password {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #64748b;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+}
+
+.toggle-password:hover {
+    color: #1e293b;
+}
+
+.error-message {
+   height: 20px;
+}
+
+.submit-button {
+    padding: 14px;
+    background-color: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+    width: 55%;
+    margin-left: 85px;
+}
+
+.submit-button:hover:not(:disabled) {
+    background-color: #4338ca;
+    transform: translateY(-1px);
+}
+
+.submit-button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.submit-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Dashboard Content */
+.payments-dashboard {
+    padding: 30px;
+    background-color: #f8fafc;
+}
+
+/* Summary Cards */
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 35px;
+}
+
+.summary-card {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s;
+    border: 1px solid #e2e8f0;
+}
+
+.summary-card:hover {
+    transform: translateY(-3px);
+}
+
+.summary-card h3 {
+    font-size: 16px;
+    color: #64748b;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.summary-card p {
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.total-payments { color: #059669; }
+.total-remaining { color: #dc2626; }
+.total-projects { color: #2563eb; }
+.completed-projects { color: #7c3aed; }
+
+/* Payments Table */
+.payments-table-container {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.payments-table-header {
+    padding: 20px 25px;
+    border-bottom: 2px solid #f1f5f9;
+    background-color: #ffffff;
+}
+
+.payments-table-header h2 {
+    font-size: 20px;
+    color: #1e293b;
+    font-weight: 600;
+    margin: 0;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    padding: 5px;
+}
+
+.payments-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.payments-table th {
+    background-color: #f8fafc;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 16px 24px;
+    border-bottom: 2px solid #e2e8f0;
+    text-align: left;
+}
+
+.payments-table td {
+    padding: 16px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #1e293b;
+    font-size: 14px;
+}
+
+.payments-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+.payments-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-block;
+    text-align: center;
+}
+
+.status-complete {
+    background-color: #ecfdf5;
+    color: #059669;
+}
+
+.status-progress {
+    background-color: #fef3c7;
+    color: #d97706;
+}
+
+.status-start {
+    background-color: #f1f5f9;
+    color: #475569;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .protected-payments {
+        padding: 15px;
+    }
+
+    .payments-dashboard {
+        padding: 15px;
+    }
+
+    .summary-cards {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .summary-card {
+        padding: 20px;
+    }
+
+    .password-container {
+        padding: 25px;
+    }
+
+    .payments-table th,
+    .payments-table td {
+        padding: 12px 15px;
+    }
+    
+    .status-badge {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .protected-payments {
+        min-height: auto;
+        padding: 0;
+    }
+
+    .payments-dashboard {
+        padding: 0;
+    }
+
+    .summary-cards {
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .summary-card {
+        box-shadow: none;
+        border: 1px solid #e2e8f0;
+    }
+
+    .payments-table-container {
+        box-shadow: none;
+        border: 1px solid #e2e8f0;
+    }
+}
