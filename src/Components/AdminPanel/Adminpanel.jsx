@@ -3,7 +3,7 @@ import { database, auth } from '../../firebase';
 import { ref, set, get } from 'firebase/database';
 import { useNavigate } from 'react-router-dom';
 // import { createWorker } from 'tesseract.js';
-import './AdminPanel.css';
+import './Adminpanel.css';
 
 const AdminPanel = () => {
     const navigate = useNavigate();
