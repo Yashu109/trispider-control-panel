@@ -1,12 +1,13 @@
-// AdminDashboard.js
 import { useState, useEffect } from 'react';
 import { database, auth } from '../../firebase';
-import { ref, onValue, update, remove } from 'firebase/database';
+import { ref, get, onValue, update, remove, getDatabase } from 'firebase/database';
 import { useNavigate } from 'react-router-dom';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
-import { Loader2, Pencil, Trash2, X } from "lucide-react";
+import { Loader2, Pencil, Trash2, X, Bell } from "lucide-react";
 import './AdminProfile.css';
 import ProtectedPayments from '../ProtectedPayments/ProtectedPayments';
+import { Download } from 'lucide-react';
+import { getStorage, ref as storageRef, getDownloadURL } from 'firebase/storage';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -21,9 +22,51 @@ const AdminDashboard = () => {
     const [editingProject, setEditingProject] = useState(null);
 
     const teamMembers = ['Select Member', 'Yashwanth', 'Manu', 'Tanush'];
-    const projectStatuses = ['Start', 'Middle', 'Complete'];
+    const projectStatuses = ['Start', 'PartiallyComplete', 'Complete'];
 
-    // Auth state effect
+    const [queries, setQueries] = useState([]);
+    const [showQueriesModal, setShowQueriesModal] = useState(false);
+    const [queriesCount, setQueriesCount] = useState(0);
+    // const [action, setAction] = useState('');
+    const [editedQueryText, setEditedQueryText] = useState('');
+
+    const [editableQueryText, setEditableQueryText] = useState('');
+    const [isEditing, setIsEditing] = useState(false);
+    useEffect(() => {
+        const queriesRef = ref(database, 'queries'); // Reference to the 'queries' node
+
+        const unsubscribe = onValue(queriesRef, (snapshot) => {
+            if (snapshot.exists()) {
+                const allQueries = [];
+                let totalPendingCount = 0;
+
+                snapshot.forEach((keySnapshot) => {
+                    const dynamicKey = keySnapshot.key; // e.g., 'KS5000', 'KS5001'
+                    keySnapshot.forEach((querySnapshot) => {
+                        const queryData = querySnapshot.val();
+                        if (queryData.status === 'pending') {
+                            totalPendingCount++;
+                            allQueries.push({
+                                id: querySnapshot.key,
+                                parentKey: dynamicKey, // Include the dynamic key for reference
+                                queryText: queryData.queryText,
+                                status: queryData.status,
+                                timestamp: queryData.timestamp,
+                            });
+                        }
+                    });
+                });
+
+                setQueries(allQueries);
+                setQueriesCount(totalPendingCount);
+            } else {
+                setQueries([]);
+                setQueriesCount(0);
+            }
+        });
+
+        return () => unsubscribe();
+    }, []);
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (!user && !loading) {
@@ -35,7 +78,6 @@ const AdminDashboard = () => {
         return () => unsubscribe();
     }, [navigate, loading]);
 
-    // Firebase data effect
     useEffect(() => {
         if (!authChecked) return;
 
@@ -79,13 +121,47 @@ const AdminDashboard = () => {
         return () => unsubscribe();
     }, [authChecked, navigate]);
 
-    // Handle edit click
+    // ReferralMessage Component
+    // const ReferralMessage = ({ referredBy, projects }) => {
+    //     if (!referredBy) return null;
+
+    //     const searchLower = referredBy.toLowerCase();
+    //     const matchingProjects = projects.filter(p =>
+    //         p.clientName && p.clientName.toLowerCase() === searchLower
+    //     );
+
+    //     return (
+    //         <div className="referral-info">
+    //             {matchingProjects.length > 0 ? (
+    //                 <>
+    //                     <p className="referral-status success">
+    //                         "{referredBy}" found as a client with following project details:
+    //                     </p>
+    //                     {matchingProjects.map(project => (
+    //                         <div key={project.id} className="referral-details">
+    //                             <p>Project ID: {project.projectId}</p>
+    //                             <p>Project Type: {project.ProjectType}</p>
+    //                             <p>College: {project.collegeName}</p>
+    //                             <p>Timeline: {project.timeline ?
+    //                                 new Date(project.timeline).toLocaleDateString() :
+    //                                 'Not set'}</p>
+    //                         </div>
+    //                     ))}
+    //                 </>
+    //             ) : (
+    //                 <p className="referral-status warning">
+    //                     "{referredBy}" is not found as a client in any project
+    //                 </p>
+    //             )}
+    //         </div>
+    //     );
+    // };
+
     const handleEdit = (project) => {
         setEditingProject({ ...project });
         setShowEditModal(true);
     };
 
-    // Handle form submit
     const handleSubmitEdit = async (e) => {
         e.preventDefault();
         if (!editingProject?.id) return;
@@ -103,7 +179,6 @@ const AdminDashboard = () => {
         }
     };
 
-    // Handle delete
     const handleDelete = async (projectId) => {
         if (window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
             try {
@@ -116,7 +191,6 @@ const AdminDashboard = () => {
         }
     };
 
-    // Handle sign out
     const handleSignOut = async () => {
         try {
             await signOut(auth);
@@ -127,13 +201,11 @@ const AdminDashboard = () => {
         }
     };
 
-    // Clear filters handler
     const handleClearFilters = () => {
         setSearchQuery('');
         setFilterField('all');
     };
 
-    // Format currency
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-IN', {
             style: 'currency',
@@ -142,9 +214,8 @@ const AdminDashboard = () => {
         }).format(amount);
     };
 
-    // Utility functions
     const getReadyCount = () => projects.filter(p => p.projectStatus === 'Complete').length;
-    const getInProgressCount = () => projects.filter(p => p.projectStatus === 'Middle').length;
+    const getInProgressCount = () => projects.filter(p => p.projectStatus === 'PartiallyComplete').length;
     const getNearbyCount = () => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -157,9 +228,24 @@ const AdminDashboard = () => {
         }).length;
     };
 
-    // Filter projects
     let filteredProjects = projects.filter(project => {
         const searchLower = searchQuery.toLowerCase();
+
+        // Special handling for referredBy search
+        if (filterField === 'referredBy' && searchLower) {
+            // First look for the name in clientName to display info
+            const isRefererAClient = projects.some(p =>
+                p.clientName && p.clientName.toLowerCase() === searchLower
+            );
+
+            if (isRefererAClient) {
+                // If they are a client, return any project where they match the clientName
+                return project.clientName && project.clientName.toLowerCase() === searchLower;
+            } else {
+                // If not a client, show no results
+                return false;
+            }
+        }
 
         if (filterField === 'timeline') {
             const projectDate = project.timeline ? new Date(project.timeline) : null;
@@ -190,6 +276,7 @@ const AdminDashboard = () => {
             project.email,
             project.phoneNumber,
             project.whatsappNumber,
+            project.referredBy,
             project.timeline ? new Date(project.timeline).toLocaleDateString() : ''
         ];
 
@@ -197,7 +284,7 @@ const AdminDashboard = () => {
             String(field || '').toLowerCase().includes(searchLower)
         );
     });
-
+console.log(filteredProjects,'filteredProjects')
     // Filter by tab
     filteredProjects = filteredProjects.filter(project => {
         const today = new Date();
@@ -207,7 +294,7 @@ const AdminDashboard = () => {
             case 'ready':
                 return project.projectStatus === 'Complete';
             case 'progress':
-                return project.projectStatus === 'Middle';
+                return project.projectStatus === 'PartiallyComplete';
             case 'nearby':
                 if (!project.timeline) return false;
                 const projectDate = new Date(project.timeline);
@@ -236,6 +323,129 @@ const AdminDashboard = () => {
         );
     }
 
+    // const handleQueryAction = (queryId, action) => {
+    //     const database = getDatabase();
+
+    //     const queriesRef = ref(database, 'queries');
+    //     get(queriesRef)
+    //         .then(snapshot => {
+    //             if (snapshot.exists()) {
+    //                 snapshot.forEach((keySnapshot) => {
+    //                     const dynamicKey = keySnapshot.key;
+    //                     const childSnapshot = keySnapshot.child(queryId);
+
+    //                     if (childSnapshot.exists()) {
+    //                         const queryRef = ref(database, `queries/${dynamicKey}/${queryId}`);
+    //                         const projectRef = ref(database, `projects/${dynamicKey}/querylist`);
+
+    //                         if (action === 'accepted') {
+    //                             const queryData = childSnapshot.val();
+
+    //                             update(projectRef, {
+    //                                 queryText: queryData.queryText,
+    //                                 queryStatus: 'Your query has been accepted and will be addressed soon.'
+    //                             })
+    //                                 .then(() => remove(queryRef))
+    //                                 .then(() => setShowQueriesModal(false))
+    //                                 .catch(error => console.error('Upload error:', error));
+    //                         } else if (action === 'rejected') {
+    //                             update(projectRef, {
+    //                                 queryStatus: 'Query Rejected'
+    //                             })
+    //                                 .then(() => remove(queryRef))
+    //                                 .then(() => setShowQueriesModal(false))
+    //                                 .catch(error => console.error('Upload error:', error));
+    //                         }
+    //                     }
+    //                 });
+    //             }
+    //         })
+    //         .catch(error => console.error('Queries fetch error:', error));
+    // };
+
+    const handleQueryAction = (query, action) => {
+        const database = getDatabase();
+        
+        if (action === 'accepted') {
+            // Simple acceptance path
+            const projectRef = ref(database, `projects/${query.parentKey}`);
+            update(projectRef, {
+                queryStatus: 'Your query has been accepted and will be addressed soon.'
+            })
+            .then(() => {
+                // Remove the specific query
+                const queryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
+                return remove(queryRef);
+            })
+            .then(() => setShowQueriesModal(false))
+            .catch(error => console.error('Acceptance error:', error));
+        } else if (action === 'rejected') {
+            // Editing path
+            setEditableQueryText(query.queryText);
+            setIsEditing(true);
+        }
+    };
+
+    const handleDownloadPDF = async (projectId) => {
+        try {
+            const storage = getStorage();
+            const pdfRef = storageRef(storage, `quotations/${projectId}.pdf`);
+            const url = await getDownloadURL(pdfRef);
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/pdf'
+                },
+                mode: 'cors',
+                cache: 'no-cache'
+            });
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = `${projectId}_quotation.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(downloadUrl);
+        } catch (error) {
+            console.error('Error downloading PDF:', error);
+            alert('Error downloading PDF. Please try again.');
+        }
+    };
+    const handleSendEditedQuery = () => {
+        if (editableQueryText.trim()) {
+            const database = getDatabase();
+            const projectRef = ref(database, `projects/${query.parentKey}`);
+            
+            update(projectRef, {
+                queryStatus: 'Your query has been reviewed and updated.'
+            })
+            .then(() => {
+                // Remove the old query
+                const oldQueryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
+                return remove(oldQueryRef);
+            })
+            .then(() => {
+                // Push new query
+                const newQueryRef = ref(database, `queries/${query.parentKey}`);
+                return push(newQueryRef, {
+                    queryText: editableQueryText,
+                    timestamp: new Date().toISOString(),
+                    status: 'pending'
+                });
+            })
+            .then(() => {
+                setIsEditing(false);
+                setShowQueriesModal(false);
+            })
+            .catch(error => console.error('Edit and send error:', error));
+        }
+    };
+    
     return (
         <div className="dashboard-container">
             <div className="sidebar">
@@ -289,7 +499,7 @@ const AdminDashboard = () => {
             <div className="main-content">
                 <div className="table-section">
                     {activeTab === 'payments' ? (
-                        <ProtectedPayments 
+                        <ProtectedPayments
                             projects={projects}
                             formatCurrency={formatCurrency}
                         />
@@ -318,13 +528,18 @@ const AdminDashboard = () => {
                                             <option value="ProjectType">Project Type</option>
                                             <option value="email">Email</option>
                                             <option value="phoneNumber">Phone</option>
+                                            <option value="referredBy">Referred By</option>
                                             <option value="timeline">Timeline</option>
                                         </select>
 
                                         <div className="search-input-container">
                                             <input
                                                 type="text"
-                                                placeholder={filterField === 'timeline' ? "Search date (e.g., 08/02/2025)" : "Search projects..."}
+                                                placeholder={filterField === 'timeline'
+                                                    ? "Search date (e.g., 08/02/2025)"
+                                                    : filterField === 'referredBy'
+                                                        ? "Enter referrer name..."
+                                                        : "Search projects..."}
                                                 value={searchQuery}
                                                 onChange={(e) => setSearchQuery(e.target.value)}
                                                 className="search-input"
@@ -347,11 +562,118 @@ const AdminDashboard = () => {
                                                 Clear All Filters
                                             </button>
                                         )}
+                                        {/* {filterField === 'referredBy' && searchQuery && (
+                                            <ReferralMessage 
+                                                referredBy={searchQuery}
+                                                projects={projects}
+                                            />
+                                        )} */}
                                     </div>
                                 </div>
+                                <div className='notification-record'>
+                                    <div className="notification-icon">
+                                        <button onClick={() => setShowQueriesModal(true)} className="bell-button">
+                                            <Bell />
+                                            {queriesCount > 0 && <span className="notification-badge">{queriesCount}</span>}
+                                        </button>
+                                    </div>
+                                    {showQueriesModal && (
+                                        <div className="modal-overlay">
+                                            <div className="modal-content queries-modal">
+                                                <div className="modal-header">
+                                                    <h2>Pending Queries ({queriesCount})</h2>
+                                                    <button onClick={() => setShowQueriesModal(false)} className="close-button">
+                                                        <X size={20} />
+                                                    </button>
+                                                </div>
+                                                <div className="queries-list">
+                                                    {queries.map((query) => (
+                                                        <div key={query.id} className="query-item">
+                                                            <div className="query-info">
+                                                                <div className="dashboard-form-group">
+                                                                    <label>Project ID:</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={query.parentKey}
+                                                                    // readOnly    
+                                                                    />
+                                                                </div>
+                                                                <div className="dashboard-form-group">
+                                                                    <label>Timestamp:</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={new Date(query.timestamp).toLocaleString()}
+                                                                    // readOnly
+                                                                    />
+                                                                </div>
+                                                                <div className="dashboard-form-group">
+                                                                    <label>Query:</label>
+                                                                    <textarea
+                                                                        rows="4"
+                                                                        value={query.queryText}
+                                                                    // readOnly
+                                                                    />
+                                                                </div>
+                                                            </div>
 
-                                <div className="record-count">
-                                    {filteredProjects.length} {filteredProjects.length === 1 ? 'Record' : 'Records'}
+                                                            <div className="query-actions">
+                                                                {!isEditing ? (
+                                                                    <>
+                                                                        <button
+                                                                            onClick={() => handleQueryAction(query, 'accepted')}
+                                                                            className="btn-accept"
+                                                                        >
+                                                                            Accept
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleQueryAction(query, 'rejected')}
+                                                                            className="btn-reject"
+                                                                        >
+                                                                            Reject
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={handleSendEditedQuery}
+                                                                            className="btn-send"
+                                                                        >
+                                                                            Send Updated Query
+                                                                        </button>
+                                                                    </>
+                                                                    
+                                                                ) : (
+                                                                    <>
+                                                                        <textarea
+                                                                            value={editableQueryText}
+                                                                            onChange={(e) => setEditableQueryText(e.target.value)}
+                                                                            rows="4"
+                                                                            placeholder="Edit query text"
+                                                                        />
+                                                                        <button
+                                                                            onClick={handleSendEditedQuery}
+                                                                            className="btn-send"
+                                                                        >
+                                                                            Send Updated Query
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => setIsEditing(false)}
+                                                                            className="btn-cancel"
+                                                                        >
+                                                                            Cancel
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                    {queries.length === 0 && (
+                                                        <div className="no-queries">No pending queries</div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div className="record-count">
+                                        {filteredProjects.length} {filteredProjects.length === 1 ? 'Record' : 'Records'}
+                                    </div>
                                 </div>
                             </div>
 
@@ -370,7 +692,7 @@ const AdminDashboard = () => {
                                                 <th>Phone Number</th>
                                                 <th>WhatsApp Number</th>
                                                 <th>Referred By</th>
-                                                <th>Timeline</th>                                            
+                                                <th>Timeline</th>
                                                 <th>Project Status</th>
                                                 <th>Assign To</th>
                                                 <th>Actions</th>
@@ -387,9 +709,9 @@ const AdminDashboard = () => {
                                                     <td>{project.phoneNumber}</td>
                                                     <td>{project.whatsappNumber}</td>
                                                     <td>{project.referredBy}</td>
-                                                    <td>{project.timeline ? new Date(project.timeline).toLocaleDateString() : 'Not set'}</td>                                                   
+                                                    <td>{project.timeline ? new Date(project.timeline).toLocaleDateString() : 'Not set'}</td>
                                                     <td>{project.projectStatus || 'Start'}</td>
-                                                    <td>{project.assignedTo || 'Select Member'}</td>
+                                                    <td>{project.Assign_To|| 'Select Member'}</td>
                                                     <td className="actions-column">
                                                         <button
                                                             onClick={() => handleEdit(project)}
@@ -399,22 +721,29 @@ const AdminDashboard = () => {
                                                             <Pencil size={16} />
                                                         </button>
                                                         <button onClick={() => handleDelete(project.id)}
-                                            className="action-button delete"
-                                            title="Delete project"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                                                            className="action-button delete"
+                                                            title="Delete project"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDownloadPDF(project.projectId)}
+                                                            className="action-button download"
+                                                            title="Download PDF"
+                                                        >
+                                                            <Download size={16} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
-            )}
-        </>
-    )}
-</div>
-</div>
+            </div>
 
             {/* Edit Modal */}
             {showEditModal && editingProject && (
@@ -528,7 +857,7 @@ const AdminDashboard = () => {
                                     />
                                 </div>
 
-                                
+
 
                                 <div className="form-group">
                                     <label>Project Status</label>
@@ -550,7 +879,7 @@ const AdminDashboard = () => {
                                 <div className="form-group">
                                     <label>Assign To</label>
                                     <select
-                                        value={editingProject.assignedTo || 'Select Member'}
+                                        value={editingProject.Assign_To || 'Select Member'}
                                         onChange={(e) => setEditingProject({
                                             ...editingProject,
                                             assignedTo: e.target.value

@@ -185,7 +185,7 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
       try {
         const passwordRef = ref(database, 'adminPassword');
         const snapshot = await get(passwordRef);
-        
+
         if (snapshot.exists()) {
           setHasExistingPassword(true);
           setStoredPassword(snapshot.val());
@@ -266,14 +266,14 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
             <Lock className="lock-icon" />
             <h2>{hasExistingPassword ? 'Enter Password' : 'Create Password'}</h2>
             <p>
-              {hasExistingPassword 
+              {hasExistingPassword
                 ? 'Please enter your password to view payment details'
                 : 'Create a password to protect your payment details'}
             </p>
           </div>
 
-          <form onSubmit={hasExistingPassword ? handlePasswordLogin : handleCreatePassword} 
-                className="password-form">
+          <form onSubmit={hasExistingPassword ? handlePasswordLogin : handleCreatePassword}
+            className="password-form">
             <div className="password-input-group">
               <input
                 type={showPassword ? "text" : "password"}
@@ -372,6 +372,14 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
               <tr>
                 <th>Project ID</th>
                 <th>Client Name</th>
+                <th>Project Type</th>
+                <th>College</th>
+                <th>Email</th>
+                <th>Phone Number</th>
+                <th>WhatsApp Number</th>
+                <th>Referred By</th>
+                <th>Timeline</th>
+                <th>Assign To</th>
                 <th>Total Payment</th>
                 <th>Remaining</th>
                 <th>Status</th>
@@ -382,6 +390,14 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
                 <tr key={project.id}>
                   <td>{project.projectId}</td>
                   <td>{project.clientName}</td>
+                  <td>{project.ProjectType}</td>
+                  <td>{project.collegeName}</td>
+                  <td>{project.email}</td>
+                  <td>{project.phoneNumber}</td>
+                  <td>{project.whatsappNumber}</td>
+                  <td>{project.referredBy}</td>
+                  <td>{project.timeline ? new Date(project.timeline).toLocaleDateString() : 'Not set'}</td>
+                  <td>{project.assignedTo || 'Select Member'}</td>
                   <td className="total-payments">
                     {formatCurrency(project.totalPayment || 0)}
                   </td>
@@ -389,11 +405,10 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
                     {formatCurrency(project.totalRemaining || 0)}
                   </td>
                   <td>
-                    <span className={`status-badge ${
-                      project.projectStatus === 'Complete' ? 'status-complete' :
+                    <span className={`status-badge ${project.projectStatus === 'Complete' ? 'status-complete' :
                       project.projectStatus === 'Middle' ? 'status-progress' :
-                      'status-start'
-                    }`}>
+                        'status-start'
+                      }`}>
                       {project.projectStatus || 'Start'}
                     </span>
                   </td>

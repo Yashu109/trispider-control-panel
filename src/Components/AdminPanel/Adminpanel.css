@@ -120,7 +120,15 @@
     display: flex;
     justify-content: space-between;
 }
-
+.form-group select{
+    width: 72%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background-color: #fff;
+}
 .form-group-Project-Title {
     margin-bottom: 1.5rem;
     display: flex;
@@ -489,4 +497,192 @@
     * {
         transition: none !important;
     }
+}
+/* Task Assignments Section Container */
+.assignments-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #ffffff;
+    gap: 10px;
+    /* padding: 20px; */
+    border-radius: 8px;
+    /* border: 1px solid #e0e0e0; */
+    margin: 20px 0;
+    /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); */
+}
+
+.assignments-section label {
+    font-weight: 600;
+    color: #333;
+    font-size: 16px;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.assignment-info {
+    font-size: 14px;
+    color: #666;
+    font-weight: normal;
+    margin-left: 8px;
+}
+.part1{
+    display: flex
+    ;
+        justify-content: space-between;
+        width: 100%;
+}
+.part2{
+    display: flex
+    ;
+        align-items: center;
+        width: 100%;
+        justify-content: center;
+        gap: 30%;
+    
+}
+/* Individual Assignment Row */
+.assignment-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    /* background: #f8f9fa; */
+    /* border-radius: 6px; */
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+    flex-direction: column;
+}
+
+/* .assignment-row:hover {
+    background: #f0f0f0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+} */
+.quotation{
+    display: none;
+}
+/* Assignee Input */
+.assignee-input {
+    flex: 2;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+.assignee-input:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+}
+
+.assignee-input::placeholder {
+    color: #aaa;
+}
+
+/* Percentage Display */
+.percentage-display {
+    flex: 1;
+    min-width: 80px;
+    padding: 8px 12px;
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+    border: 1px solid #c8e6c9;
+}
+
+/* Remove Button */
+.remove-assignment-btn {
+    padding: 8px 16px;
+    background-color: #ff5252;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+.remove-assignment-btn:hover {
+    background-color: #ff1744;
+}
+
+/* Add Assignee Button */
+.add-assignment-btn {
+    /* width: 100%; */
+    height: 10%;
+    padding: 12px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 10px;
+    transition: background-color 0.3s ease;
+}
+
+.add-assignment-btn:hover {
+    background-color: #43a047;
+}
+
+/* Total Percentage Display */
+.total-percentage {
+    margin-top: 16px;
+    padding: 12px;
+    background-color: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 4px;
+    color: #1565c0;
+    font-weight: 600;
+    text-align: right;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .assignment-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .assignee-input,
+    .percentage-display,
+    .remove-assignment-btn {
+        width: 100%;
+    }
+    
+    .percentage-display {
+        text-align: center;
+    }
+}
+
+/* Button States */
+.add-assignment-btn:disabled,
+.remove-assignment-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Focus and Active States */
+.add-assignment-btn:focus,
+.remove-assignment-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+.view-button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.view-button:hover {
+    background-color: #45a049;
 }

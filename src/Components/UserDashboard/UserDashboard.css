@@ -68,7 +68,18 @@
   display: flex;
   justify-content: space-between;
 }
-
+.dashboard-form-group button{
+  display: flex
+  ;
+      background-color: #3f3fed;
+      color: white;
+      width: 100px;
+      height: 30px;
+      align-items: center;
+      justify-content: center;
+      border: navajowhite;
+      border-radius: 6px;
+}
 .dashboard-form-group label {
   display: block;
   margin-bottom: 0.5rem;
@@ -174,4 +185,13 @@
   padding: 3rem;
   font-size: 1.2rem;
   color: #6c757d;
+}
+.query-status-message {
+  margin-bottom: 15px;
+  color: green;
+  padding: 10px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  text-align: center;
+  font-weight: bold;
 }

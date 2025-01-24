@@ -121,15 +121,18 @@
 }
 
 .toggle-button {
-  background: transparent;
+  background: none;
   color: #3b82f6;
   padding: 0.5rem;
   font-size: 0.875rem;
   transition: color 0.2s;
+  cursor: pointer;
+  border: none;
 }
 
 .toggle-button:hover {
-  color: #2563eb;
+  color: black;
+  border: none;
 }
 
 .auth-footer {
