@@ -487,7 +487,9 @@ const AuthForm = () => {
           department: '',
           employeeId: ''
         });
-        navigate('/admin-panel');
+        // navigate('/admin-panel');
+        navigate('/admin-profile');
+
       } else {
         await createUserWithEmailAndPassword(auth, formData.email.trim(), formData.password);
         alert('Account created successfully!');

@@ -7,7 +7,7 @@ import Quotation from '../Quotation/Quotation'
 import Splitslayout from '../Splitslayout/Splitslayout'
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-import { uploadString, ref as storageRef,getDownloadURL  } from 'firebase/storage';
+import { uploadString, ref as storageRef, getDownloadURL } from 'firebase/storage';
 
 const AdminPanel = () => {
     const navigate = useNavigate();
@@ -29,7 +29,7 @@ const AdminPanel = () => {
     const [counterpass, setCounterpass] = useState('');
     // Task assignment state with initial 100% for first person
     const [assignments, setAssignments] = useState([
-        { id: 1, assignee: '', percentage: '100' }
+        { id: 1, assignee: '', description: '', percentage: '100' }
     ]);
 
     // Helper function to calculate even percentage splits
@@ -71,10 +71,32 @@ const AdminPanel = () => {
     const [editingId, setEditingId] = useState(null);
 
     // Assignment handlers
+    // const handleAddAssignment = () => {
+    //     const newAssignments = [
+    //         ...assignments,
+    //         { id: assignments.length + 1, assignee: '' }
+    //     ];
+
+    //     // Calculate even split for all assignees
+    //     const evenPercentage = calculateEvenSplit(newAssignments.length);
+    //     newAssignments.forEach(assignment => {
+    //         assignment.percentage = evenPercentage;
+    //     });
+
+    //     setAssignments(newAssignments);
+    //     setProjectData(prev => ({
+    //         ...prev,
+    //         assignments: newAssignments
+    //     }));
+
+    //     // Display message showing the split
+    //     setMessage(`Work split evenly: ${evenPercentage}% per person`);
+    //     setTimeout(() => setMessage(''), 3000);
+    // };
     const handleAddAssignment = () => {
         const newAssignments = [
             ...assignments,
-            { id: assignments.length + 1, assignee: '' }
+            { id: assignments.length + 1, assignee: '', description: '' }
         ];
 
         // Calculate even split for all assignees
@@ -93,7 +115,27 @@ const AdminPanel = () => {
         setMessage(`Work split evenly: ${evenPercentage}% per person`);
         setTimeout(() => setMessage(''), 3000);
     };
+    //  
+    //     if (assignments.length > 1) {
+    //         const newAssignments = assignments.filter(assignment => assignment.id !== id);
 
+    //         // Recalculate even split for remaining assignees
+    //         const evenPercentage = calculateEvenSplit(newAssignments.length);
+    //         newAssignments.forEach(assignment => {
+    //             assignment.percentage = evenPercentage;
+    //         });
+
+    //         setAssignments(newAssignments);
+    //         setProjectData(prev => ({
+    //             ...prev,
+    //             assignments: newAssignments
+    //         }));
+
+    //         // Display message showing the new split
+    //         setMessage(`Work split evenly: ${evenPercentage}% per person`);
+    //         setTimeout(() => setMessage(''), 3000);
+    //     }
+    // };
     const handleRemoveAssignment = (id) => {
         if (assignments.length > 1) {
             const newAssignments = assignments.filter(assignment => assignment.id !== id);
@@ -115,30 +157,52 @@ const AdminPanel = () => {
             setTimeout(() => setMessage(''), 3000);
         }
     };
+    // const handleAssignmentChange = (id, field, value) => {
+    //     if (field === 'assignee') {
+    //         const updatedAssignments = assignments.map(assignment => {
+    //             if (assignment.id === id) {
+    //                 return { ...assignment, assignee: value };
+    //             }
+    //             return assignment;
+    //         });
+
+    //         setAssignments(updatedAssignments);
+
+    //         // Update both assignments array and Assign_To field
+    //         const assigneeNames = updatedAssignments
+    //             .map(a => a.assignee)
+    //             .filter(name => name.trim() !== '')
+    //             .join(', ');
+
+    //         setProjectData(prev => ({
+    //             ...prev,
+    //             assignments: updatedAssignments,
+    //             Assign_To: assigneeNames
+    //         }));
+    //     }
+    // };
 
     const handleAssignmentChange = (id, field, value) => {
-        if (field === 'assignee') {
-            const updatedAssignments = assignments.map(assignment => {
-                if (assignment.id === id) {
-                    return { ...assignment, assignee: value };
-                }
-                return assignment;
-            });
+        const updatedAssignments = assignments.map(assignment => {
+            if (assignment.id === id) {
+                return { ...assignment, [field]: value };
+            }
+            return assignment;
+        });
 
-            setAssignments(updatedAssignments);
+        setAssignments(updatedAssignments);
 
-            // Update both assignments array and Assign_To field
-            const assigneeNames = updatedAssignments
-                .map(a => a.assignee)
-                .filter(name => name.trim() !== '')
-                .join(', ');
+        // Update both assignments array and Assign_To field
+        const assigneeNames = updatedAssignments
+            .map(a => a.assignee)
+            .filter(name => name.trim() !== '')
+            .join(', ');
 
-            setProjectData(prev => ({
-                ...prev,
-                assignments: updatedAssignments,
-                Assign_To: assigneeNames
-            }));
-        }
+        setProjectData(prev => ({
+            ...prev,
+            assignments: updatedAssignments,
+            Assign_To: assigneeNames
+        }));
     };
     // Form stage handlers
     const handleStageChange = () => {
@@ -169,14 +233,38 @@ const AdminPanel = () => {
         setMessage('');
     };
 
+    // const handleChange = (e) => {
+    //     const { name, value } = e.target;
+    //     setProjectData(prevState => ({
+    //         ...prevState,
+    //         [name]: value
+    //     }));
+    // };
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setProjectData(prevState => ({
-            ...prevState,
-            [name]: value
-        }));
+        
+        setProjectData(prevState => {
+            const newState = {
+                ...prevState,
+                [name]: value
+            };
+    
+            // Auto-calculate remaining amount when total, advance, or discount changes
+            if (['totalPayment', 'advancePayment', 'discount'].includes(name)) {
+                const total = parseFloat(name === 'totalPayment' ? value : newState.totalPayment) || 0;
+                const advance = parseFloat(name === 'advancePayment' ? value : newState.advancePayment) || 0;
+                const discount = parseFloat(name === 'discount' ? value : newState.discount) || 0;
+                
+                // Calculate remaining amount
+                const remaining = total - advance - discount;
+                
+                // Update the remaining amount, ensuring it's not negative
+                newState.totalRemaining = Math.max(0, remaining).toString();
+            }
+    
+            return newState;
+        });
     };
-
     // Canvas handlers
     useEffect(() => {
         if (inputMode === 'pen' && canvasRef.current) {
@@ -310,7 +398,7 @@ const AdminPanel = () => {
 
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
-            const imgWidth = 210;
+            const imgWidth = 120;
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
             pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
@@ -497,19 +585,20 @@ const AdminPanel = () => {
         }
     };
 
-    const handleNextPage = () => {
-        navigate('/admin-profile');
-    };
+    // const handleNextPage = () => {
+    //     navigate('/admin-profile');
+    // };
 
     return (
         <Splitslayout
             quotationPreview={
-                <div ref={quotationRef}>
+                <div ref={quotationRef} >
                     <Quotation
                         {...projectData}
                         counterpass={counterpass}
                     // Add other props as needed
                     />
+                    
                 </div>
             }
         >
@@ -531,7 +620,7 @@ const AdminPanel = () => {
                     {/* <Quotation scopeOfWork={projectData.scopeOfWork} /> */}
 
                 </div>
-                <form onSubmit={handleSubmit} className="project-form">
+                <form onSubmit={handleSubmit} className="admin-panel-project-form ">
                     {formStage === 'basic' ? (
                         // Basic Project Information Form
                         <>
@@ -548,7 +637,7 @@ const AdminPanel = () => {
                                 />
                             </div>
 
-                            <div className="form-group">
+                            <div className="form-group ">
                                 <label htmlFor="description">Project Description:</label>
                                 <textarea
                                     id="description"
@@ -793,6 +882,7 @@ const AdminPanel = () => {
                                     </div>
                                 </div>
 
+                                {/* Total Payment Field */}
                                 <div className="form-group">
                                     <label htmlFor="totalPayment">Total Payment:</label>
                                     <input
@@ -806,6 +896,7 @@ const AdminPanel = () => {
                                     />
                                 </div>
 
+                                {/* Advance Payment Field */}
                                 <div className="form-group">
                                     <label htmlFor="advancePayment">Advance Payment:</label>
                                     <input
@@ -819,6 +910,7 @@ const AdminPanel = () => {
                                     />
                                 </div>
 
+                                {/* Discount Field */}
                                 <div className="form-group">
                                     <label htmlFor="discount">Discount:</label>
                                     <input
@@ -831,6 +923,7 @@ const AdminPanel = () => {
                                     />
                                 </div>
 
+                                {/* Total Remaining Field - Now read-only */}
                                 <div className="form-group">
                                     <label htmlFor="totalRemaining">Total Remaining:</label>
                                     <input
@@ -838,11 +931,11 @@ const AdminPanel = () => {
                                         id="totalRemaining"
                                         name="totalRemaining"
                                         value={projectData.totalRemaining}
-                                        onChange={handleChange}
-                                        placeholder="Enter remaining amount"
+                                        readOnly
+                                        placeholder="Auto-calculated remaining amount"
+                                        style={{ backgroundColor: '#f5f5f5' }} 
                                     />
                                 </div>
-
                                 <div className="form-group">
                                     <label htmlFor="timeline">Project Timeline:</label>
                                     <input
@@ -859,16 +952,46 @@ const AdminPanel = () => {
                                 <div className="form-group assignments-section">
                                     <div className='part1'>
                                         <label htmlFor="Assign_To">Task Assignments: <span className="assignment-info"></span></label>
+                                        {/* {assignments.map((assignment) => (
+                                                <div key={assignment.id} className="assignment-row">
+                                                    <input
+                                                        type="text"
+                                                        id="Assign_To"
+                                                        name="Assign_To"
+                                                        placeholder="Assignee name"
+                                                        value={assignment.assignee}
+                                                        onChange={(e) => handleAssignmentChange(assignment.id, 'assignee', e.target.value)}
+                                                        className="assignee-input"
+                                                    />
+                                                    <div className="percentage-display">
+                                                        {assignment.percentage}%
+                                                    </div>
+                                                    {assignments.length > 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemoveAssignment(assignment.id)}
+                                                            className="remove-assignment-btn"
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))} */}
                                         {assignments.map((assignment) => (
                                             <div key={assignment.id} className="assignment-row">
                                                 <input
                                                     type="text"
-                                                    id="Assign_To"
-                                                    name="Assign_To"
                                                     placeholder="Assignee name"
                                                     value={assignment.assignee}
                                                     onChange={(e) => handleAssignmentChange(assignment.id, 'assignee', e.target.value)}
                                                     className="assignee-input"
+                                                />
+                                                <textarea
+                                                    placeholder="Task description"
+                                                    value={assignment.description || ''}
+                                                    onChange={(e) => handleAssignmentChange(assignment.id, 'description', e.target.value)}
+                                                    className="description-input"
+                                                    rows="3"
                                                 />
                                                 <div className="percentage-display">
                                                     {assignment.percentage}%
@@ -944,7 +1067,7 @@ const AdminPanel = () => {
                                 </button>
                             )}
                         </div>
-                        <button className='nextpage' onClick={handleNextPage}>Next page</button>
+                        
                     </div>
                 </form>
             </div>

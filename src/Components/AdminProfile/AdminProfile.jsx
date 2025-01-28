@@ -3,12 +3,13 @@ import { database, auth } from '../../firebase';
 import { ref, get, onValue, update, remove, getDatabase } from 'firebase/database';
 import { useNavigate } from 'react-router-dom';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
-import { Loader2, Pencil, Trash2, X, Bell } from "lucide-react";
+import { Loader2, Pencil, Trash2, X, Bell, Eye } from "lucide-react";
 import './AdminProfile.css';
 import ProtectedPayments from '../ProtectedPayments/ProtectedPayments';
 import { Download } from 'lucide-react';
 import { getStorage, ref as storageRef, getDownloadURL } from 'firebase/storage';
-
+import SidebarNav from './Sidebar';
+import AdminPanel from '../AdminPanel/Adminpanel';
 const AdminDashboard = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('profile');
@@ -28,10 +29,11 @@ const AdminDashboard = () => {
     const [showQueriesModal, setShowQueriesModal] = useState(false);
     const [queriesCount, setQueriesCount] = useState(0);
     // const [action, setAction] = useState('');
-    const [editedQueryText, setEditedQueryText] = useState('');
+    const [showAdminPanel, setShowAdminPanel] = useState(false);
 
     const [editableQueryText, setEditableQueryText] = useState('');
     const [isEditing, setIsEditing] = useState(false);
+
     useEffect(() => {
         const queriesRef = ref(database, 'queries'); // Reference to the 'queries' node
 
@@ -67,6 +69,55 @@ const AdminDashboard = () => {
 
         return () => unsubscribe();
     }, []);
+    useEffect(() => {
+        if (!authChecked) return;
+
+        if (!auth.currentUser) {
+            setLoading(false);
+            return;
+        }
+
+        const projectsRef = ref(database, 'projects');
+
+        const unsubscribe = onValue(projectsRef, (snapshot) => {
+            try {
+                if (snapshot.exists()) {
+                    const projectsData = [];
+                    snapshot.forEach((childSnapshot) => {
+                        const project = childSnapshot.val();
+
+                        // Ensure assignments is an array, default to empty if not
+                        const assignments = Array.isArray(project.assignments)
+                            ? project.assignments
+                            : [];
+
+                        projectsData.push({
+                            id: childSnapshot.key,
+                            ...project,
+                            assignments
+                        });
+                    });
+
+                    projectsData.sort((a, b) => {
+                        const dateA = a.timeline ? new Date(a.timeline) : new Date(0);
+                        const dateB = b.timeline ? new Date(b.timeline) : new Date(0);
+                        return dateB - dateA;
+                    });
+
+                    setProjects(projectsData);
+                } else {
+                    setProjects([]);
+                }
+            } catch (error) {
+                console.error('Error processing projects:', error);
+                setError('Error loading projects');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        return () => unsubscribe();
+    }, [authChecked, navigate]);
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (!user && !loading) {
@@ -121,42 +172,55 @@ const AdminDashboard = () => {
         return () => unsubscribe();
     }, [authChecked, navigate]);
 
-    // ReferralMessage Component
-    // const ReferralMessage = ({ referredBy, projects }) => {
-    //     if (!referredBy) return null;
-
-    //     const searchLower = referredBy.toLowerCase();
-    //     const matchingProjects = projects.filter(p =>
-    //         p.clientName && p.clientName.toLowerCase() === searchLower
-    //     );
-
-    //     return (
-    //         <div className="referral-info">
-    //             {matchingProjects.length > 0 ? (
-    //                 <>
-    //                     <p className="referral-status success">
-    //                         "{referredBy}" found as a client with following project details:
-    //                     </p>
-    //                     {matchingProjects.map(project => (
-    //                         <div key={project.id} className="referral-details">
-    //                             <p>Project ID: {project.projectId}</p>
-    //                             <p>Project Type: {project.ProjectType}</p>
-    //                             <p>College: {project.collegeName}</p>
-    //                             <p>Timeline: {project.timeline ?
-    //                                 new Date(project.timeline).toLocaleDateString() :
-    //                                 'Not set'}</p>
-    //                         </div>
-    //                     ))}
-    //                 </>
-    //             ) : (
-    //                 <p className="referral-status warning">
-    //                     "{referredBy}" is not found as a client in any project
-    //                 </p>
-    //             )}
-    //         </div>
-    //     );
-    // };
-
+    const ReferralInfo = ({ referredBy, projects }) => {
+        const referredProjects = projects.filter(project => 
+            project.clientName && project.clientName.toLowerCase() === referredBy.toLowerCase()
+        );
+    
+        const referredByProjects = projects.filter(project =>
+            project.referredBy && project.referredBy.toLowerCase() === referredBy.toLowerCase()
+        );
+    
+        if (!referredBy) return null;
+    
+        return (
+            <div className="referral-info">
+                {referredProjects.length > 0 && (
+                    <div className="referral-section">
+                        <h4>Client Details:</h4>
+                        {referredProjects.map(project => (
+                            <div key={project.id} className="referral-details">
+                                <p><strong>Project ID:</strong> {project.projectId}</p>
+                                <p><strong>Project Type:</strong> {project.title}</p>
+                                <p><strong>College:</strong> {project.collegeName}</p>
+                                <p><strong>Timeline:</strong> {project.timeline ? 
+                                    new Date(project.timeline).toLocaleDateString() : 
+                                    'Not set'}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                
+                {referredByProjects.length > 0 && (
+                    <div className="referral-section">
+                        <h4>Projects Referred:</h4>
+                        {referredByProjects.map(project => (
+                            <div key={project.id} className="referral-details">
+                                <p><strong>Project ID:</strong> {project.projectId}</p>
+                                <p><strong>Client:</strong> {project.clientName}</p>
+                                <p><strong>Project Type:</strong> {project.title}</p>
+                                <p><strong>College:</strong> {project.collegeName}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+    
+                {referredProjects.length === 0 && referredByProjects.length === 0 && (
+                    <p className="no-referrals">No matching referrals found for "{referredBy}"</p>
+                )}
+            </div>
+        );
+    };
     const handleEdit = (project) => {
         setEditingProject({ ...project });
         setShowEditModal(true);
@@ -230,48 +294,40 @@ const AdminDashboard = () => {
 
     let filteredProjects = projects.filter(project => {
         const searchLower = searchQuery.toLowerCase();
-
+    
         // Special handling for referredBy search
         if (filterField === 'referredBy' && searchLower) {
-            // First look for the name in clientName to display info
-            const isRefererAClient = projects.some(p =>
-                p.clientName && p.clientName.toLowerCase() === searchLower
+            return (
+                (project.referredBy && project.referredBy.toLowerCase().includes(searchLower)) ||
+                (project.clientName && project.clientName.toLowerCase() === searchLower)
             );
-
-            if (isRefererAClient) {
-                // If they are a client, return any project where they match the clientName
-                return project.clientName && project.clientName.toLowerCase() === searchLower;
-            } else {
-                // If not a client, show no results
-                return false;
-            }
         }
-
+    
         if (filterField === 'timeline') {
             const projectDate = project.timeline ? new Date(project.timeline) : null;
             if (!projectDate) return false;
-
+    
             const dateFormats = [
                 projectDate.toLocaleDateString(),
                 projectDate.toLocaleDateString('en-GB'),
                 projectDate.toLocaleDateString('en-US'),
                 projectDate.toISOString().split('T')[0],
             ];
-
+    
             return dateFormats.some(format =>
                 format.toLowerCase().includes(searchLower)
             );
         }
-
+    
         if (filterField !== 'all') {
             const fieldValue = String(project[filterField] || '').toLowerCase();
             return fieldValue.includes(searchLower);
         }
-
+    
         const searchFields = [
             project.projectId,
             project.clientName,
-            project.ProjectType,
+            project.title,
             project.collegeName,
             project.email,
             project.phoneNumber,
@@ -279,12 +335,12 @@ const AdminDashboard = () => {
             project.referredBy,
             project.timeline ? new Date(project.timeline).toLocaleDateString() : ''
         ];
-
+    
         return searchFields.some(field =>
             String(field || '').toLowerCase().includes(searchLower)
         );
     });
-console.log(filteredProjects,'filteredProjects')
+    console.log(filteredProjects, 'filteredProjects')
     // Filter by tab
     filteredProjects = filteredProjects.filter(project => {
         const today = new Date();
@@ -365,20 +421,20 @@ console.log(filteredProjects,'filteredProjects')
 
     const handleQueryAction = (query, action) => {
         const database = getDatabase();
-        
+
         if (action === 'accepted') {
             // Simple acceptance path
             const projectRef = ref(database, `projects/${query.parentKey}`);
             update(projectRef, {
                 queryStatus: 'Your query has been accepted and will be addressed soon.'
             })
-            .then(() => {
-                // Remove the specific query
-                const queryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
-                return remove(queryRef);
-            })
-            .then(() => setShowQueriesModal(false))
-            .catch(error => console.error('Acceptance error:', error));
+                .then(() => {
+                    // Remove the specific query
+                    const queryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
+                    return remove(queryRef);
+                })
+                .then(() => setShowQueriesModal(false))
+                .catch(error => console.error('Acceptance error:', error));
         } else if (action === 'rejected') {
             // Editing path
             setEditableQueryText(query.queryText);
@@ -420,82 +476,81 @@ console.log(filteredProjects,'filteredProjects')
         if (editableQueryText.trim()) {
             const database = getDatabase();
             const projectRef = ref(database, `projects/${query.parentKey}`);
-            
+
             update(projectRef, {
                 queryStatus: 'Your query has been reviewed and updated.'
             })
-            .then(() => {
-                // Remove the old query
-                const oldQueryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
-                return remove(oldQueryRef);
-            })
-            .then(() => {
-                // Push new query
-                const newQueryRef = ref(database, `queries/${query.parentKey}`);
-                return push(newQueryRef, {
-                    queryText: editableQueryText,
-                    timestamp: new Date().toISOString(),
-                    status: 'pending'
-                });
-            })
-            .then(() => {
-                setIsEditing(false);
-                setShowQueriesModal(false);
-            })
-            .catch(error => console.error('Edit and send error:', error));
+                .then(() => {
+                    // Remove the old query
+                    const oldQueryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
+                    return remove(oldQueryRef);
+                })
+                .then(() => {
+                    // Push new query
+                    const newQueryRef = ref(database, `queries/${query.parentKey}`);
+                    return push(newQueryRef, {
+                        queryText: editableQueryText,
+                        timestamp: new Date().toISOString(),
+                        status: 'pending'
+                    });
+                })
+                .then(() => {
+                    setIsEditing(false);
+                    setShowQueriesModal(false);
+                })
+                .catch(error => console.error('Edit and send error:', error));
         }
     };
-    
+    if (showAdminPanel) {
+        return (
+            <div className="admin-panel-container">
+                <div className="admin-panel-header">
+                    <h2>Add New Order</h2>
+                    <button
+                        className="close-panel-btn"
+                        onClick={() => setShowAdminPanel(false)}
+                    >
+                        Close
+                        {/* <X size={20} /> */}
+                    </button>
+                </div>
+                <div className="admin-panel-content">
+                    <AdminPanel onComplete={() => setShowAdminPanel(false)} />
+                </div>
+            </div>
+        );
+    }
+    const handleViewPDF = async (projectId) => {
+        try {
+            const storage = getStorage();
+            const pdfRef = storageRef(storage, `quotations/${projectId}.pdf`);
+            const url = await getDownloadURL(pdfRef);
+            window.open(url, '_blank');
+        } catch (error) {
+            console.error('Error viewing PDF:', error);
+            alert('Error viewing PDF. Please try again.');
+        }
+    };
+
     return (
         <div className="dashboard-container">
+
             <div className="sidebar">
                 <div className="admin-info">
                     <h2>Admin Dashboard</h2>
                     <p>{auth.currentUser?.email}</p>
                 </div>
-                <nav className="sidebar-nav">
-                    <div
-                        className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('profile')}
-                    >
-                        Admin Profile
-                    </div>
-                    <div
-                        className={`nav-item ${activeTab === 'orders' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('orders')}
-                    >
-                        Total Orders ({projects.length})
-                    </div>
-                    <div
-                        className={`nav-item ${activeTab === 'ready' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('ready')}
-                    >
-                        Ready to Deliver ({getReadyCount()})
-                    </div>
-                    <div
-                        className={`nav-item ${activeTab === 'progress' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('progress')}
-                    >
-                        In Progress ({getInProgressCount()})
-                    </div>
-                    <div
-                        className={`nav-item ${activeTab === 'payments' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('payments')}
-                    >
-                        All Payments(Restricted)
-                    </div>
-                    <div
-                        className={`nav-item ${activeTab === 'nearby' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('nearby')}
-                    >
-                        Nearby Submission ({getNearbyCount()})
-                    </div>
-                    <div className="nav-item signout" onClick={handleSignOut}>
-                        Sign Out
-                    </div>
-                </nav>
+                <SidebarNav
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    projects={projects}
+                    getReadyCount={getReadyCount}
+                    getInProgressCount={getInProgressCount}
+                    getNearbyCount={getNearbyCount}
+                    handleSignOut={handleSignOut}
+                    setShowAdminPanel={setShowAdminPanel}
+                />
             </div>
-
             <div className="main-content">
                 <div className="table-section">
                     {activeTab === 'payments' ? (
@@ -507,7 +562,7 @@ console.log(filteredProjects,'filteredProjects')
                         <>
                             <div className="table-header">
                                 <h2>
-                                    {activeTab === 'profile' ? 'All Projects' :
+                                    {activeTab === 'profile' ? 'Total Orders' :
                                         activeTab === 'orders' ? 'Total Orders' :
                                             activeTab === 'ready' ? 'Ready to Deliver' :
                                                 activeTab === 'progress' ? 'In Progress' :
@@ -525,7 +580,7 @@ console.log(filteredProjects,'filteredProjects')
                                             <option value="projectId">Project ID</option>
                                             <option value="clientName">Client Name</option>
                                             <option value="collegeName">College</option>
-                                            <option value="ProjectType">Project Type</option>
+                                            <option value="title">Project Name</option>
                                             <option value="email">Email</option>
                                             <option value="phoneNumber">Phone</option>
                                             <option value="referredBy">Referred By</option>
@@ -638,7 +693,7 @@ console.log(filteredProjects,'filteredProjects')
                                                                             Send Updated Query
                                                                         </button>
                                                                     </>
-                                                                    
+
                                                                 ) : (
                                                                     <>
                                                                         <textarea
@@ -686,7 +741,7 @@ console.log(filteredProjects,'filteredProjects')
                                             <tr>
                                                 <th>Project ID</th>
                                                 <th>Client Name</th>
-                                                <th>Project Type</th>
+                                                <th>Project Name</th>
                                                 <th>College</th>
                                                 <th>Email</th>
                                                 <th>Phone Number</th>
@@ -703,7 +758,7 @@ console.log(filteredProjects,'filteredProjects')
                                                 <tr key={project.id}>
                                                     <td>{project.projectId}</td>
                                                     <td>{project.clientName}</td>
-                                                    <td>{project.ProjectType}</td>
+                                                    <td>{project.title}</td>
                                                     <td>{project.collegeName}</td>
                                                     <td>{project.email}</td>
                                                     <td>{project.phoneNumber}</td>
@@ -711,7 +766,27 @@ console.log(filteredProjects,'filteredProjects')
                                                     <td>{project.referredBy}</td>
                                                     <td>{project.timeline ? new Date(project.timeline).toLocaleDateString() : 'Not set'}</td>
                                                     <td>{project.projectStatus || 'Start'}</td>
-                                                    <td>{project.Assign_To|| 'Select Member'}</td>
+                                                    <td>
+                                                        {project.assignments && project.assignments.length > 0 ? (
+                                                            project.assignments.map((assignment, index) => (
+                                                                <div key={index} className="assignment-details">
+                                                                    <div className="assignee-info">
+                                                                        <strong>{assignment.assignee || 'Select Member'}</strong>
+                                                                        <span className="assignment-percentage">
+                                                                            ({assignment.percentage || 'N/A'}%)
+                                                                        </span>
+                                                                    </div>
+                                                                    {assignment.description && (
+                                                                        <div className="assignment-description">
+                                                                            {assignment.description}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            project.Assign_To || 'Select Member'
+                                                        )}
+                                                    </td>
                                                     <td className="actions-column">
                                                         <button
                                                             onClick={() => handleEdit(project)}
@@ -727,12 +802,20 @@ console.log(filteredProjects,'filteredProjects')
                                                             <Trash2 size={16} />
                                                         </button>
                                                         <button
+                                                            onClick={() => handleViewPDF(project.projectId)}
+                                                            className="action-button view"
+                                                            title="View PDF"
+                                                        >
+                                                            <Eye size={16} />
+                                                        </button>
+                                                        {/* <button
                                                             onClick={() => handleDownloadPDF(project.projectId)}
                                                             className="action-button download"
                                                             title="Download PDF"
                                                         >
                                                             <Download size={16} />
-                                                        </button>
+                                                        </button> */}
+
                                                     </td>
                                                 </tr>
                                             ))}
@@ -746,175 +829,246 @@ console.log(filteredProjects,'filteredProjects')
             </div>
 
             {/* Edit Modal */}
-            {showEditModal && editingProject && (
-                <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h2>Edit Project</h2>
-                            <button
-                                onClick={() => setShowEditModal(false)}
-                                className="close-button"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleSubmitEdit} className="edit-form">
-                            <div className="form-grid">
-                                <div className="form-group">
-                                    <label>Client Name</label>
-                                    <input
-                                        type="text"
-                                        value={editingProject.clientName || ''}
-                                        onChange={(e) => setEditingProject({
-                                            ...editingProject,
-                                            clientName: e.target.value
-                                        })}
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Project Type</label>
-                                    <input
-                                        type="text"
-                                        value={editingProject.ProjectType || ''}
-                                        onChange={(e) => setEditingProject({
-                                            ...editingProject,
-                                            ProjectType: e.target.value
-                                        })}
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>College Name</label>
-                                    <input
-                                        type="text"
-                                        value={editingProject.collegeName || ''}
-                                        onChange={(e) => setEditingProject({
-                                            ...editingProject,
-                                            collegeName: e.target.value
-                                        })}
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Email</label>
-                                    <input
-                                        type="email"
-                                        value={editingProject.email || ''}
-                                        onChange={(e) => setEditingProject({
-                                            ...editingProject,
-                                            email: e.target.value
-                                        })}
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Phone Number</label>
-                                    <input
-                                        type="tel"
-                                        value={editingProject.phoneNumber || ''}
-                                        onChange={(e) => setEditingProject({
-                                            ...editingProject,
-                                            phoneNumber: e.target.value
-                                        })}
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>WhatsApp Number</label>
-                                    <input
-                                        type="tel"
-                                        value={editingProject.whatsappNumber || ''}
-                                        onChange={(e) => setEditingProject({
-                                            ...editingProject,
-                                            whatsappNumber: e.target.value
-                                        })}
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Referred By</label>
-                                    <input
-                                        type="text"
-                                        value={editingProject.referredBy || ''}
-                                        onChange={(e) => setEditingProject({
-                                            ...editingProject,
-                                            referredBy: e.target.value
-                                        })}
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Timeline</label>
-                                    <input
-                                        type="date"
-                                        value={editingProject.timeline || ''}
-                                        onChange={(e) => setEditingProject({
-                                            ...editingProject,
-                                            timeline: e.target.value
-                                        })}
-                                    />
-                                </div>
-
-
-
-                                <div className="form-group">
-                                    <label>Project Status</label>
-                                    <select
-                                        value={editingProject.projectStatus || 'Start'}
-                                        onChange={(e) => setEditingProject({
-                                            ...editingProject,
-                                            projectStatus: e.target.value
-                                        })}
-                                    >
-                                        {projectStatuses.map(status => (
-                                            <option key={status} value={status}>
-                                                {status}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Assign To</label>
-                                    <select
-                                        value={editingProject.Assign_To || 'Select Member'}
-                                        onChange={(e) => setEditingProject({
-                                            ...editingProject,
-                                            assignedTo: e.target.value
-                                        })}
-                                    >
-                                        {teamMembers.map(member => (
-                                            <option key={member} value={member}>
-                                                {member}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="modal-footer">
+            {
+                showEditModal && editingProject && (
+                    <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+                        <div className="modal-content" onClick={e => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h2>Edit Project</h2>
                                 <button
-                                    type="button"
                                     onClick={() => setShowEditModal(false)}
-                                    className="btn-cancel"
+                                    className="close-button"
                                 >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="btn-save"
-                                >
-                                    Save Changes
+                                    <X size={20} />
                                 </button>
                             </div>
-                        </form>
+
+                            <form onSubmit={handleSubmitEdit} className="edit-form">
+                                <div className="form-grid">
+                                    <div className="form-group">
+                                        <label>Client Name</label>
+                                        <input
+                                            type="text"
+                                            value={editingProject.clientName || ''}
+                                            onChange={(e) => setEditingProject({
+                                                ...editingProject,
+                                                clientName: e.target.value
+                                            })}
+                                        />
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label>Project Type</label>
+                                        <input
+                                            type="text"
+                                            value={editingProject.title || ''}
+                                            onChange={(e) => setEditingProject({
+                                                ...editingProject,
+                                                title: e.target.value
+                                            })}
+                                        />
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label>College Name</label>
+                                        <input
+                                            type="text"
+                                            value={editingProject.collegeName || ''}
+                                            onChange={(e) => setEditingProject({
+                                                ...editingProject,
+                                                collegeName: e.target.value
+                                            })}
+                                        />
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label>Email</label>
+                                        <input
+                                            type="email"
+                                            value={editingProject.email || ''}
+                                            onChange={(e) => setEditingProject({
+                                                ...editingProject,
+                                                email: e.target.value
+                                            })}
+                                        />
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label>Phone Number</label>
+                                        <input
+                                            type="tel"
+                                            value={editingProject.phoneNumber || ''}
+                                            onChange={(e) => setEditingProject({
+                                                ...editingProject,
+                                                phoneNumber: e.target.value
+                                            })}
+                                        />
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label>WhatsApp Number</label>
+                                        <input
+                                            type="tel"
+                                            value={editingProject.whatsappNumber || ''}
+                                            onChange={(e) => setEditingProject({
+                                                ...editingProject,
+                                                whatsappNumber: e.target.value
+                                            })}
+                                        />
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label>Referred By</label>
+                                        <input
+                                            type="text"
+                                            value={editingProject.referredBy || ''}
+                                            onChange={(e) => setEditingProject({
+                                                ...editingProject,
+                                                referredBy: e.target.value
+                                            })}
+                                        />
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label>Timeline</label>
+                                        <input
+                                            type="date"
+                                            value={editingProject.timeline || ''}
+                                            onChange={(e) => setEditingProject({
+                                                ...editingProject,
+                                                timeline: e.target.value
+                                            })}
+                                        />
+                                    </div>
+
+
+
+                                    <div className="form-group">
+                                        <label>Project Status</label>
+                                        <select
+                                            value={editingProject.projectStatus || 'Start'}
+                                            onChange={(e) => setEditingProject({
+                                                ...editingProject,
+                                                projectStatus: e.target.value
+                                            })}
+                                        >
+                                            {projectStatuses.map(status => (
+                                                <option key={status} value={status}>
+                                                    {status}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="form-group assignments-section">
+                                        <label>Assignments</label>
+                                        {(editingProject.assignments || [{ assignee: '', description: '', percentage: '100' }]).map((assignment, index) => (
+                                            <div key={index} className="assignment-row">
+                                                <div className="assignment-inputs">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Assignee name"
+                                                        value={assignment.assignee || ''}
+                                                        onChange={(e) => {
+                                                            const updatedAssignments = [...(editingProject.assignments || [])];
+                                                            updatedAssignments[index] = {
+                                                                ...updatedAssignments[index],
+                                                                assignee: e.target.value
+                                                            };
+                                                            setEditingProject({
+                                                                ...editingProject,
+                                                                assignments: updatedAssignments,
+                                                                Assign_To: updatedAssignments
+                                                                    .map(a => a.assignee)
+                                                                    .filter(name => name.trim() !== '')
+                                                                    .join(', ')
+                                                            });
+                                                        }}
+                                                        className="assignee-input"
+                                                    />
+                                                    <textarea
+                                                        placeholder="Task description"
+                                                        value={assignment.description || ''}
+                                                        onChange={(e) => {
+                                                            const updatedAssignments = [...(editingProject.assignments || [])];
+                                                            updatedAssignments[index] = {
+                                                                ...updatedAssignments[index],
+                                                                description: e.target.value
+                                                            };
+                                                            setEditingProject({
+                                                                ...editingProject,
+                                                                assignments: updatedAssignments
+                                                            });
+                                                        }}
+                                                        className="description-input"
+                                                        rows="3"
+                                                    />
+
+                                                    {index > 0 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const updatedAssignments = editingProject.assignments.filter((_, i) => i !== index);
+                                                                setEditingProject({
+                                                                    ...editingProject,
+                                                                    assignments: updatedAssignments,
+                                                                    Assign_To: updatedAssignments
+                                                                        .map(a => a.assignee)
+                                                                        .filter(name => name.trim() !== '')
+                                                                        .join(', ')
+                                                                });
+                                                            }}
+                                                            className="remove-assignment-btn"
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const updatedAssignments = [
+                                                    ...(editingProject.assignments || []),
+                                                    { assignee: '', description: '', percentage: '100' }
+                                                ];
+                                                setEditingProject({
+                                                    ...editingProject,
+                                                    assignments: updatedAssignments
+                                                });
+                                            }}
+                                            className="add-assignment-btn"
+                                        >
+                                            Add Assignment
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="modal-footer">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowEditModal(false)}
+                                        className="btn-cancel"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="btn-save"
+                                    >
+                                        Save Changes
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
+
 };
 
 export default AdminDashboard;

@@ -632,3 +632,83 @@ tr:hover {
     font-size: 12px;
     margin-top: 4px;
 }
+.nav-folder {
+    border-radius: 4px;
+    margin-bottom: 4px;
+}
+
+.nav-folder-header {
+    display: flex;
+    justify-content: space-between;
+    margin-left: 4%;
+    align-items: center;
+    padding: 10px 15px;
+    cursor: pointer;
+    /* background-color: #f0f0f0; */
+    /* border-radius: 4px; */
+    transition: background-color 0.2s;
+}
+
+.nav-folder-header:hover {
+    background-color: #333;
+}
+
+.nav-folder-header.active {
+    /* background-color: #007bff; */
+    color: white;
+}
+
+.nav-folder-content {
+    padding-left: 15px;
+    margin-top: 4px;
+}
+
+.nav-item.sub-item {
+    padding-left: 25px;
+    font-size: 0.95em;
+    /* background-color: #f8f9fa; */
+}
+
+.nav-item.sub-item:hover {
+    /* background-color: #e9ecef; */
+}
+
+.nav-item.sub-item.active {
+    background-color: #2c3e50;
+    color: #fff;
+    border-left: 4px solid #3498db;
+}
+.close-panel-btn{
+    cursor: pointer;
+    width: 4%;
+    height: 2vh;
+    border-radius: 6px;
+    background-color: #b60a0a;
+    color: #fff;
+    border: none;
+}
+.admin-panel-header h2{
+    color: #1E3A8A;
+}
+.assignment-details {
+    margin-bottom: 10px;
+    padding: 5px;
+    border-bottom: 1px solid #eee;
+}
+
+.assignee-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.assignment-percentage {
+    color: #666;
+    font-size: 0.8em;
+}
+
+.assignment-description {
+    /* color: #888; */
+    font-size: 0.9em;
+    margin-top: 5px;
+}

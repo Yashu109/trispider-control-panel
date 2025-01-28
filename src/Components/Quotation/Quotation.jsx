@@ -203,7 +203,7 @@ const TrispiderQuotation = ({
     discount = '',
     totalRemaining = '',
     timeline = '',
-    counterpass=''
+    counterpass = ''
 }) => {
     return (
         <div className='quotation-main-container'>
@@ -241,7 +241,7 @@ const TrispiderQuotation = ({
                         {/* Quotation Details */}
                         <div className="quotation-details">
                             <p>Date: {date}</p>
-                            <p className='quotationRef'>Quotation Reference: {counterpass ||'projectID'}</p>
+                            <p className='quotationRef'>Quotation Reference: {counterpass || 'projectID'}</p>
                             {/* <p>Project Name: {title}</p> */}
                         </div>
 
@@ -250,7 +250,7 @@ const TrispiderQuotation = ({
 
                             <p className='clientName'>Dear {clientName || 'Client'},</p>
                             <p className='clientName1'>
-                                We are pleased to provide you with a detailed {title ||'title' } ( {counterpass ||'projectID'}) At Trispider Innovation Labs, we are
+                                We are pleased to provide you with a detailed {title || 'title'} ( {counterpass || 'projectID'}) At Trispider Innovation Labs, we are
                                 excited about the opportunity to collaborate with you on this project. Our team is confident that our expertise
                                 in development and AI-driven solutions will meet your requirements.
                             </p>
@@ -261,7 +261,7 @@ const TrispiderQuotation = ({
                             </p>
                             <p className='clientName3'>
                                 Thank you for considering Trispider Innovation Labs for your project. We look forward to working together to
-                                bring {title ||'title'} (KS5654).
+                                bring {title || 'title'} .
                             </p>
                             <p className='companysign'>
                                 <p> Best regards:</p>
@@ -298,27 +298,28 @@ const TrispiderQuotation = ({
                             </div>
 
                             <div className="quotation-number">
-                                <p><span className='p1'>Quotation Number:</span> <span className='p2'>TIL-25112024-{counterpass ||'projectID'}</span></p>
+                                <p><span className='p1'>Quotation Number:</span> <span className='p2'>TIL-25112024-{counterpass || 'projectID'}</span></p>
                             </div>
                         </div>
                         <div className="project-overview">
-                            <p>Project Overview:</p>
+                            <p>Project Overview:{projectDescription}</p>
                             <div className="project-details">
-                                <p>Project Name: {title ||'title'} ({counterpass ||'projectID'})</p>
-                                <p>Project Description: As discussed, the project involves the design and development {title ||'title'} ({counterpass ||'projectID'})</p>
+                                <p>Project Name: {title || 'title'} ({counterpass || 'projectID'})</p>
+                                <p>Project Description: As discussed, the project involves the design and development {title || 'title'} ({counterpass || 'projectID'})</p>
                             </div>
                         </div>
                     </div>
                     <div className="scope-of-work">
                         <p className="section-title">Scope of Work:</p>
                         {scopeOfWork && (
-                <div className='scope-of'>
-                    
-                    {scopeOfWork.split('\n').map((item, index) => (
-                        <p key={index}>{item}</p>
-                    ))}  
-                </div>
-            )}
+                            <div className='scope-of'>
+
+                                {scopeOfWork.split('\n').map((item, index) => (
+                                    <p key={index}>{item}</p>
+                                ))}
+                            </div>
+                        )}
+                        
                         {/* <div className="section">
                             <h3>1. Mechanical System Design & Integration</h3>
                             <div className="subsection">

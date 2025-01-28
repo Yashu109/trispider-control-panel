@@ -1,5 +1,5 @@
 .quotation-container {
-    max-width: 800px;
+    /* max-width: 800px; */
     display: flex
 ;
     flex-direction: column;
@@ -98,7 +98,7 @@
     content: '';
     position: absolute;
     left: 33%;
-    width: 47px;
+    width: 50px;
     height: 4rem;
     background: white;
     transform: rotate(310deg);
@@ -231,10 +231,11 @@
   
   /* Scroll container for preview */
   .preview-side {
-    max-height: 100vh;
+    max-height: 94vh;
     overflow-y: auto;
     padding: 1rem;
     background: #F8F9FA;
+    width: 50%;
   }
   .ImgLogo{
     width: 200px;

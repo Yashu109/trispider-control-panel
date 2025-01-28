@@ -31,11 +31,11 @@
 .admin-container {
     /* padding: 2rem; */
     background-color: var(--bg-color);
-    max-height: 90vh;
+    /* max-height: 100vh; */
     /* Adjust the max height as needed */
     overflow-y: auto;
-    width: 54%;
-    margin-left: 22.5%;
+    /* width: 54%; */
+    /* margin-left: 22.5%; */
     /* padding: 2rem; */
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1)
@@ -104,7 +104,7 @@
 }
 
 /* Form Styles */
-.project-form {
+.admin-panel-project-form {
     background-color: var(--card-bg);
     padding: 1rem;
     /* border-radius: 1rem; */
@@ -113,6 +113,7 @@
     margin: 0 auto;
     width: 100%;
     margin-top: -30px   ;
+    height: 80vh;
 }
 
 .form-group {
@@ -134,7 +135,11 @@
     display: flex;
     justify-content: space-between;
 }
-
+.form-group-Project-description {
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+}
 .form-group-Project-Title label {
     display: flex;
     margin-bottom: 0.5rem;
@@ -160,7 +165,22 @@
     transition: all 0.3s ease;
     background-color: #fff;
 }
-
+.form-group-Project-description label {
+    display: flex;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 1rem;
+}
+.form-group-Project-description textarea {
+    width: 81%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background-color: #fff;
+}
 .form-group input,
 .form-group textarea {
     width: 72%;
