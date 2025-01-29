@@ -92,12 +92,23 @@
         padding: 15px;
     }
 }
-
+.sortable-header{
+    cursor: pointer;
+}
 .table-section {
     background-color: white;
     border-radius: 8px;
+    height: 100vh;
 }
-
+.clear-filters {
+    width: 18%;
+    height: 2.5vh;
+    border-radius: 6px;
+    background-color: #dc3545;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+}
 .table-header {
     display: flex;
     flex-wrap: wrap;
@@ -711,4 +722,19 @@ tr:hover {
     /* color: #888; */
     font-size: 0.9em;
     margin-top: 5px;
+}
+/* Add to your existing CSS */
+.action-button.invoice {
+    background-color: #3b82f6;
+    border: none;
+    color: white;
+}
+
+.action-button.invoice:hover {
+    background-color: #2563eb;
+}
+
+/* If you need to adjust the actions column width */
+.actions-column {
+    min-width: 160px; /* Increased to accommodate the new button */
 }

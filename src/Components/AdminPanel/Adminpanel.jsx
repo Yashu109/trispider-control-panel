@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { database, auth, storage } from '../../firebase';
-import { ref, set, get } from 'firebase/database';
+import { ref, set, get, getDatabase, onValue  } from 'firebase/database';
 import { useNavigate } from 'react-router-dom';
 import './Adminpanel.css';
 import Quotation from '../Quotation/Quotation'
@@ -31,7 +31,9 @@ const AdminPanel = () => {
     const [assignments, setAssignments] = useState([
         { id: 1, assignee: '', description: '', percentage: '100' }
     ]);
-
+    const [employees, setEmployees] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     // Helper function to calculate even percentage splits
     const calculateEvenSplit = (numberOfPeople) => {
         const percentage = (100 / numberOfPeople).toFixed(0);
@@ -242,26 +244,26 @@ const AdminPanel = () => {
     // };
     const handleChange = (e) => {
         const { name, value } = e.target;
-        
+
         setProjectData(prevState => {
             const newState = {
                 ...prevState,
                 [name]: value
             };
-    
+
             // Auto-calculate remaining amount when total, advance, or discount changes
             if (['totalPayment', 'advancePayment', 'discount'].includes(name)) {
                 const total = parseFloat(name === 'totalPayment' ? value : newState.totalPayment) || 0;
                 const advance = parseFloat(name === 'advancePayment' ? value : newState.advancePayment) || 0;
                 const discount = parseFloat(name === 'discount' ? value : newState.discount) || 0;
-                
+
                 // Calculate remaining amount
                 const remaining = total - advance - discount;
-                
+
                 // Update the remaining amount, ensuring it's not negative
                 newState.totalRemaining = Math.max(0, remaining).toString();
             }
-    
+
             return newState;
         });
     };
@@ -588,7 +590,45 @@ const AdminPanel = () => {
     // const handleNextPage = () => {
     //     navigate('/admin-profile');
     // };
+    useEffect(() => {
+        const fetchEmployees = async () => {
+            try {
+                const db = getDatabase();
+                const employeesRef = ref(db, 'employeesList/employees');
 
+                onValue(employeesRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        // Transform the data into the required format
+                        const employeeList = Object.values(data).map((employee, index) => ({
+                            id: employee.employeeId || index,
+                            name: employee.name
+                        }));
+                        setEmployees(employeeList);
+                    }
+                    setLoading(false);
+                }, (error) => {
+                    setError('Failed to fetch employees');
+                    setLoading(false);
+                    console.error('Error fetching employees:', error);
+                });
+            } catch (error) {
+                setError('Failed to fetch employees');
+                setLoading(false);
+                console.error('Error setting up Firebase listener:', error);
+            }
+        };
+
+        fetchEmployees();
+    }, []);
+
+    if (loading) {
+        return <select disabled className="assignee-dropdown"><option>Loading...</option></select>;
+    }
+
+    if (error) {
+        return <select disabled className="assignee-dropdown"><option>{error}</option></select>;
+    }
     return (
         <Splitslayout
             quotationPreview={
@@ -598,7 +638,7 @@ const AdminPanel = () => {
                         counterpass={counterpass}
                     // Add other props as needed
                     />
-                    
+
                 </div>
             }
         >
@@ -933,7 +973,7 @@ const AdminPanel = () => {
                                         value={projectData.totalRemaining}
                                         readOnly
                                         placeholder="Auto-calculated remaining amount"
-                                        style={{ backgroundColor: '#f5f5f5' }} 
+                                        style={{ backgroundColor: '#f5f5f5' }}
                                     />
                                 </div>
                                 <div className="form-group">
@@ -949,34 +989,9 @@ const AdminPanel = () => {
                                 </div>
 
                                 {/* Task Assignment Section */}
-                                <div className="form-group assignments-section">
+                                {/* <div className="form-group assignments-section">
                                     <div className='part1'>
                                         <label htmlFor="Assign_To">Task Assignments: <span className="assignment-info"></span></label>
-                                        {/* {assignments.map((assignment) => (
-                                                <div key={assignment.id} className="assignment-row">
-                                                    <input
-                                                        type="text"
-                                                        id="Assign_To"
-                                                        name="Assign_To"
-                                                        placeholder="Assignee name"
-                                                        value={assignment.assignee}
-                                                        onChange={(e) => handleAssignmentChange(assignment.id, 'assignee', e.target.value)}
-                                                        className="assignee-input"
-                                                    />
-                                                    <div className="percentage-display">
-                                                        {assignment.percentage}%
-                                                    </div>
-                                                    {assignments.length > 1 && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleRemoveAssignment(assignment.id)}
-                                                            className="remove-assignment-btn"
-                                                        >
-                                                            Remove
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            ))} */}
                                         {assignments.map((assignment) => (
                                             <div key={assignment.id} className="assignment-row">
                                                 <input
@@ -1018,8 +1033,70 @@ const AdminPanel = () => {
                                             Add Assignee
                                         </button>
                                     </div>
-                                </div>
+                                </div> */}
+                                {/* Task Assignment Section */}
+                                <div className="form-group assignments-section">
+                                    <div className='part1'>
+                                        <label htmlFor="Assign_To">Task Assignments: <span className="assignment-info"></span></label>
+                                        {assignments.map((assignment) => (
+                                            <div key={assignment.id} className="assignment-row">
+                                                {/* <select
+                                                    value={assignment.assignee}
+                                                    onChange={(e) => handleAssignmentChange(assignment.id, 'assignee', e.target.value)}
+                                                    className="assignee-dropdown"
+                                                >
+                                                    <option value="">Select Assignee</option>
+                                                    {assigneesList.map((assignee) => (
+                                                        <option key={assignee.id} value={assignee.name}>
+                                                            {assignee.name}
+                                                        </option>
+                                                    ))}
+                                                </select> */}
+                                                <select
+                                                    value={assignment.assignee}
+                                                    onChange={(e) => handleAssignmentChange(assignment.id, 'assignee', e.target.value)}
+                                                    className="assignee-dropdown"
+                                                >
+                                                    <option value="">Select Assignee</option>
+                                                    {employees.map((employee) => (
+                                                        <option key={employee.id} value={employee.name}>
+                                                            {employee.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <textarea
+                                                    placeholder="Task description"
+                                                    value={assignment.description || ''}
+                                                    onChange={(e) => handleAssignmentChange(assignment.id, 'description', e.target.value)}
+                                                    className="description-input"
+                                                    rows="3"
+                                                />
+                                                <div className="percentage-display">
+                                                    {assignment.percentage}%
+                                                </div>
+                                                {assignments.length > 1 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRemoveAssignment(assignment.id)}
+                                                        className="remove-assignment-btn"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
 
+                                    <div className='part2'>
+                                        <button
+                                            type="button"
+                                            onClick={handleAddAssignment}
+                                            className="add-assignment-btn"
+                                        >
+                                            Add Assignee
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </>
                     )}
@@ -1067,7 +1144,7 @@ const AdminPanel = () => {
                                 </button>
                             )}
                         </div>
-                        
+
                     </div>
                 </form>
             </div>

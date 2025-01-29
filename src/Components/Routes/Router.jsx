@@ -27,6 +27,7 @@ import Adminprofile from '../../Components/AdminProfile/AdminProfile'
 import UserDashboard from '../UserDashboard/UserDashboard';
 import EmployeePanel from '../../Components/EmployeePanel/EmployeePanel';
 import Imageprocessing from '../../Components/Imageprocessing/Imageprocessing'
+import Invoice from '../InVoice/InVoice';
 function App() {
   return (
     <Router>
@@ -38,6 +39,7 @@ function App() {
         <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="/employee-panel" element={<EmployeePanel />} />
         <Route path="/image-processing" element={<Imageprocessing/>}/>
+        <Route path="/invoice" element={<Invoice/>}/>
       </Routes>
     </Router>
   );
