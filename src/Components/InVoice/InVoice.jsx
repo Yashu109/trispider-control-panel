@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { database } from '../../firebase';
 import { ref, push } from 'firebase/database';
 import { X, Printer, Plus, Minus } from 'lucide-react';
-import './Invoice.css';
+import './InVoice.css';
 
 const Invoice = ({ project, onClose }) => {
   // Validate project data and set defaults
