@@ -20,7 +20,7 @@ import ProtectedPayments from '../ProtectedPayments/ProtectedPayments';
 import { getStorage, ref as storageRef, getDownloadURL } from 'firebase/storage';
 import SidebarNav from './Sidebar';
 import AdminPanel from '../AdminPanel/Adminpanel';
-import PDFViewer from '../PDFViewer/PDFViewer';
+import PDFViewer from '../PDFviewer/PDFviewer';
 import EmployeeManagement from '../EmployeeManagement/EmployeeManagement';
 import Invoice from '../InVoice/InVoice';
 const AdminDashboard = () => {
