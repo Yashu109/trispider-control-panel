@@ -13,7 +13,7 @@ import {
     ArrowUpDown,
     ArrowUp,
     ArrowDown,
-    Receipt,
+    FileText,
 } from "lucide-react";
 import './AdminProfile.css';
 import ProtectedPayments from '../ProtectedPayments/ProtectedPayments';
@@ -22,7 +22,7 @@ import SidebarNav from './Sidebar';
 import AdminPanel from '../AdminPanel/Adminpanel';
 import PDFViewer from '../PDFviewer/PDFviewer';
 import EmployeeManagement from '../EmployeeManagement/EmployeeManagement';
-import Invoice from '../InVoice/InVoice';
+import Invoice from '../InVoice/InVoice'
 const AdminDashboard = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('profile');
@@ -53,17 +53,7 @@ const AdminDashboard = () => {
         direction: null
     });
     const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-const [selectedInvoiceProject, setSelectedInvoiceProject] = useState(null);
-
-
-const handleGenerateInvoice = (project) => {
-    if (!project || !project.projectId) {
-        console.error('Invalid project data');
-        return;
-    }
-    setSelectedInvoiceProject(project);
-    setShowInvoiceModal(true);
-};
+    const [selectedInvoiceProject, setSelectedInvoiceProject] = useState(null);
     // Query Monitoring Effect
     useEffect(() => {
         const queriesRef = ref(database, 'queries');
@@ -85,6 +75,7 @@ const handleGenerateInvoice = (project) => {
                                 queryText: queryData.queryText,
                                 status: queryData.status,
                                 timestamp: queryData.timestamp,
+                                queryType: queryData.queryType,
                             });
                         }
                     });
@@ -216,9 +207,11 @@ const handleGenerateInvoice = (project) => {
         const database = getDatabase();
 
         if (action === 'accepted') {
-            const projectRef = ref(database, `projects/${query.parentKey}`);
+            const projectRef = ref(database, `Accepted_Queries/${query.parentKey}`);
             update(projectRef, {
-                queryStatus: 'Your query has been accepted and will be addressed soon.'
+                queryStatus: 'Your query has been accepted and will be addressed soon.',
+                queryText: query.queryText,
+                // queryType: query.queryType,
             })
                 .then(() => {
                     const queryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
@@ -235,10 +228,13 @@ const handleGenerateInvoice = (project) => {
     const handleSendEditedQuery = (query) => {
         if (editableQueryText.trim()) {
             const database = getDatabase();
-            const projectRef = ref(database, `projects/${query.parentKey}`);
+            const projectRef = ref(database, `Accepted_Queries/${query.parentKey}`);
 
             update(projectRef, {
-                queryStatus: 'Your query has been reviewed and updated.'
+                queryStatus: 'Your query has been reviewed and updated.',
+                queryText: query.queryText,
+                // queryType: query.queryType,
+
             })
                 .then(() => {
                     const oldQueryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
@@ -317,6 +313,7 @@ const handleGenerateInvoice = (project) => {
 
         const searchFields = [
             project.projectId,
+            project.timestamp,
             project.clientName,
             project.title,
             project.collegeName,
@@ -424,7 +421,7 @@ const handleGenerateInvoice = (project) => {
         if (!bValue) return -1;
 
         // Special handling for dates
-        if (sortConfig.key === 'timeline') {
+        if (sortConfig.key === 'timeline' || sortConfig.key === 'timestamp') {
             const dateA = new Date(aValue);
             const dateB = new Date(bValue);
             return sortConfig.direction === 'asc' ?
@@ -438,7 +435,13 @@ const handleGenerateInvoice = (project) => {
             bValue.toString().localeCompare(aValue.toString());
     });
 
-
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+        // Close Admin Panel if the tab is not 'new'
+        if (tab !== 'new') {
+            setShowAdminPanel(false);
+        }
+    };
     // Render Functions
     const renderMainContent = () => {
         if (showAdminPanel) {
@@ -491,6 +494,7 @@ const handleGenerateInvoice = (project) => {
                                 className="filter-select"
                             >
                                 <option value="all">All Fields</option>
+                                <option value="createdtime">Created Time</option>
                                 <option value="projectId">Project ID</option>
                                 <option value="clientName">Client Name</option>
                                 <option value="collegeName">College</option>
@@ -553,6 +557,9 @@ const handleGenerateInvoice = (project) => {
                                 <th onClick={() => handleSort('projectId')} className="sortable-header">
                                     Project ID {getSortIcon('projectId')}
                                 </th>
+                                <th onClick={() => handleSort('timestamp')} className="sortable-header">
+                                    Created Time {getSortIcon('timestamp')}
+                                </th>
                                 <th onClick={() => handleSort('clientName')} className="sortable-header">
                                     Client Name {getSortIcon('clientName')}
                                 </th>
@@ -587,38 +594,44 @@ const handleGenerateInvoice = (project) => {
                             </tr>
                         </thead>
                         <tbody>
+
                             {sortedProjects.map((project) => (
                                 <tr key={project.id}>
                                     <td>{project.projectId}</td>
-                                    <td>{project.clientName}</td>
-                                    <td>{project.title}</td>
-                                    <td>{project.collegeName}</td>
-                                    <td>{project.email}</td>
+                                    <td>{project.timestamp}</td>
+                                    <td className="truncate-cell" data-full-text={project.clientName}>{project.clientName}</td>
+                                    <td className="truncate-cell" data-full-text={project.title}>{project.title}</td>
+                                    <td className="truncate-cell" data-full-text={project.collegeName}>{project.collegeName}</td>
+                                    <td className="truncate-cell email-cell" data-full-text={project.email}>{project.email}</td>
                                     <td>{project.phoneNumber}</td>
                                     <td>{project.whatsappNumber}</td>
-                                    <td>{project.referredBy}</td>
+                                    <td className="truncate-cell" data-full-text={project.referredBy}>{project.referredBy}</td>
                                     <td>{project.timeline ? new Date(project.timeline).toLocaleDateString() : 'Not set'}</td>
                                     <td>{project.projectStatus || 'Start'}</td>
-                                    <td>
+                                    <td className="assignee-cell">
                                         {project.assignments && project.assignments.length > 0 ? (
-                                            project.assignments.map((assignment, index) => (
-                                                <div key={index} className="assignment-details">
-                                                    <div className="assignee-info">
-                                                        <strong>{assignment.assignee || 'Select Member'}</strong>
-                                                        <span className="assignment-percentage">
-                                                            ({assignment.percentage || 'N/A'}%)
-                                                        </span>
-                                                    </div>
-                                                    {assignment.description && (
-                                                        <div className="assignment-description">
-                                                            {assignment.description}
+                                            project.assignments
+                                                .filter(assignment => assignment.assignee && assignment.assignee.trim() !== '')
+                                                .map((assignment, index) => (
+                                                    <div key={index} className="assignment-details">
+                                                        <div className="assignee-info">
+                                                            <div className="truncate-cell"
+                                                                data-full-text={`${assignment.assignee} (${assignment.percentage}%)`}>
+                                                                <strong>{assignment.assignee}</strong>
+                                                                <span className="assignment-percentage">
+                                                                    ({assignment.percentage || 'N/A'}%)
+                                                                </span>
+                                                            </div>
+                                                            {assignment.description && (
+                                                                <div className="truncate-cell description-cell"
+                                                                    data-full-text={assignment.description}>
+                                                                    {assignment.description}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    )}
-                                                </div>
-                                            ))
-                                        ) : (
-                                            project.Assign_To || 'Select Member'
-                                        )}
+                                                    </div>
+                                                ))
+                                        ) : null}
                                     </td>
                                     <td className="actions-column">
                                         <button
@@ -643,11 +656,14 @@ const handleGenerateInvoice = (project) => {
                                             <Eye size={16} />
                                         </button>
                                         <button
-                                            onClick={() => handleGenerateInvoice(project)}
+                                            onClick={() => {
+                                                setSelectedInvoiceProject(project);
+                                                setShowInvoiceModal(true);
+                                            }}
                                             className="action-button invoice"
                                             title="Generate Invoice"
                                         >
-                                            <Receipt size={16} />
+                                            <FileText size={16} />
                                         </button>
                                     </td>
                                 </tr>
@@ -688,7 +704,7 @@ const handleGenerateInvoice = (project) => {
                 </div>
                 <SidebarNav
                     activeTab={activeTab}
-                    setActiveTab={setActiveTab}
+                    setActiveTab={handleTabChange}
                     projects={projects}
                     getReadyCount={getReadyCount}
                     getInProgressCount={getInProgressCount}
@@ -838,27 +854,6 @@ const handleGenerateInvoice = (project) => {
                                     {(editingProject.assignments || [{ assignee: '', description: '', percentage: '100' }]).map((assignment, index) => (
                                         <div key={index} className="assignment-row">
                                             <div className="assignment-inputs">
-                                                {/* <input
-                                               type="text"
-                                               placeholder="Assignee name"
-                                               value={assignment.assignee || ''}
-                                               onChange={(e) => {
-                                                   const updatedAssignments = [...(editingProject.assignments || [])];
-                                                   updatedAssignments[index] = {
-                                                       ...updatedAssignments[index],
-                                                       assignee: e.target.value
-                                                   };
-                                                   setEditingProject({
-                                                       ...editingProject,
-                                                       assignments: updatedAssignments,
-                                                       Assign_To: updatedAssignments
-                                                           .map(a => a.assignee)
-                                                           .filter(name => name.trim() !== '')
-                                                           .join(', ')
-                                                   });
-                                               }}
-                                               className="assignee-input"
-                                           /> */}
                                                 <select
                                                     value={assignment.assignee || ''}
                                                     onChange={(e) => {
@@ -902,23 +897,6 @@ const handleGenerateInvoice = (project) => {
                                                         </option>
                                                     ))}
                                                 </select>
-                                                {/* <textarea
-                                                    placeholder="Task description"
-                                                    value={assignment.description || ''}
-                                                    onChange={(e) => {
-                                                        const updatedAssignments = [...(editingProject.assignments || [])];
-                                                        updatedAssignments[index] = {
-                                                            ...updatedAssignments[index],
-                                                            description: e.target.value
-                                                        };
-                                                        setEditingProject({
-                                                            ...editingProject,
-                                                            assignments: updatedAssignments
-                                                        });
-                                                    }}
-                                                    className="description-input"
-                                                    rows="3"
-                                                /> */}
                                                 <textarea
                                                     placeholder="Task description"
                                                     value={assignment.description || ''}
@@ -1082,13 +1060,20 @@ const handleGenerateInvoice = (project) => {
                                             </div>
                                             <div className="dashboard-form-group">
                                                 <label>Query:</label>
-                                                <textarea
+                                                <textarea   
                                                     rows="4"
                                                     value={query.queryText}
                                                 />
                                             </div>
                                         </div>
-
+                                        <div className="dashboard-form-group">
+                                            <label>Query Type:</label>
+                                            <input
+                                                type="text"
+                                                value={query.queryType || 'N/A'}
+                                                readOnly
+                                            />
+                                        </div>
                                         <div className="query-actions">
                                             {!isEditing ? (
                                                 <>
@@ -1138,7 +1123,7 @@ const handleGenerateInvoice = (project) => {
                     </div>
                 )
             }
-            {/* {showInvoiceModal && selectedInvoiceProject && (
+            {showInvoiceModal && selectedInvoiceProject && (
                 <Invoice
                     project={selectedInvoiceProject}
                     onClose={() => {
@@ -1146,7 +1131,8 @@ const handleGenerateInvoice = (project) => {
                         setSelectedInvoiceProject(null);
                     }}
                 />
-            )} */}
+            )}
+
         </div >
     );
 };

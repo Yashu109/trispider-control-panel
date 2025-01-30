@@ -1,258 +1,248 @@
-import React, { useState, useEffect } from 'react';
-import { database } from '../../firebase';
-import { ref, push } from 'firebase/database';
-import { X, Printer, Plus, Minus } from 'lucide-react';
-import './InVoice.css';
+// import React, { useState } from 'react';
+// import { X } from 'lucide-react';
 
+// const Invoice = ({ project, onClose }) => {
+//     const [invoiceDetails, setInvoiceDetails] = useState({
+//         totalAmount: project.totalAmount || '',
+//         advancePayment: project.advancePayment || '',
+//         remainingPayment: project.remainingPayment || '',
+//         paymentStatus: project.paymentStatus || 'Pending'
+//     });
+
+//     const handleSaveInvoice = () => {
+//         // Implement save logic to Firebase
+//         // This is a placeholder for actual implementation
+//         console.log('Saving invoice details:', invoiceDetails);
+//         onClose();
+//     };
+
+//     return (
+//         <div className="modal-overlay">
+//             <div className="modal-content invoice-modal">
+//                 <div className="modal-header">
+//                     <h2>Invoice Details - {project.projectId}</h2>
+//                     <button onClick={onClose} className="close-button">
+//                         <X size={20} />
+//                     </button>
+//                 </div>
+//                 <div className="invoice-content">
+//                     <div className="invoice-grid">
+//                         <div className="form-group">
+//                             <label>Client Name</label>
+//                             <input 
+//                                 type="text" 
+//                                 value={project.clientName || ''} 
+//                                 readOnly 
+//                                 className="readonly-input"
+//                             />
+//                         </div>
+//                         <div className="form-group">
+//                             <label>Project Name</label>
+//                             <input 
+//                                 type="text" 
+//                                 value={project.title || ''} 
+//                                 readOnly 
+//                                 className="readonly-input"
+//                             />
+//                         </div>
+//                         <div className="form-group">
+//                             <label>Total Amount</label>
+//                             <input 
+//                                 type="number" 
+//                                 value={invoiceDetails.totalAmount}
+//                                 onChange={(e) => setInvoiceDetails(prev => ({
+//                                     ...prev, 
+//                                     totalAmount: e.target.value,
+//                                     remainingPayment: (e.target.value - (invoiceDetails.advancePayment || 0)).toString()
+//                                 }))}
+//                                 placeholder="Enter total project amount"
+//                             />
+//                         </div>
+//                         <div className="form-group">
+//                             <label>Advance Payment</label>
+//                             <input 
+//                                 type="number" 
+//                                 value={invoiceDetails.advancePayment}
+//                                 onChange={(e) => setInvoiceDetails(prev => ({
+//                                     ...prev, 
+//                                     advancePayment: e.target.value,
+//                                     remainingPayment: (invoiceDetails.totalAmount - e.target.value).toString()
+//                                 }))}
+//                                 placeholder="Enter advance payment"
+//                             />
+//                         </div>
+//                         <div className="form-group">
+//                             <label>Remaining Payment</label>
+//                             <input 
+//                                 type="number" 
+//                                 value={invoiceDetails.remainingPayment}
+//                                 readOnly 
+//                                 className="readonly-input"
+//                             />
+//                         </div>
+//                         <div className="form-group">
+//                             <label>Payment Status</label>
+//                             <select 
+//                                 value={invoiceDetails.paymentStatus}
+//                                 onChange={(e) => setInvoiceDetails(prev => ({
+//                                     ...prev, 
+//                                     paymentStatus: e.target.value
+//                                 }))}
+//                             >
+//                                 <option value="Pending">Pending</option>
+//                                 <option value="Partial">Partial</option>
+//                                 <option value="Completed">Completed</option>
+//                             </select>
+//                         </div>
+//                     </div>
+//                 </div>
+//                 <div className="modal-footer">
+//                     <button 
+//                         onClick={onClose} 
+//                         className="btn-cancel"
+//                     >
+//                         Cancel
+//                     </button>
+//                     <button 
+//                         onClick={handleSaveInvoice} 
+//                         className="btn-save"
+//                     >
+//                         Save Invoice
+//                     </button>
+//                 </div>
+//             </div>
+//         </div>
+//     );
+// };
+
+// export default Invoice;
+
+// import React from 'react';
+// import { X} from "lucide-react";
+// import './InVoice.css'
+// const Invoice = ({ project, onClose }) => {
+//     return (
+//         <div className="modal-overlay">
+//             <div className="modal-content">
+//                 <div className="modal-header">
+//                     <h2>Invoice for {project.clientName}</h2>
+//                     <button onClick={onClose} className="close-button">
+//                         <X size={20} />
+//                     </button>
+//                 </div>
+//                 <div className="invoice-content">
+//                     <p><strong>Project ID:</strong> {project.projectId}</p>
+//                     <p><strong>Client Name:</strong> {project.clientName}</p>
+//                     <p><strong>Project Name:</strong> {project.title}</p>
+//                     <p><strong>College Name:</strong> {project.collegeName}</p>
+//                     <p><strong>Email:</strong> {project.email}</p>
+//                     <p><strong>Phone Number:</strong> {project.phoneNumber}</p>
+//                     <p><strong>WhatsApp Number:</strong> {project.whatsappNumber}</p>
+//                     <p><strong>Referred By:</strong> {project.referredBy}</p>
+//                     <p><strong>Timeline:</strong> {project.timeline ? new Date(project.timeline).toLocaleDateString() : 'Not set'}</p>
+//                     <p><strong>Project Status:</strong> {project.projectStatus || 'Start'}</p>
+//                     {/* Add more invoice details as needed */}
+//                 </div>
+//                 <div className="modal-footer">
+//                     <button onClick={onClose} className="btn-cancel">
+//                         Close
+//                     </button>
+//                     <button onClick={() => window.print()} className="btn-print">
+//                         Print Invoice
+//                     </button>
+//                 </div>
+//             </div>
+//         </div>
+//     );
+// };
+
+// export default Invoice;
+
+import React, { useState } from "react";
+import axios from "axios";
+import { X } from "lucide-react";
+import './InVoice.css'
 const Invoice = ({ project, onClose }) => {
-  // Validate project data and set defaults
-  const [projectData] = useState(() => {
-    if (!project) {
-      console.error('Project data is missing');
-      return {
-        projectId: '',
-        clientName: '',
-        email: '',
-        phoneNumber: '',
-        collegeName: '',
-      };
-    }
-    return {
-      projectId: project.projectId || '',
-      clientName: project.clientName || '',
-      email: project.email || '',
-      phoneNumber: project.phoneNumber || '',
-      collegeName: project.collegeName || '',
+    const [loading, setLoading] = useState(false);
+
+    const generateInvoice = async (print = false) => {
+        setLoading(true);
+        try {
+            const response = await axios.post(
+                "https://invoice-generator.com",
+                {
+                    logo: "", // Optional: Add a logo URL
+                    from: "Your Company Name\nAddress\nCity, Country",
+                    to: `${project.clientName}\n${project.collegeName}\n${project.email}`,
+                    items: [
+                        {
+                            name: project.title,
+                            quantity: 1,
+                            unit_cost: 100, // Example cost
+                        },
+                    ],
+                    notes: "Thank you for your business!",
+                    currency: "USD",
+                },
+                { responseType: "blob" } // Ensures we get a PDF file
+            );
+
+            // Create a URL for the PDF
+            const pdfUrl = window.URL.createObjectURL(new Blob([response.data]));
+
+            if (print) {
+                // Open PDF in a new tab for printing
+                const newTab = window.open(pdfUrl, "_blank");
+                if (newTab) {
+                    newTab.focus();
+                } else {
+                    alert("Please allow pop-ups to print the invoice.");
+                }
+            } else {
+                // Trigger download
+                const a = document.createElement("a");
+                a.href = pdfUrl;
+                a.download = "invoice.pdf";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        } catch (error) {
+            console.error("Error generating invoice:", error);
+        }
+        setLoading(false);
     };
-  });
 
-  const [formData, setFormData] = useState({
-    invoiceNumber: `INV-${Date.now()}`,
-    items: [{ description: projectData.projectId ? `Project: ${projectData.projectId}` : '', quantity: 1, rate: 0 }],
-    tax: 18,
-    notes: '',
-    termsAndConditions: '',
-  });
-
-  const addItem = () => {
-    setFormData({
-      ...formData,
-      items: [...formData.items, { description: '', quantity: 1, rate: 0 }]
-    });
-  };
-
-  const removeItem = (index) => {
-    const newItems = formData.items.filter((_, i) => i !== index);
-    setFormData({ ...formData, items: newItems });
-  };
-
-  const updateItem = (index, field, value) => {
-    const newItems = [...formData.items];
-    newItems[index] = { ...newItems[index], [field]: value };
-    setFormData({ ...formData, items: newItems });
-  };
-
-  const calculateSubtotal = () => {
-    return formData.items.reduce((total, item) => {
-      const quantity = parseFloat(item.quantity) || 0;
-      const rate = parseFloat(item.rate) || 0;
-      return total + (quantity * rate);
-    }, 0);
-  };
-
-  const calculateTax = () => {
-    return (calculateSubtotal() * formData.tax) / 100;
-  };
-
-  const calculateTotal = () => {
-    return calculateSubtotal() + calculateTax();
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    try {
-      const invoiceData = {
-        ...formData,
-        projectId: projectData.projectId,
-        clientName: projectData.clientName,
-        clientEmail: projectData.email,
-        clientPhone: projectData.phoneNumber,
-        date: new Date().toISOString(),
-        subtotal: calculateSubtotal(),
-        tax: calculateTax(),
-        total: calculateTotal()
-      };
-
-      const invoicesRef = ref(database, 'invoices');
-      await push(invoicesRef, invoiceData);
-      onClose();
-    } catch (error) {
-      console.error('Error saving invoice:', error);
-    }
-  };
-
-  // If project data is completely missing, return early
-  if (!project) {
-    console.error('No project data provided');
-    onClose();
-    return null;
-  }
-
-  return (
-    <div className="invoice-overlay">
-      <div className="invoice-modal">
-        <div className="invoice-header">
-          <h2>Generate Invoice</h2>
-          <button onClick={onClose} className="close-button">
-            <X size={20} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="invoice-form">
-          <div className="invoice-details">
-            <div className="form-group">
-              <label>Invoice Number</label>
-              <input
-                type="text"
-                value={formData.invoiceNumber}
-                onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })}
-                readOnly
-              />
-            </div>
-
-            <div className="client-details">
-              <h3>Client Information</h3>
-              <div className="info-grid">
-                <div>
-                  <label>Name:</label>
-                  <span>{projectData.clientName || 'Not provided'}</span>
-                </div>
-                <div>
-                  <label>Email:</label>
-                  <span>{projectData.email || 'Not provided'}</span>
-                </div>
-                <div>
-                  <label>Phone:</label>
-                  <span>{projectData.phoneNumber || 'Not provided'}</span>
-                </div>
-                <div>
-                  <label>College:</label>
-                  <span>{projectData.collegeName || 'Not provided'}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="items-section">
-            <div className="items-header">
-              <h3>Items</h3>
-              <button type="button" onClick={addItem} className="add-item-btn">
-                <Plus size={16} /> Add Item
-              </button>
-            </div>
-
-            <div className="items-list">
-              {formData.items.map((item, index) => (
-                <div key={index} className="item-row">
-                  <input
-                    type="text"
-                    placeholder="Description"
-                    value={item.description}
-                    onChange={(e) => updateItem(index, 'description', e.target.value)}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Qty"
-                    value={item.quantity}
-                    onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
-                    min="1"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Rate"
-                    value={item.rate}
-                    onChange={(e) => updateItem(index, 'rate', parseFloat(e.target.value) || 0)}
-                    min="0"
-                  />
-                  <div className="item-total">
-                    ₹{((item.quantity || 0) * (item.rate || 0)).toFixed(2)}
-                  </div>
-                  {index > 0 && (
-                    <button 
-                      type="button" 
-                      onClick={() => removeItem(index)}
-                      className="remove-item-btn"
-                    >
-                      <Minus size={16} />
+    return (
+        <div className="modal-overlay">
+            <div className="modal-content">
+                <div className="modal-header">
+                    <h2>Invoice for {project.clientName}</h2>
+                    <button onClick={onClose} className="close-button">
+                        <X size={20} />
                     </button>
-                  )}
                 </div>
-              ))}
+                <div className="invoice-content">
+                    <p><strong>Project ID:</strong> {project.projectId}</p>
+                    <p><strong>Client Name:</strong> {project.clientName}</p>
+                    <p><strong>Project Name:</strong> {project.title}</p>
+                    <p><strong>College Name:</strong> {project.collegeName}</p>
+                    <p><strong>Email:</strong> {project.email}</p>
+                    <p><strong>Phone Number:</strong> {project.phoneNumber}</p> 
+                    <p><strong>Project Status:</strong> {project.projectStatus || "Start"}</p>
+                </div>
+                <div className="modal-footer">
+                    <button onClick={onClose} className="btn-cancel">Close</button>
+                    {/* <button onClick={() => generateInvoice(false)} className="btn-download" disabled={loading}>
+                        {loading ? "Generating..." : "Download Invoice"}
+                    </button> */}
+                    <button onClick={() => window.print()} className="btn-print">
+                        Print Invoice
+                    </button>
+                </div>
             </div>
-          </div>
-
-          <div className="invoice-footer">
-            <div className="tax-section">
-              <div className="form-group">
-                <label>Tax Rate (%)</label>
-                <input
-                  type="number"
-                  value={formData.tax}
-                  onChange={(e) => setFormData({ ...formData, tax: parseFloat(e.target.value) || 0 })}
-                  min="0"
-                  max="100"
-                />
-              </div>
-            </div>
-
-            <div className="totals-section">
-              <div className="total-row">
-                <span>Subtotal:</span>
-                <span>₹{calculateSubtotal().toFixed(2)}</span>
-              </div>
-              <div className="total-row">
-                <span>Tax ({formData.tax}%):</span>
-                <span>₹{calculateTax().toFixed(2)}</span>
-              </div>
-              <div className="total-row grand-total">
-                <span>Total:</span>
-                <span>₹{calculateTotal().toFixed(2)}</span>
-              </div>
-            </div>
-
-            <div className="form-group full-width">
-              <label>Notes</label>
-              <textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Additional notes..."
-              />
-            </div>
-
-            <div className="form-group full-width">
-              <label>Terms and Conditions</label>
-              <textarea
-                value={formData.termsAndConditions}
-                onChange={(e) => setFormData({ ...formData, termsAndConditions: e.target.value })}
-                placeholder="Terms and conditions..."
-              />
-            </div>
-
-            <div className="button-group">
-              <button type="button" onClick={onClose} className="cancel-btn">
-                Cancel
-              </button>
-              <button type="submit" className="generate-btn">
-                <Printer size={16} />
-                Generate Invoice
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+        </div>
+    );
 };
 
 export default Invoice;

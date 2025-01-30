@@ -738,3 +738,55 @@ tr:hover {
 .actions-column {
     min-width: 160px; /* Increased to accommodate the new button */
 }
+/* Add to your AdminProfile.css */
+
+.truncate-cell {
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    position: relative;
+}
+
+.truncate-cell:hover::after {
+    content: attr(data-full-text);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background-color: #333;
+    color: white;
+    padding: 8px;
+    border-radius: 4px;
+    z-index: 1000;
+    white-space: normal;
+    max-width: 300px;
+    word-wrap: break-word;
+}
+
+.email-cell {
+    max-width: 200px;
+}
+
+.description-cell {
+    max-width: 180px;
+}
+
+.assignee-cell {
+    /* display: flex; */
+    max-width: 250px;
+    flex-direction: column;
+}
+/* .assignment-details:last-child {
+    margin-bottom: 0;
+} */
+
+.assignee-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.assignment-percentage {
+    margin-left: 4px;
+    color: #666;
+}

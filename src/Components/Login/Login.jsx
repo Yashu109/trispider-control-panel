@@ -599,6 +599,61 @@ const AuthForm = () => {
     }
   };
 
+  // const handleEmployeeLogin = async () => {
+  //   if (!formData.email || !formData.password) {
+  //     setError('Please enter both email and password');
+  //     return;
+  //   }
+
+  //   try {
+  //     setIsLoading(true);
+      
+  //     // Sign in with Firebase Auth
+  //     const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      
+  //     // Get employee data from database using the selected email
+  //     const employeeRef = ref(database, 'employeesList/employees');
+  //     const snapshot = await get(employeeRef);
+      
+  //     if (snapshot.exists()) {
+  //       let employeeData = null;
+  //       let employeeId = null;
+        
+  //       snapshot.forEach((childSnapshot) => {
+  //         if (childSnapshot.val().email === formData.email) {
+  //           employeeData = childSnapshot.val();
+  //           employeeId = childSnapshot.key;
+  //         }
+  //       });
+
+  //       if (employeeData) {
+  //         // Store both in session storage
+  //         sessionStorage.setItem('currentEmployee', JSON.stringify({
+  //           ...employeeData,
+  //           id: employeeId
+  //         }));
+  //         sessionStorage.setItem('userToken', await userCredential.user.getIdToken());
+          
+  //         alert('Successfully logged in!');
+  //         setFormData({
+  //           email: '',
+  //           password: '',
+  //           orderId: '',
+  //           phoneNumber: ''
+  //         });
+  //         navigate('/employee-panel');
+  //       } else {
+  //         setError('Employee not found');
+  //         await auth.signOut();
+  //       }
+  //     }
+  //   } catch (err) {
+  //     console.error('Error during employee login:', err);
+  //     setError('Invalid credentials');
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
   const handleEmployeeLogin = async () => {
     if (!formData.email || !formData.password) {
       setError('Please enter both email and password');
@@ -608,31 +663,29 @@ const AuthForm = () => {
     try {
       setIsLoading(true);
       
-      // Sign in with Firebase Auth
-      const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
-      
-      // Get employee data from database using the selected email
-      const employeeRef = ref(database, 'employeesList/employees');
-      const snapshot = await get(employeeRef);
+      // Get employee data from employeesList structure
+      const employeesRef = ref(database, 'employeesList/employees');
+      const snapshot = await get(employeesRef);
       
       if (snapshot.exists()) {
         let employeeData = null;
-        let employeeId = null;
+        let employeeKey = null;
         
         snapshot.forEach((childSnapshot) => {
-          if (childSnapshot.val().email === formData.email) {
-            employeeData = childSnapshot.val();
-            employeeId = childSnapshot.key;
+          const employee = childSnapshot.val();
+          // Check if email and password match exactly
+          if (employee.email === formData.email && employee.password === formData.password) {
+            employeeData = employee;
+            employeeKey = childSnapshot.key;
           }
         });
 
         if (employeeData) {
-          // Store both in session storage
+          // Store employee data in session
           sessionStorage.setItem('currentEmployee', JSON.stringify({
             ...employeeData,
-            id: employeeId
+            id: employeeKey
           }));
-          sessionStorage.setItem('userToken', await userCredential.user.getIdToken());
           
           alert('Successfully logged in!');
           setFormData({
@@ -643,18 +696,18 @@ const AuthForm = () => {
           });
           navigate('/employee-panel');
         } else {
-          setError('Employee not found');
-          await auth.signOut();
+          setError('Invalid email or password');
         }
+      } else {
+        setError('No employee data found');
       }
     } catch (err) {
       console.error('Error during employee login:', err);
-      setError('Invalid credentials');
+      setError('Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
-  };
-
+};
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');

@@ -20,7 +20,7 @@ const SidebarNav = ({
 
     const handleAddNew = () => {
         setShowAdminPanel(true);
-        setActiveTab('');
+        setActiveTab('new');
     };
 
     return (

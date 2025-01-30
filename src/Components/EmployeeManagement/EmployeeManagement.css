@@ -146,3 +146,131 @@ th {
         gap: 10px;
     }
 }
+.employee-section .table-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.edit-employee-form {
+    width: 100%;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.edit-employee-form .form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.edit-employee-form .form-row input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.edit-employee-form .password-row {
+    display: flex;
+    gap: 15px;
+}
+
+.edit-employee-form .password-input {
+    flex: 1;
+    position: relative;
+}
+
+.edit-employee-form .password-input input {
+    width: 100%;
+    padding: 10px;
+    padding-right: 40px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.edit-employee-form .password-input button {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #888;
+}
+
+.edit-employee-form .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.edit-employee-form .save-btn,
+.edit-employee-form .cancel-btn {
+    padding: 10px 15px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.edit-employee-form .save-btn {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+}
+
+.edit-employee-form .save-btn:hover {
+    background-color: #45a049;
+}
+
+.edit-employee-form .cancel-btn {
+    background-color: #f44336;
+    color: white;
+    border: none;
+}
+
+.edit-employee-form .cancel-btn:hover {
+    background-color: #d32f2f;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .edit-employee-form .form-row,
+    .edit-employee-form .password-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .edit-employee-form .form-actions {
+        flex-direction: column;
+    }
+
+    .edit-employee-form .save-btn,
+    .edit-employee-form .cancel-btn {
+        width: 100%;
+    }
+}
+.employee-toggle-password{
+    position: absolute;
+    /* right: 14px; */
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #64748b;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+}
+.form-field-password-field{
+    display: flex;
+    justify-content: end;
+}

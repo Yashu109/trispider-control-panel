@@ -17,6 +17,7 @@
     "@tensorflow-models/mobilenet": "^2.1.1",
     "@tensorflow/tfjs": "^4.22.0",
     "@welcome-ui/alert": "^6.6.0",
+    "axios": "^1.7.9",
     "bootstrap": "^5.3.3",
     "firebase": "^11.2.0",
     "html2canvas": "^1.4.1",
