@@ -481,8 +481,9 @@ const handleChange = (e) => {
     
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
-            const imgWidth = 210;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            const imgWidth = 110;
+            // const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            const imgHeight = 300
     
             pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
             const pdfData = pdf.output('datauristring');

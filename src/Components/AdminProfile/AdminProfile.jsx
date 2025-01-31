@@ -203,28 +203,88 @@ const AdminDashboard = () => {
         setFilterField('all');
     };
 
+    // const handleQueryAction = (query, action) => {
+    //     const database = getDatabase();
+
+    //     if (action === 'accepted') {
+    //         const projectRef = ref(database, `Accepted_Queries/${query.parentKey}`);
+    //         update(projectRef, {
+    //             queryStatus: 'Your query has been accepted and will be addressed soon.',
+    //             queryText: query.queryText,
+    //             // queryType: query.queryType,
+    //         })
+    //             .then(() => {
+    //                 const queryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
+    //                 return remove(queryRef);
+    //             })
+    //             .then(() => setShowQueriesModal(false))
+    //             .catch(error => console.error('Acceptance error:', error));
+    //     } else if (action === 'rejected') {
+    //         // setEditableQueryText(query.queryText);
+    //         setIsEditing(true);
+    //     }
+    // };
+    // const handleQueryAction = (query, action) => {
+    //     const database = getDatabase();
+
+    //     if (action === 'accepted') {
+    //         const projectRef = ref(database, `Accepted_Queries/${query.parentKey}`);
+    //         update(projectRef, {
+    //             queryStatus: 'Your query has been accepted and will be addressed soon.',
+    //             queryText: query.queryText,
+    //         })
+    //             .then(() => {
+    //                 const queryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
+    //                 return remove(queryRef);
+    //             })
+    //             .then(() => setShowQueriesModal(false))
+    //             .catch(error => console.error('Acceptance error:', error));
+    //     } else if (action === 'rejected') {
+    //         // Delete the query directly when rejected
+    //         const queryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
+    //         remove(queryRef)
+    //             .then(() => {
+    //                 setShowQueriesModal(false);
+    //             })
+    //             .catch(error => console.error('Rejection error:', error));
+    //     }
+    // };
+
+    // In AdminDashboard.js
     const handleQueryAction = (query, action) => {
         const database = getDatabase();
 
         if (action === 'accepted') {
+            // First, update the Accepted_Queries for this specific project
             const projectRef = ref(database, `Accepted_Queries/${query.parentKey}`);
-            update(projectRef, {
+            const newAcceptedQuery = {
                 queryStatus: 'Your query has been accepted and will be addressed soon.',
                 queryText: query.queryText,
-                // queryType: query.queryType,
-            })
+                timestamp: new Date().toISOString(),
+                queryType: query.queryType
+            };
+
+            // Push as a new entry instead of updating the whole node
+            push(projectRef, newAcceptedQuery)
                 .then(() => {
+                    // After successfully adding to accepted queries, remove from pending
                     const queryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
                     return remove(queryRef);
                 })
-                .then(() => setShowQueriesModal(false))
+                .then(() => {
+                    setShowQueriesModal(false);
+                })
                 .catch(error => console.error('Acceptance error:', error));
         } else if (action === 'rejected') {
-            setEditableQueryText(query.queryText);
-            setIsEditing(true);
+            // Just remove the query if rejected
+            const queryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
+            remove(queryRef)
+                .then(() => {
+                    setShowQueriesModal(false);
+                })
+                .catch(error => console.error('Rejection error:', error));
         }
     };
-
     const handleSendEditedQuery = (query) => {
         if (editableQueryText.trim()) {
             const database = getDatabase();
@@ -608,7 +668,7 @@ const AdminDashboard = () => {
                                     <td className="truncate-cell" data-full-text={project.referredBy}>{project.referredBy}</td>
                                     <td>{project.timeline ? new Date(project.timeline).toLocaleDateString() : 'Not set'}</td>
                                     <td>{project.projectStatus || 'Start'}</td>
-                                    <td className="assignee-cell">
+                                    {/* <td className="assignee-cell">
                                         {project.assignments && project.assignments.length > 0 ? (
                                             project.assignments
                                                 .filter(assignment => assignment.assignee && assignment.assignee.trim() !== '')
@@ -626,6 +686,44 @@ const AdminDashboard = () => {
                                                                 <div className="truncate-cell description-cell"
                                                                     data-full-text={assignment.description}>
                                                                     {assignment.description}
+                                                                </div>
+                                                            )}
+                                                            
+                                                        </div>
+                                                    </div>
+                                                ))
+                                        ) : null}
+                                    </td> */}
+                                    <td className="assignee-cell">
+                                        {project.assignments && project.assignments.length > 0 ? (
+                                            project.assignments
+                                                .filter((assignment) => assignment.assignee && assignment.assignee.trim() !== '')
+                                                .map((assignment, index) => (
+                                                    <div key={index} className="assignment-details">
+                                                        <div className="assignee-info">
+                                                            <div
+                                                                className="truncate-cell"
+                                                                data-full-text={`${assignment.assignee} (${assignment.percentage}%)`}
+                                                            >
+                                                                <strong>{assignment.assignee}</strong>
+                                                                <span className="assignment-percentage">
+                                                                    ({assignment.percentage || 'N/A'}%)
+                                                                </span>
+                                                            </div>
+                                                            {assignment.taskCompleted && (
+                                                                <div
+                                                                    className="truncate-cell task-completed-cell"
+                                                                    data-full-text={assignment.taskCompleted}
+                                                                >
+                                                                    <strong>Task Status:</strong> {assignment.taskCompleted}
+                                                                </div>
+                                                            )}
+                                                            {assignment.description && (
+                                                                <div
+                                                                    className="truncate-cell description-cell"
+                                                                    data-full-text={assignment.description}
+                                                                >
+                                                                    <strong>Description:</strong> {assignment.description}
                                                                 </div>
                                                             )}
                                                         </div>
@@ -853,6 +951,11 @@ const AdminDashboard = () => {
                                     <label>Assignments</label>
                                     {(editingProject.assignments || [{ assignee: '', description: '', percentage: '100' }]).map((assignment, index) => (
                                         <div key={index} className="assignment-row">
+                                            {assignment.taskCompleted && (
+                                                <div className="task-completed-display">
+                                                    <strong>Task Status:</strong> {assignment.taskCompleted}
+                                                </div>
+                                            )}
                                             <div className="assignment-inputs">
                                                 <select
                                                     value={assignment.assignee || ''}
@@ -1060,7 +1163,7 @@ const AdminDashboard = () => {
                                             </div>
                                             <div className="dashboard-form-group">
                                                 <label>Query:</label>
-                                                <textarea   
+                                                <textarea
                                                     rows="4"
                                                     value={query.queryText}
                                                 />

@@ -1,199 +1,213 @@
 /* EmployeePanel.css */
+.employee-dashboard-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f4f4f4;
+  min-height: 100vh;
+}
 
-.panel-card {
-    background: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin: 20px;
-    padding: 20px;
-    width: 100%;
-    max-width: 1200px;
-  }
-  
-  .panel-header {
-    margin-bottom: 24px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 16px;
-  }
-  
-  .panel-title {
-    color: #2d3748;
-    font-size: 24px;
-    font-weight: 600;
-    margin: 0;
-  }
-  
-  .loading-spinner {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 200px;
-  }
-  
-  .spinner {
-    border: 3px solid #f3f3f3;
-    border-radius: 50%;
-    border-top: 3px solid #3498db;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-  }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
-  .error-message {
-    color: #e53e3e;
-    text-align: center;
-    padding: 20px;
-  }
-  
-  .no-tasks {
-    text-align: center;
-    color: #718096;
-    padding: 40px;
-  }
-  
-  .tasks-container {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-  
-  .task-card {
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 16px;
-    transition: box-shadow 0.3s ease;
-  }
-  
-  .task-card:hover {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  
-  .task-header {
-    display: flex;
+.dashboard-header {
+  display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 12px;
-  }
-  
-  .task-title-container {
-    flex: 1;
-  }
-  
-  .task-title {
-    font-size: 18px;
-    font-weight: 500;
-    color: #2d3748;
-    margin: 0;
-    margin-bottom: 4px;
-  }
-  
-  .project-name {
-    font-size: 14px;
-    color: #718096;
-    margin: 0;
-  }
-  
-  .status-badge {
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 500;
-  }
-  
-  .status-completed {
-    background-color: #c6f6d5;
-    color: #22543d;
-  }
-  
-  .status-progress {
-    background-color: #bee3f8;
-    color: #2c5282;
-  }
-  
-  .status-pending {
-    background-color: #fefcbf;
-    color: #744210;
-  }
-  
-  .status-default {
-    background-color: #e2e8f0;
-    color: #2d3748;
-  }
-  
-  .task-description {
-    color: #4a5568;
-    font-size: 14px;
-    line-height: 1.5;
-    margin: 12px 0;
-  }
-  
-  .task-footer {
-    display: flex;
-    gap: 16px;
-    margin-top: 12px;
-  }
-  
-  .task-metadata {
-    display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    color: #718096;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.signout-button {
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.signout-button:hover {
+  background-color: #ff7875;
+}
+
+.assigned-projects-section {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.assigned-projects-section h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #333;
+  font-size: 1.25rem;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 10px;
+}
+
+.no-projects-message {
+  text-align: center;
+  color: #777;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.projects-table-container {
+  position: relative;
+  max-height: 950px; /* Adjust as needed */
+  overflow: auto;
+}
+
+.projects-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.projects-table th {
+  background-color: #f0f0f0;
+  color: #333;
+  font-weight: 600;
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 2px solid #ddd;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.projects-table td {
+  padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+    background-color: white;
+}
+
+.projects-table tr:last-child td {
+  border-bottom: none;
+}
+
+.projects-table tr:hover {
+  background-color: #f5f5f5;
+}
+.projects-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background-color: #f0f0f0;
+}
+.projects-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.projects-table tbody tr:hover {
+  background-color: #f5f5f5;
+}
+.work-status-section {
+  margin-top: 10px;
+}
+
+.work-status-textarea {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.save-status-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #52c41a;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  gap: 8px;
+}
+
+.save-status-btn:hover {
+  background-color: #73d13d;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.loading-container .spinner {
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-container {
+  text-align: center;
+  padding: 20px;
+  background-color: #fff1f0;
+  border: 1px solid #ffa39e;
+  border-radius: 8px;
+  max-width: 400px;
+  margin: 50px auto;
+}
+
+.error-container button {
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+.error-container button:hover {
+  background-color: #ff7875;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .employee-dashboard-container {
+      padding: 10px;
   }
-  
-  .calendar-icon, .priority-icon {
-    font-size: 16px;
-  }
-  
-  .priority-high {
-    color: #e53e3e;
-  }
-  
-  .priority-medium {
-    color: #d69e2e;
-  }
-  
-  .priority-low {
-    color: #38a169;
-  }
-  
-  .priority-default {
-    color: #718096;
-  }
-  
-  /* Responsive Design */
-  @media (max-width: 768px) {
-    .panel-card {
-      margin: 10px;
-      padding: 16px;
-    }
-  
-    .task-header {
+
+  .dashboard-header {
       flex-direction: column;
-    }
-  
-    .status-badge {
-      margin-top: 8px;
+      align-items: flex-start;
+  }
+
+  .signout-button {
+      margin-top: 10px;
       align-self: flex-start;
-    }
-  
-    .task-footer {
-      flex-direction: column;
-      gap: 8px;
-    }
   }
-  
-  @media (max-width: 480px) {
-    .panel-title {
-      font-size: 20px;
-    }
-  
-    .task-title {
-      font-size: 16px;
-    }
-  } 
+
+  .projects-table th, 
+  .projects-table td {
+      padding: 8px 10px;
+  }
+}

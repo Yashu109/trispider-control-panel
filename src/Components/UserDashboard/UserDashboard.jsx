@@ -1070,29 +1070,58 @@ const UserDashboard = () => {
     });
 
     // Fetch accepted queries
-    const acceptedQueriesRef = ref(database, `Accepted_Queries/KS5066`);
-    console.log('Reference Path:',acceptedQueriesRef);
+    // const acceptedQueriesRef = ref(database, `Accepted_Queries/KS5066`);
+    // console.log('Reference Path:',acceptedQueriesRef);
+    // const unsubscribeAcceptedQueries = onValue(acceptedQueriesRef, (snapshot) => {
+    //   if (snapshot.exists()) {
+    //     const queriesData = [];
+    //     snapshot.forEach((childSnapshot) => {
+    //       const queryData = childSnapshot.val();
+
+    //       // Convert queryStatus and queryText from array of characters to string
+    //       const queryStatus = Array.isArray(queryData.queryStatus)
+    //         ? queryData.queryStatus.join('') // Convert array to string
+    //         : queryData.queryStatus || ''; // Fallback to empty string if not an array
+
+    //       const queryText = Array.isArray(queryData.queryText)
+    //         ? queryData.queryText.join('') // Convert array to string
+    //         : queryData.queryText || ''; // Fallback to empty string if not an array
+
+    //       queriesData.push({
+    //         id: childSnapshot.key,
+    //         queryStatus,
+    //         queryText,
+    //         timestamp: queryData.timestamp || ''
+    //       });
+    //     });
+    //     setAcceptedQueries(queriesData);
+    //   } else {
+    //     setAcceptedQueries([]);
+    //   }
+    // });
+
+    //   // Cleanup listeners
+    //   return () => {
+    //     unsubscribeOrder();
+    //     unsubscribeAcceptedQueries();
+    //   };
+    // }, [navigate]);
+    const acceptedQueriesRef = ref(database, `Accepted_Queries/${orderId}`);
+
     const unsubscribeAcceptedQueries = onValue(acceptedQueriesRef, (snapshot) => {
       if (snapshot.exists()) {
         const queriesData = [];
         snapshot.forEach((childSnapshot) => {
           const queryData = childSnapshot.val();
-  
-          // Convert queryStatus and queryText from array of characters to string
-          const queryStatus = Array.isArray(queryData.queryStatus)
-            ? queryData.queryStatus.join('') // Convert array to string
-            : queryData.queryStatus || ''; // Fallback to empty string if not an array
-  
-          const queryText = Array.isArray(queryData.queryText)
-            ? queryData.queryText.join('') // Convert array to string
-            : queryData.queryText || ''; // Fallback to empty string if not an array
-  
-          queriesData.push({
-            id: childSnapshot.key,
-            queryStatus,
-            queryText,
-            timestamp: queryData.timestamp || ''
-          });
+          if (queryData) {
+            queriesData.push({
+              id: childSnapshot.key,
+              queryStatus: queryData.queryStatus || '',
+              queryText: queryData.queryText || '',
+              timestamp: queryData.timestamp || '',
+              queryType: queryData.queryType || ''
+            });
+          }
         });
         setAcceptedQueries(queriesData);
       } else {
@@ -1100,13 +1129,12 @@ const UserDashboard = () => {
       }
     });
 
-    // Cleanup listeners
+
     return () => {
-      unsubscribeOrder();
       unsubscribeAcceptedQueries();
+      unsubscribeOrder();
     };
   }, [navigate]);
-
   // Handle query input change
   const handleQueryChange = (e) => {
     setQuery(e.target.value);
@@ -1166,10 +1194,13 @@ const UserDashboard = () => {
           <span className={`status-badge status-${orderData.status?.toLowerCase()}`}>
             {orderData.status}
           </span>
-          <div className="notification-icon" onClick={() => setShowNotificationModal(true)}>
-            <Bell size={24} />
-            {acceptedQueries.length > 0 && <span className="notification-badge">{acceptedQueries.length}</span>}
-          </div>
+          {/* Only show notification icon and badge if there are accepted queries */}
+          {acceptedQueries.length > 0 && (
+            <div className="notification-icon" onClick={() => setShowNotificationModal(true)}>
+              <Bell size={24} />
+              <span className="notification-badge">{acceptedQueries.length}</span>
+            </div>
+          )}
         </div>
 
         {/* Project details form */}
@@ -1434,11 +1465,11 @@ const UserDashboard = () => {
         </div>
 
         {/* Notification Modal */}
-        {showNotificationModal && (
+        {showNotificationModal && acceptedQueries.length > 0 && (
           <div className="modal-overlay" onClick={() => setShowNotificationModal(false)}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
               <div className="modal-header">
-                <h2>Accepted Queries</h2>
+                <h2>Accepted Queries for Project {orderData.projectId}</h2>
                 <button
                   onClick={() => setShowNotificationModal(false)}
                   className="close-button"
@@ -1454,7 +1485,7 @@ const UserDashboard = () => {
                         <label>Query Status:</label>
                         <input
                           type="text"
-                          value={query.queryStatus || ''} // Display empty string if queryStatus is missing
+                          value={query.queryStatus}
                           readOnly
                         />
                       </div>
@@ -1462,16 +1493,13 @@ const UserDashboard = () => {
                         <label>Query Text:</label>
                         <textarea
                           rows="4"
-                          value={query.queryText || ''} // Display empty string if queryText is missing
+                          value={query.queryText}
                           readOnly
                         />
                       </div>
                     </div>
                   </div>
                 ))}
-                {acceptedQueries.length === 0 && (
-                  <div className="no-queries">No accepted queries</div>
-                )}
               </div>
             </div>
           </div>
