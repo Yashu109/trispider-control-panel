@@ -142,7 +142,7 @@
 
 import React from 'react';
 import { X } from "lucide-react";
-import './Invoice.css';
+import './InVoice.css';
 import Img from '../../assets/Trispider-Logo-removebg-preview.png'
 const Invoice = ({ project, onClose }) => {
     const rate = parseFloat(project?.totalPayment || 0);
