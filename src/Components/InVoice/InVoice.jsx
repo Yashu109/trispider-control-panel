@@ -1,10 +1,43 @@
-
-
 // import React from 'react';
 // import { X } from "lucide-react";
-// import './Invoice.css';
-
+// import './InVoice.css';
+// import Img from '../../assets/Trispider-Logo-removebg-preview.png'
 // const Invoice = ({ project, onClose }) => {
+//     const rate = parseFloat(project?.totalPayment || 0);
+//     const quantity = parseFloat(project?.quantity || 1);
+//     const baseAmount = rate * quantity;
+//     const gstRate = 9;
+//     const cgstAmount = parseFloat((baseAmount * gstRate) / 100);
+//     const sgstAmount = parseFloat((baseAmount * gstRate) / 100);
+//     const grandTotal = parseFloat(baseAmount + cgstAmount + sgstAmount);
+
+//     const formatCurrency = (amount) => {
+//         const numberAmount = parseFloat(amount);
+//         if (isNaN(numberAmount)) return '0.00';
+//         return new Intl.NumberFormat('en-IN', {
+//             maximumFractionDigits: 2,
+//             minimumFractionDigits: 2
+//         }).format(numberAmount);
+//     };
+//     const getCurrentDate = () => {
+//         const today = new Date();
+//         const day = String(today.getDate()).padStart(2, '0');
+//         const month = String(today.getMonth() + 1).padStart(2, '0');
+//         const year = today.getFullYear();
+//         return `${day}-${month}-${year}`;
+//     };
+//     const getFinancialYear = () => {
+//         const today = new Date();
+//         const currentYear = today.getFullYear();
+//         const currentMonth = today.getMonth() + 1;
+
+//         if (currentMonth > 3) {
+//             return `${currentYear}-${String(currentYear + 1).slice(2)}`;
+//         } else {
+//             return `${currentYear - 1}-${String(currentYear).slice(2)}`;
+//         }
+//     };
+
 //     return (
 //         <div className="modal-overlay">
 //             <div className="modal-content">
@@ -21,19 +54,20 @@
 //                             <div className="header-top">
 //                                 <h1>TAX INVOICE</h1>
 //                                 <div className="invoice-number">
-//                                     <p>INVOICE NO : 0029 / 2017-18</p>
-//                                     <p>DATE : 04-03-2018</p>
+//                                     <div className="invoice-number">
+//                                         <p>INVOICE NO : 200 / {getFinancialYear()}</p>
+//                                         <p>DATE : {getCurrentDate()}</p>
+//                                     </div>
 //                                 </div>
 //                             </div>
 
 //                             <div className="company-details">
-//                                 <div className="logo">
-//                                     <div className="logo-circle">
-//                                         <span className="logo-wave"></span>
-//                                     </div>
-//                                 </div>
+//                                 {/* <div className="invoice-logo">
+//                                     <img src={Img}></img>
+//                                 </div> */}
 //                                 <div className="company-info">
-//                                     <h2>TRISPIDER INNOVATIVE LABS</h2>
+//                                     <h2>TRISPIDER PRIVATE LIMITED</h2>
+//                                     <p>GSTIN: 29AALCT3687J1ZI</p>
 //                                     <p>Dodhmane complex, 1st floor,</p>
 //                                     <p>Muddinaplaya main road, Vishwaneedam</p>
 //                                     <p>Post, Bangalore-560091</p>
@@ -41,83 +75,90 @@
 //                             </div>
 
 //                             <div className="party-details">
-//                                 <h3>Cleint Name: -</h3>
+//                                 <h3>Client Name:</h3>
 //                                 <p>{project?.clientName || ''}</p>
 //                                 <p>{project?.collegeName || ''}</p>
-//                                 <p>GSTIN: 07AAFD8457JU3</p>
+
 //                             </div>
 //                         </div>
 
-//                         <div className="invoice-table">
+//                         <div className="main-table">
 //                             <table>
 //                                 <thead>
 //                                     <tr>
-//                                         <th>Particulars (Descriptions & Specifications)</th>
-//                                         <th>HSN Code</th>
+//                                         <th>SR No</th>
+//                                         <th>Item & Description</th>
+//                                         <th>HSN</th>
 //                                         <th>Qty</th>
-//                                         <th>Rate</th>
-//                                         <th>Amount</th>
+//                                         <th>Product Rate</th>
+//                                         <th>Disc.</th>
+//                                         <th>Taxable Amt.</th>
+//                                         <th>CGST</th>
+//                                         <th>S/UT GST</th>
+//                                         <th>CGST Amt.</th>
+//                                         <th>S/UT GST Amt.</th>
+//                                         <th>Cess</th>
+//                                         <th>Cess Amt.</th>
+//                                         <th>Total Amt.</th>
 //                                     </tr>
 //                                 </thead>
 //                                 <tbody>
-//                                     <tr>
+//                                     <tr className="content-row">
 //                                         <td>{project?.title || ''}</td>
-//                                         <td></td>
-//                                         <td></td>
-//                                         <td></td>
-//                                         <td></td>
+//                                         {/* <td></td> */}
+//                                         <td>{quantity}</td>
+//                                         <td>₹ {formatCurrency(rate)}</td>
+//                                         <td>₹ {formatCurrency(baseAmount)}</td>
 //                                     </tr>
 //                                 </tbody>
-//                                 <tfoot>
-//                                     <tr>
-//                                         <td colSpan="2"></td>
-//                                         <td>Total</td>
-//                                         <td></td>
-//                                         <td></td>
-//                                     </tr>
-//                                     <tr>
-//                                         <td colSpan="2"></td>
-//                                         <td>Add : CGST @</td>
-//                                         <td>14%</td>
-//                                         <td>-</td>
-//                                     </tr>
-//                                     <tr>
-//                                         <td colSpan="2"></td>
-//                                         <td>Add : SGST @</td>
-//                                         <td>14%</td>
-//                                         <td>-</td>
-//                                     </tr>
-//                                     <tr>
-//                                         <td colSpan="2"></td>
-//                                         <td>Grand Total</td>
-//                                         <td></td>
-//                                         <td>-</td>
-//                                     </tr>
-//                                 </tfoot>
 //                             </table>
 //                         </div>
 
-//                         <div className="warranty-section">
-//                             <h3>Warranty related Terms & conditions</h3>
-//                             <ol>
-//                                 <li>An Invoice Must accompany products returned for warranty.</li>
-//                                 <li>Goods damaged During transit voids warranty.</li>
-//                                 <li>90 days limited warranty unless otherwise stated.</li>
-//                                 <li>30 days limited warranty on OEM processor ( an internal parts of the product) exchange the same items only.</li>
-//                                 <li>All Items carry MFG Warranty only No return or exchange.</li>
-//                             </ol>
+//                         <div className="bottom-section">
+//                             <div className="warranty-section">
+//                                 <h3>Warranty related Terms & conditions</h3>
+//                                 <ol>
+//                                     <li>An Invoice Must accompany products returned for warranty.</li>
+//                                     <li>Goods damaged During transit voids warranty.</li>
+//                                     <li>90 days limited warranty unless otherwise stated.</li>
+//                                     <li>30 days limited warranty on OEM processor ( an internal parts of the product) exchange the same items only.</li>
+//                                     <li>All Items carry MFG Warranty only No return or exchange.</li>
+//                                 </ol>
+//                             </div>
+
+//                             <div className="totals-section">
+//                                 <table>
+//                                     <tr>
+//                                         <td>Total</td>
+//                                         <td>₹ {formatCurrency(baseAmount)}</td>
+//                                     </tr>
+//                                     <tr>
+//                                         <td>Add : CGST @ 9%</td>
+//                                         <td>₹ {formatCurrency(cgstAmount)}</td>
+//                                     </tr>
+//                                     <tr>
+//                                         <td>Add : SGST @ 9%</td>
+//                                         <td>₹ {formatCurrency(sgstAmount)}</td>
+//                                     </tr>
+//                                     <tr className="grand-total">
+//                                         <td>Grand Total</td>
+//                                         <td>₹ {formatCurrency(grandTotal)}</td>
+//                                     </tr>
+//                                 </table>
+//                             </div>
 //                         </div>
 
 //                         <div className="amount-words">
 //                             <p>Total Amount (INR):</p>
 //                             <input
-//                             className="word-amount-box"
-//                             type='number'
-//                             value={project?.totalPayment || ''}
-//                             readOnly></input>
+//                                 className="word-amount-box"
+//                                 type="text"
+//                                 value={`₹ ${formatCurrency(grandTotal)}`}
+//                                 readOnly
+//                             />
 //                         </div>
 
-//                         <div className="signature-section">
+//                         <div className="invoice-signature-section">
 //                             <div>
 //                                 <p>For TRISPIDER INNOVATIVE LABS</p>
 //                                 <div className="signature-line"></div>
@@ -126,7 +167,6 @@
 //                         </div>
 //                     </div>
 //                 </div>
-
 //                 <div className="modal-footer">
 //                     <button onClick={onClose} className="btn-cancel">Close</button>
 //                     <button onClick={() => window.print()} className="btn-print">
@@ -140,15 +180,15 @@
 
 // export default Invoice;
 
+
 import React from 'react';
-import { X } from "lucide-react";
-import './InVoice.css';
-import Img from '../../assets/Trispider-Logo-removebg-preview.png'
-const Invoice = ({ project, onClose }) => {
+import { X, Printer } from "lucide-react";
+import './InVoice.css'
+const InvoiceComponent = ({ invoiceData, project, onClose }) => {
     const rate = parseFloat(project?.totalPayment || 0);
     const quantity = parseFloat(project?.quantity || 1);
     const baseAmount = rate * quantity;
-    const gstRate = 18;
+    const gstRate = 9;
     const cgstAmount = parseFloat((baseAmount * gstRate) / 100);
     const sgstAmount = parseFloat((baseAmount * gstRate) / 100);
     const grandTotal = parseFloat(baseAmount + cgstAmount + sgstAmount);
@@ -161,6 +201,7 @@ const Invoice = ({ project, onClose }) => {
             minimumFractionDigits: 2
         }).format(numberAmount);
     };
+
     const getCurrentDate = () => {
         const today = new Date();
         const day = String(today.getDate()).padStart(2, '0');
@@ -168,6 +209,7 @@ const Invoice = ({ project, onClose }) => {
         const year = today.getFullYear();
         return `${day}-${month}-${year}`;
     };
+
     const getFinancialYear = () => {
         const today = new Date();
         const currentYear = today.getFullYear();
@@ -179,135 +221,210 @@ const Invoice = ({ project, onClose }) => {
             return `${currentYear - 1}-${String(currentYear).slice(2)}`;
         }
     };
-
+    const handlePrint = () => {
+        const printContent = document.querySelector('.invoice-modal-content');
+        const originalContent = document.body.innerHTML;
+    
+        document.body.innerHTML = printContent.innerHTML;
+        window.print();
+        document.body.innerHTML = originalContent;
+        window.location.reload(); // Reload to restore the original view
+    };
+    
     return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <div className="modal-header">
-                    <h2>Invoice for {project?.clientName}</h2>
-                    <button onClick={onClose} className="close-button">
-                        <X size={20} />
-                    </button>
-                </div>
-
-                <div className="invoice-wrapper">
-                    <div className="tax-invoice">
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="invoice-modal-content" onClick={(e) => e.stopPropagation()}>
+               
+                <div className="invoice-container">
+                    {/* Page 1 */}
+                    <div className="invoice-page">
                         <div className="invoice-header">
-                            <div className="header-top">
-                                <h1>TAX INVOICE</h1>
-                                <div className="invoice-number">
-                                    <div className="invoice-number">
-                                        <p>INVOICE NO : 200 / {getFinancialYear()}</p>
-                                        <p>DATE : {getCurrentDate()}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="company-details">
-                                <div className="invoice-logo">
-                                    <img src={Img}></img>
-                                </div>
-                                <div className="company-info">
-                                    <h2>TRISPIDER INNOVATIVE LABS</h2>
-                                    <p>Dodhmane complex, 1st floor,</p>
-                                    <p>Muddinaplaya main road, Vishwaneedam</p>
-                                    <p>Post, Bangalore-560091</p>
-                                </div>
-                            </div>
-
-                            <div className="party-details">
-                                <h3>Client Name:</h3>
-                                <p>{project?.clientName || ''}</p>
-                                <p>{project?.collegeName || ''}</p>
-                                <p>GSTIN: 07AAFD8457JU3</p>
+                            <div className="company-info">
+                                <h1>TRISPIDER PRIVATE LIMITED</h1>
+                                <p>Dodhmane complex, 1st floor, Muddinaplaya main road, Vishwaneedam, Post, Bangalore-560091</p>
+                                <p>GSTIN: 29AALCT3687J1ZI</p>
+                                <p>FSSAI: 11521998000248</p>
                             </div>
                         </div>
 
-                        <div className="main-table">
+                        <div className="invoice-title">TAX INVOICE/BILL OF SUPPLY</div>
+
+                        <div className="invoice-details">
+                            <div className="invoice-details-left">
+                                <p><strong>Invoice No. :</strong> G290125-7202678</p>
+                                <p><strong>Order No :</strong> 9B525BULP00813A</p>
+                            </div>
+                            <div className="invoice-details-right">
+                                <p><strong>Place Of Supply :</strong> Karnataka (29)</p>
+                                <p>DATE : {getCurrentDate()}</p>
+                            </div>
+                        </div>
+
+                        <div className="address-section">
+                            <div className="bill-to">
+                                <div className="section-title">Bill To</div>
+                                <div className="address-content">
+                                    <h3>{project?.clientName || ''}</h3>
+                                    <p>{project?.collegeName || ''}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="invoice-table">
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>Particulars (Descriptions & Specifications)</th>
-                                        {/* <th>HSN Code</th> */}
+                                        <th>SR No</th>
+                                        <th>Item & Description</th>
+                                        <th>HSN</th>
                                         <th>Qty</th>
-                                        <th>Rate</th>
-                                        <th>Amount</th>
+                                        <th>Product Rate</th>
+                                        <th>Disc.</th>
+                                        <th>Taxable Amt.</th>
+                                        <th>CGST</th>
+                                        <th>S/UT GST</th>
+                                        <th>CGST Amt.</th>
+                                        <th>S/UT GST Amt.</th>
+                                        <th>Cess</th>
+                                        <th>Cess Amt.</th>
+                                        <th>Total Amt.</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr className="content-row">
+                                    <tr>
+                                        <td>1</td>
                                         <td>{project?.title || ''}</td>
-                                        {/* <td></td> */}
-                                        <td>{quantity}</td>
-                                        <td>₹ {formatCurrency(rate)}</td>
-                                        <td>₹ {formatCurrency(baseAmount)}</td>
+                                        <td>996331</td>
+                                        <td>1</td>
+                                        <td>85.0</td>
+                                        <td>36.47%</td>
+                                        <td>54.0</td>
+                                        <td>2.5%</td>
+                                        <td>2.5%</td>
+                                        <td>1.35</td>
+                                        <td>1.35</td>
+                                        <td>0.0</td>
+                                        <td>0.0</td>
+                                        <td>56.7</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colSpan="6"></td>
+                                        <td>120.58</td>
+                                        <td colSpan="2"></td>
+                                        <td>4.61</td>
+                                        <td>4.61</td>
+                                        <td>0.0</td>
+                                        <td>0.0</td>
+                                        <td>129.8</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <div className="invoice-summary">
+                            <div className="summary-item">
+                                <span>Item Total</span>
+                                <span>129.8</span>
+                            </div>
+                            <div className="summary-item">
+                                <span>Packaging Fee (Inclusive of Taxes)</span>
+                                <span>12.91</span>
+                            </div>
+                            <div className="summary-item total">
+                                <span>Invoice Value</span>
+                                <span>142.71</span>
+                            </div>
+                        </div>
+
+                        <div className="invoice-footer">
+                            <p>Whether GST is payable on reverse charge - No.</p>
+                            <div className="footer-note">
+                                <p>Charges/Fees mentioned above (For instance, Delivery Charges, Surge Fees, Packaging Charges, etc.)
+                                    are apportioned to each product included in this invoice in the ratio of taxable value for
+                                    computation of applicable Goods and Services Tax and/or Compensation Cess, and accordingly, Goods
+                                    and Services Tax and/or Compensation Cess are computed, disclosed (please refer to the annexure) and
+                                    collected in the invoice</p>
+                            </div>
+                            <div className="signature-section">
+                                <p>Authorized Signatory</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Page 2 - Annexure */}
+                    <div className="invoice-page annexure">
+                        <div className="invoice-header">
+                            <div className="company-info">
+                                <h1>Geddit Convenience Private Limited</h1>
+                                <p>No 567/2, 60ft rd, 5th block, 3rd Cross rd, Sir M V layout, Bangalore - 560056</p>
+                                <p>GSTIN: 29AAJCG0980D1ZK</p>
+                                <p>FSSAI: 11521998000248</p>
+                            </div>
+                        </div>
+
+                        <div className="annexure-title">Annexure</div>
+
+                        <div className="annexure-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Tax Rate</th>
+                                        <th>Cess Rate</th>
+                                        <th colSpan="4">Packaging Fee</th>
+                                    </tr>
+                                    <tr>
+                                        <th></th>
+                                        <th></th>
+                                        <th>Taxable Value</th>
+                                        <th>CGST</th>
+                                        <th>S/UT GST</th>
+                                        <th>Cess</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>5.0%</td>
+                                        <td>0.0%</td>
+                                        <td>9.59</td>
+                                        <td>0.24</td>
+                                        <td>0.24</td>
+                                        <td>0.0</td>
+                                    </tr>
+                                    <tr>
+                                        <td>18.0%</td>
+                                        <td>0.0%</td>
+                                        <td>2.4</td>
+                                        <td>0.22</td>
+                                        <td>0.22</td>
+                                        <td>0.0</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Total</td>
+                                        <td></td>
+                                        <td>11.99</td>
+                                        <td>0.46</td>
+                                        <td>0.46</td>
+                                        <td>0</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-
-                        <div className="bottom-section">
-                            <div className="warranty-section">
-                                <h3>Warranty related Terms & conditions</h3>
-                                <ol>
-                                    <li>An Invoice Must accompany products returned for warranty.</li>
-                                    <li>Goods damaged During transit voids warranty.</li>
-                                    <li>90 days limited warranty unless otherwise stated.</li>
-                                    <li>30 days limited warranty on OEM processor ( an internal parts of the product) exchange the same items only.</li>
-                                    <li>All Items carry MFG Warranty only No return or exchange.</li>
-                                </ol>
-                            </div>
-
-                            <div className="totals-section">
-                                <table>
-                                    <tr>
-                                        <td>Total</td>
-                                        <td>₹ {formatCurrency(baseAmount)}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Add : CGST @ 18%</td>
-                                        <td>₹ {formatCurrency(cgstAmount)}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Add : SGST @ 18%</td>
-                                        <td>₹ {formatCurrency(sgstAmount)}</td>
-                                    </tr>
-                                    <tr className="grand-total">
-                                        <td>Grand Total</td>
-                                        <td>₹ {formatCurrency(grandTotal)}</td>
-                                    </tr>
-                                </table>
-                            </div>
-                        </div>
-
-                        <div className="amount-words">
-                            <p>Total Amount (INR):</p>
-                            <input
-                                className="word-amount-box"
-                                type="text"
-                                value={`₹ ${formatCurrency(grandTotal)}`}
-                                readOnly
-                            />
-                        </div>
-
-                        <div className="invoice-signature-section">
-                            <div>
-                                <p>For TRISPIDER INNOVATIVE LABS</p>
-                                <div className="signature-line"></div>
-                                <p>Authorised Signatory</p>
-                            </div>
-                        </div>
                     </div>
                 </div>
-                <div className="modal-footer">
-                    <button onClick={onClose} className="btn-cancel">Close</button>
-                    <button onClick={() => window.print()} className="btn-print">
-                        Print Invoice
+                <div className="modal-actions">
+                <button onClick={onClose} className="invoice-close-button"> 
+                        <X size={20} /> Cancel
                     </button>
+                    <button onClick={handlePrint} className="print-button">
+                        <Printer size={20} /> Print
+                    </button>
+                   
                 </div>
             </div>
         </div>
     );
 };
 
-export default Invoice;
+export default InvoiceComponent;

@@ -1,257 +1,4 @@
-/* .modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  width: 90%;
-  max-width: 800px;
-  max-height: 90vh;
-  border-radius: 8px;
-  overflow: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 20px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 5px;
-}
-
-.invoice-wrapper {
-  padding: 20px;
-}
-
-.tax-invoice {
-  border: 1px solid #000;
-  padding: 20px;
-  background: white;
-}
-
-.invoice-header {
-  margin-bottom: 20px;
-}
-
-.header-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-  background: #f0f8ff;
-  padding: 10px;
-  margin-bottom: 20px;
-}
-
-.header-top h1 {
-  margin: 0;
-  font-size: 24px;
-}
-
-.invoice-number {
-  text-align: right;
-}
-
-.invoice-number p {
-  margin: 0;
-}
-
-.company-details {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
-  padding: 15px;
-  border-bottom: 1px solid #000;
-}
-
-.logo-circle {
-  width: 80px;
-  height: 80px;
-  background: #5f9ea0;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.logo-wave {
-  width: 40px;
-  height: 20px;
-  background: white;
-  position: absolute;
-}
-
-.company-info h2 {
-  margin: 0 0 10px 0;
-  font-size: 22px;
-}
-
-.company-info p {
-  margin: 5px 0;
-}
-
-.party-details {
-  padding: 15px;
-  border: 1px solid #000;
-}
-
-.party-details h3 {
-  margin: 0 0 10px 0;
-}
-
-.party-details p {
-  margin: 5px 0;
-}
-
-.invoice-table {
-  margin: 20px 0;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th, td {
-  border: 1px solid #000;
-  padding: 8px;
-  text-align: left;
-}
-
-th {
-  background: #f8f9fa;
-}
-
-.warranty-section {
-  margin: 20px 0;
-}
-
-.warranty-section h3 {
-  margin-bottom: 10px;
-}
-
-.warranty-section ol {
-  padding-left: 20px;
-}
-
-.warranty-section li {
-  margin-bottom: 5px;
-}
-
-.amount-words {
-  margin: 20px 0;
-}
-
-.word-amount-box {
-  border: 1px solid #000;
-  height: 40px;
-  margin-top: 5px;
-  text-align: center;
-}
-
-.signature-section {
-  margin-top: 40px;
-  text-align: right;
-}
-
-.signature-line {
-  width: 200px;
-  border-top: 1px solid #000;
-  margin: 40px 0 10px;
-  display: inline-block;
-}
-
-.modal-footer {
-  padding: 15px 20px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  border-top: 1px solid #dee2e6;
-}
-
-.btn-cancel, .btn-print {
-  padding: 8px 16px;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-cancel {
-  background: #6c757d;
-  color: white;
-}
-
-.btn-print {
-  background: #007bff;
-  color: white;
-}
-
-@media print {
-    body > *:not(.modal-overlay) {
-      visibility: hidden !important;
-    }
-  
-    .modal-overlay {
-      position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
-      background: none !important;
-      height: 100% !important;
-      overflow: visible !important;
-    }
-  
-    .tax-invoice {
-      visibility: visible !important;
-      margin: 0 !important;
-      padding: 20px !important;
-      position: absolute !important;
-      left: 0 !important;
-      top: 0 !important;
-    }
-  
-    .tax-invoice * {
-      visibility: visible !important;
-    }
-  
-    .modal-header,
-    .modal-footer,
-    .close-button,
-    .btn-print,
-    .btn-cancel {
-      display: none !important;
-    }
-  
-
-    .modal-content {
-      width: 100% !important;
-      height: auto !important;
-      overflow: visible !important;
-      box-shadow: none !important;
-      border: none !important;
-    }
-  
-    @page {
-      size: A4;
-      margin: 1cm;
-    }
-  } */
+/* 
 
   .modal-overlay {
     position: fixed;
@@ -363,9 +110,7 @@ th {
     margin: 5px 0;
 }
 
-/* Table Styles */
 .main-table {
-    /* margin: 20px 0; */
 }
 
 table {
@@ -387,7 +132,7 @@ table th {
 }
 
 .content-row {
-    height: 100px; /* Tall row for content */
+    height: 100px; 
 }
 
 .content-row table th:first-child,
@@ -395,7 +140,6 @@ table th {
     width: 54%;
 }
 
-/* Footer row styles */
 tfoot td {
     height: 30px;
     padding: 5px 8px;
@@ -413,7 +157,6 @@ tfoot td:last-child {
     text-align: right;
 }
 
-/* Warranty Section */
 .warranty-section {
     margin: 20px 0;
 }
@@ -447,7 +190,6 @@ tfoot td:last-child {
 }
 
 .invoice-signature-section {
-    /* margin-top: 40px; */
     text-align: right;
 }
 
@@ -534,8 +276,7 @@ tfoot td:last-child {
 .bottom-section {
     display: flex;
     margin-top: -11px;
-    /* gap: 20px;
-    margin: 20px 0; */
+
 }
 
 .warranty-section {
@@ -590,11 +331,222 @@ tfoot td:last-child {
     font-weight: bold;
 }
 
-/* Update existing styles */
+
 .main-table table {
     margin-bottom: 0;
 }
 
 .amount-words {
     margin-top: 20px;
+} */
+
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.invoice-modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 79%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+
+
+.invoice-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    font-family: Arial, sans-serif;
+}
+
+.invoice-page {
+    padding: 20px;
+    background: white;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    page-break-after: always;
+}
+
+.invoice-header {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 2px solid #000;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.company-info h1 {
+    font-size: 24px;
+    margin: 0 0 10px 0;
+}
+
+.company-info p {
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.invoice-title, .annexure-title {
+    text-align: center;
+    font-weight: bold;
+    font-size: 18px;
+    margin: 20px 0;
+}
+
+.invoice-details {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.address-section {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.bill-to, .ship-to {
+    flex: 1;
+    border: 1px solid #000;
+}
+
+.section-title {
+    background: #f5f5f5;
+    padding: 5px;
+    font-weight: bold;
+    border-bottom: 1px solid #000;
+}
+
+.address-content {
+    padding: 10px;
+}
+
+.invoice-table, .annexure-table {
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+th, td {
+    border: 1px solid #000;
+    padding: 5px;
+    text-align: center;
+}
+
+th {
+    background: #f5f5f5;
+}
+
+.invoice-summary {
+    margin-left: auto;
+    width: 300px;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.total {
+    font-weight: bold;
+    border-top: 2px solid #000;
+    margin-top: 10px;
+}
+
+.invoice-footer {
+    margin-top: 40px;
+    font-size: 12px;
+}
+
+.footer-note {
+    margin: 20px 0;
+}
+
+.signature-section {
+    text-align: right;
+    margin-top: 40px;
+}
+
+@media print {
+    .invoice-container {
+        margin: 0;
+        max-width: none;
+    }
+
+    .invoice-page {
+        box-shadow: none;
+        padding: 0;
+        margin: 0;
+    }
+    .modal-actions{
+      display: none;
+    }
+    .modal-actions {
+      display: none !important;
+  }
+  .print-button, .invoice-close-button {
+      display: none !important;
+  }
+  
+}
+.modal-footer {
+  padding: 15px 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid #dee2e6;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.print-button, .invoice-close-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.print-button {
+  background-color: #007bff;
+  color: white;
+}
+
+.print-button:hover {
+  background-color: #0056b3;
+}
+
+.invoice-close-button {
+  background-color: #dc3545;
+  color: white;
+}
+
+.invoice-close-button:hover {
+  background-color: #a71d2a;
 }

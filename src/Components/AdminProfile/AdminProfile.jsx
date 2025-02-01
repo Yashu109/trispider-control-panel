@@ -502,6 +502,93 @@ const AdminDashboard = () => {
             setShowAdminPanel(false);
         }
     };
+    const AssignmentRow = ({
+        assignment,
+        index,
+        totalAssignments,
+        employees,
+        employeesLoading,
+        updateAssignment,
+        removeAssignment
+    }) => {
+        return (
+            <div className={`assignment-row ${assignment.taskOrder ? 'has-order' : ''}`}>
+                {assignment.taskCompleted && (
+                    <div className="task-completed-display">
+                        <strong>Task Status:</strong> {assignment.taskCompleted}
+                    </div>
+                )}
+                <div className="assignment-inputs">
+                    <div className="assignment-main-inputs">
+                        <select
+                            value={assignment.assignee || ''}
+                            onChange={(e) => updateAssignment(index, 'assignee', e.target.value)}
+                            className="assignee-input"
+                            disabled={employeesLoading}
+                        >
+                            <option value="">Select Employee</option>
+                            {employees.map((employee) => (
+                                <option key={employee.id} value={employee.name}>
+                                    {employee.name}
+                                </option>
+                            ))}
+                        </select>
+
+                        {assignment.assignee && (
+                            <select
+                                value={assignment.taskOrder || ''}
+                                onChange={(e) => updateAssignment(index, 'taskOrder', e.target.value)}
+                                className={`task-order-select ${!assignment.taskOrder ? 'required' : ''}`}
+                            >
+                                <option value="">Select Task Order *</option>
+                                {[...Array(totalAssignments)].map((_, i) => (
+                                    <option key={i + 1} value={i + 1}>
+                                        {i === 0 ? '1st - Do First' :
+                                            i === 1 ? '2nd - Do Second' :
+                                                i === 2 ? '3rd - Do Third' :
+                                                    `${i + 1}th - Do ${i + 1}th`}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
+
+                    <textarea
+                        placeholder="Task description"
+                        value={assignment.description || ''}
+                        onChange={(e) => updateAssignment(index, 'description', e.target.value)}
+                        className="description-input"
+                        rows="3"
+                    />
+
+                    <div className="task-info">
+                        <div className="percentage-display">
+                            Percentage: {assignment.percentage}%
+                        </div>
+                        {assignment.taskOrder && (
+                            <div className="order-display">
+                                Task Order: #{assignment.taskOrder}
+                            </div>
+                        )}
+                    </div>
+
+                    {index > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => removeAssignment(index)}
+                            className="remove-assignment-btn"
+                        >
+                            Remove
+                        </button>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+
+
+
     // Render Functions
     const renderMainContent = () => {
         if (showAdminPanel) {
@@ -694,13 +781,57 @@ const AdminDashboard = () => {
                                                 ))
                                         ) : null}
                                     </td> */}
-                                    <td className="assignee-cell">
+                                    {/* <td className="assignee-cell">
                                         {project.assignments && project.assignments.length > 0 ? (
                                             project.assignments
                                                 .filter((assignment) => assignment.assignee && assignment.assignee.trim() !== '')
                                                 .map((assignment, index) => (
                                                     <div key={index} className="assignment-details">
                                                         <div className="assignee-info">
+                                                            <div
+                                                                className="truncate-cell"
+                                                                data-full-text={`${assignment.assignee} (${assignment.percentage}%)`}
+                                                            >
+                                                                <strong>{assignment.assignee}</strong>
+                                                                <span className="assignment-percentage">
+                                                                    ({assignment.percentage || 'N/A'}%)
+                                                                </span>
+                                                            </div>
+                                                            {assignment.taskCompleted && (
+                                                                <div
+                                                                    className="truncate-cell task-completed-cell"
+                                                                    data-full-text={assignment.taskCompleted}
+                                                                >
+                                                                    <strong>Task Status:</strong> {assignment.taskCompleted}
+                                                                </div>
+                                                            )}
+                                                            {assignment.description && (
+                                                                <div
+                                                                    className="truncate-cell description-cell"
+                                                                    data-full-text={assignment.description}
+                                                                >
+                                                                    <strong>Description:</strong> {assignment.description}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))
+                                        ) : null}
+                                    </td> */}
+                                    <td className="assignee-cell">
+                                        {project.assignments && project.assignments.length > 0 ? (
+                                            [...project.assignments]
+                                                .filter((assignment) => assignment.assignee && assignment.assignee.trim() !== '')
+                                                .sort((a, b) => Number(a.taskOrder) - Number(b.taskOrder))
+                                                .map((assignment, index) => (
+                                                    <div key={index} className="assignment-details">
+                                                        <div className="assignee-info">
+                                                            <div className="task-order-badge">
+                                                                {assignment.taskOrder === '1' ? '1st Task' :
+                                                                    assignment.taskOrder === '2' ? '2nd Task' :
+                                                                        assignment.taskOrder === '3' ? '3rd Task' :
+                                                                            `${assignment.taskOrder}th Task`}
+                                                            </div>
                                                             <div
                                                                 className="truncate-cell"
                                                                 data-full-text={`${assignment.assignee} (${assignment.percentage}%)`}
@@ -947,7 +1078,7 @@ const AdminDashboard = () => {
                                     </select>
                                 </div>
 
-                                <div className="form-group assignments-section">
+                                {/* <div className="form-group assignments-section">
                                     <label>Assignments</label>
                                     {(editingProject.assignments || [{ assignee: '', description: '', percentage: '100' }]).map((assignment, index) => (
                                         <div key={index} className="assignment-row">
@@ -1098,7 +1229,149 @@ const AdminDashboard = () => {
                                         Add Assignment
                                     </button>
 
+                                </div> */}
+                                <div className="form-group assignments-section">
+                                    <label>Assignments (Task Order Required)</label>
+                                    {(editingProject.assignments || [{
+                                        assignee: '',
+                                        description: '',
+                                        percentage: '100',
+                                        taskOrder: ''
+                                    }]).map((assignment, index, array) => (
+                                        <AssignmentRow
+                                            key={index}
+                                            assignment={assignment}
+                                            index={index}
+                                            totalAssignments={array.length}
+                                            employees={employees}
+                                            employeesLoading={employeesLoading}
+                                            updateAssignment={(index, field, value) => {
+                                                const updatedAssignments = [...(editingProject.assignments || [])];
+
+                                                if (field === 'taskOrder') {
+                                                    // Clear any existing assignment with this order
+                                                    updatedAssignments.forEach((a, i) => {
+                                                        if (i !== index && a.taskOrder === value) {
+                                                            a.taskOrder = '';
+                                                        }
+                                                    });
+                                                }
+
+                                                updatedAssignments[index] = {
+                                                    ...updatedAssignments[index],
+                                                    [field]: value
+                                                };
+
+                                                if (field === 'assignee') {
+                                                    const totalAssignees = updatedAssignments.filter(a => a.assignee.trim() !== '').length;
+                                                    if (totalAssignees > 0) {
+                                                        const equalPercentage = Math.floor(100 / totalAssignees);
+                                                        const remainder = 100 - (equalPercentage * totalAssignees);
+
+                                                        updatedAssignments.forEach((a, i) => {
+                                                            if (a.assignee.trim() !== '') {
+                                                                a.percentage = i === 0 ?
+                                                                    (equalPercentage + remainder).toString() :
+                                                                    equalPercentage.toString();
+                                                            } else {
+                                                                a.percentage = '0';
+                                                            }
+                                                        });
+                                                    }
+                                                }
+
+                                                setEditingProject({
+                                                    ...editingProject,
+                                                    assignments: updatedAssignments,
+                                                    Assign_To: updatedAssignments
+                                                        .map(a => a.assignee)
+                                                        .filter(name => name.trim() !== '')
+                                                        .join(', ')
+                                                });
+                                            }}
+                                            removeAssignment={(index) => {
+                                                let updatedAssignments = editingProject.assignments.filter((_, i) => i !== index);
+                                                const totalRemaining = updatedAssignments.filter(a => a.assignee.trim() !== '').length;
+
+                                                if (totalRemaining > 0) {
+                                                    const equalPercentage = Math.floor(100 / totalRemaining);
+                                                    const remainder = 100 - (equalPercentage * totalRemaining);
+
+                                                    updatedAssignments.forEach((a, i) => {
+                                                        if (a.assignee.trim() !== '') {
+                                                            a.percentage = i === 0 ?
+                                                                (equalPercentage + remainder).toString() :
+                                                                equalPercentage.toString();
+                                                        } else {
+                                                            a.percentage = '0';
+                                                        }
+                                                    });
+                                                }
+
+                                                // Reorder remaining assignments if needed
+                                                updatedAssignments = updatedAssignments.map(a => ({
+                                                    ...a,
+                                                    taskOrder: a.taskOrder > index ? (parseInt(a.taskOrder) - 1).toString() : a.taskOrder
+                                                }));
+
+                                                setEditingProject({
+                                                    ...editingProject,
+                                                    assignments: updatedAssignments,
+                                                    Assign_To: updatedAssignments
+                                                        .map(a => a.assignee)
+                                                        .filter(name => name.trim() !== '')
+                                                        .join(', ')
+                                                });
+                                            }}
+                                        />
+                                    ))}
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const currentAssignments = editingProject.assignments || [];
+                                            const updatedAssignments = [
+                                                ...currentAssignments,
+                                                {
+                                                    assignee: '',
+                                                    description: '',
+                                                    percentage: '0',
+                                                    taskOrder: ''
+                                                }
+                                            ];
+
+                                            const totalAssignees = updatedAssignments.filter(a => a.assignee.trim() !== '').length;
+                                            if (totalAssignees > 0) {
+                                                const equalPercentage = Math.floor(100 / totalAssignees);
+                                                const remainder = 100 - (equalPercentage * totalAssignees);
+
+                                                updatedAssignments.forEach((a, i) => {
+                                                    if (a.assignee.trim() !== '') {
+                                                        a.percentage = i === 0 ?
+                                                            (equalPercentage + remainder).toString() :
+                                                            equalPercentage.toString();
+                                                    } else {
+                                                        a.percentage = '0';
+                                                    }
+                                                });
+                                            }
+
+                                            setEditingProject({
+                                                ...editingProject,
+                                                assignments: updatedAssignments
+                                            });
+                                        }}
+                                        className="add-assignment-btn"
+                                    >
+                                        Add Assignment
+                                    </button>
+
+                                    <div className="validation-warning">
+                                        * Task order must be selected for each assignee
+                                    </div>
                                 </div>
+
+
                             </div>
 
                             <div className="modal-footer">

@@ -21,7 +21,7 @@
 //     useEffect(() => {
 //         // Retrieve employee data from session storage
 //         const currentEmployee = JSON.parse(sessionStorage.getItem('currentEmployee'));
-        
+
 //         if (!currentEmployee) {
 //             // Redirect to login if no employee data
 //             navigate('/');
@@ -38,7 +38,7 @@
 //             try {
 //                 if (snapshot.exists()) {
 //                     const projectsData = [];
-                    
+
 //                     snapshot.forEach((childSnapshot) => {
 //                         const project = childSnapshot.val();
 //                         const projectId = childSnapshot.key;
@@ -289,7 +289,7 @@
 //     useEffect(() => {
 //         // Retrieve employee data from session storage
 //         const currentEmployee = JSON.parse(sessionStorage.getItem('currentEmployee'));
-        
+
 //         if (!currentEmployee) {
 //             // Redirect to login if no employee data
 //             navigate('/');
@@ -306,7 +306,7 @@
 //             try {
 //                 if (snapshot.exists()) {
 //                     const projectsData = [];
-                    
+
 //                     snapshot.forEach((childSnapshot) => {
 //                         const project = childSnapshot.val();
 //                         const projectId = childSnapshot.key;
@@ -340,7 +340,7 @@
 //                                 assignmentsArray.forEach(assignment => {
 //                                     if (typeof assignment === 'object') {
 //                                         const assigneeName = (assignment.assignee || assignment.name || '').trim();
-                                        
+
 //                                         // Add to assignees list
 //                                         if (assigneeName) {
 //                                             assignees.push(assigneeName);
@@ -526,7 +526,7 @@
 //                                 {assignedProjects.map((project) => (
 //                                     <tr key={project.id}>
 //                                         <td>{project.id}</td>
-                                        
+
 //                                         <td>{project.ProjectType || project.projectType || 'N/A'}</td>
 //                                         <td>{formatDate(project.timeline)}</td>
 //                                         <td>{project.advancePayment || 'N/A'}</td>
@@ -572,7 +572,6 @@ import { ref, onValue, update } from 'firebase/database';
 import { useNavigate } from 'react-router-dom';
 import {
     Loader2,
-    Save
 } from "lucide-react";
 import './EmployeePanel.css'
 const EmployeePanel = () => {
@@ -586,7 +585,7 @@ const EmployeePanel = () => {
     useEffect(() => {
         // Retrieve employee data from session storage
         const currentEmployee = JSON.parse(sessionStorage.getItem('currentEmployee'));
-        
+
         if (!currentEmployee) {
             // Redirect to login if no employee data
             navigate('/');
@@ -603,7 +602,7 @@ const EmployeePanel = () => {
             try {
                 if (snapshot.exists()) {
                     const projectsData = [];
-                    
+
                     snapshot.forEach((childSnapshot) => {
                         const project = childSnapshot.val();
                         const projectId = childSnapshot.key;
@@ -629,15 +628,15 @@ const EmployeePanel = () => {
                             // Check assignments if it exists
                             if (project.assignments) {
                                 // If assignments is an object, convert to array
-                                const assignmentsArray = Array.isArray(project.assignments) 
-                                    ? project.assignments 
+                                const assignmentsArray = Array.isArray(project.assignments)
+                                    ? project.assignments
                                     : Object.values(project.assignments);
 
                                 // Collect all assignee names and find employee-specific assignments
                                 assignmentsArray.forEach((assignment, index) => {
                                     if (typeof assignment === 'object') {
                                         const assigneeName = (assignment.assignee || assignment.name || '').trim();
-                                        
+
                                         // Add to assignees list
                                         if (assigneeName) {
                                             assignees.push(assigneeName);
@@ -701,21 +700,21 @@ const EmployeePanel = () => {
     const handleSaveWorkStatus = async (projectId, assignmentIndex) => {
         try {
             const statusUpdate = workStatusUpdates[`${projectId}-${assignmentIndex}`] || '';
-            
+
             // Reference to the specific project
             const projectRef = ref(database, `projects/${projectId}`);
-            
+
             // Get the current project data
             const currentProject = assignedProjects.find(p => p.id === projectId);
-            
+
             if (!currentProject) {
                 throw new Error('Project not found');
             }
 
             // Create a copy of the current assignments
-            const currentAssignments = currentProject.assignments 
-                ? (Array.isArray(currentProject.assignments) 
-                    ? [...currentProject.assignments] 
+            const currentAssignments = currentProject.assignments
+                ? (Array.isArray(currentProject.assignments)
+                    ? [...currentProject.assignments]
                     : Object.values(currentProject.assignments))
                 : [];
 
@@ -731,13 +730,13 @@ const EmployeePanel = () => {
             await update(projectRef, {
                 assignments: currentAssignments
             });
-            
+
             // Clear the status update input
             setWorkStatusUpdates(prev => ({
                 ...prev,
                 [`${projectId}-${assignmentIndex}`]: ''
             }));
-            
+
             alert('Work status updated successfully!');
         } catch (error) {
             console.error('Error updating work status:', error);
@@ -776,7 +775,19 @@ const EmployeePanel = () => {
             </div>
         );
     }
+    const getSortedAssignments = (project) => {
+        if (!project.assignments || !Array.isArray(project.assignments)) {
+            return [];
+        }
 
+        return [...project.assignments]
+            .filter(assignment => assignment && assignment.assignee)
+            .sort((a, b) => {
+                const orderA = parseInt(a.taskOrder) || Number.MAX_SAFE_INTEGER;
+                const orderB = parseInt(b.taskOrder) || Number.MAX_SAFE_INTEGER;
+                return orderA - orderB;
+            });
+    };
     return (
         <div className="employee-dashboard-container">
             <div className="dashboard-header">
@@ -799,40 +810,87 @@ const EmployeePanel = () => {
                                     <th>Assigned To</th>
                                     <th>Project Type</th>
                                     <th>Timeline</th>
-                                    <th>Advance Payment</th>
+                                    <th>Project Description</th>
                                     <th>Project Status</th>
-                                   
+
                                 </tr>
                             </thead>
                             <tbody>
+
                                 {assignedProjects.map((project) => (
                                     <tr key={project.id}>
                                         <td>{project.id}</td>
-                                        <td>
+                                        {/* <td>
                                             {project.allAssignees.map((assignee, index) => (
-                                                <div 
-                                                    key={index} 
+                                                <div
+                                                    key={index}
                                                     style={{
-                                                        fontWeight: assignee.toLowerCase() === employeeName.toLowerCase() 
-                                                            ? 'bold' 
+                                                        fontWeight: assignee.toLowerCase() === employeeName.toLowerCase()
+                                                            ? 'bold'
                                                             : 'normal'
                                                     }}
                                                 >
                                                     {assignee}
                                                 </div>
                                             ))}
+                                        </td> */}
+                                        <td className="employee-assignees-cell">
+                                            {getSortedAssignments(project).map((assignment, index) => (
+                                                <div
+                                                    key={index}
+                                                    className={`assignee-row ${assignment.assignee.toLowerCase() === employeeName.toLowerCase()
+                                                            ? 'current-employee'
+                                                            : ''
+                                                        }`}
+                                                >
+                                                    <span className="task-order">
+                                                        {assignment.taskOrder ? (
+                                                            assignment.taskOrder === '1' ? '1st Task: ' :
+                                                                assignment.taskOrder === '2' ? '2nd Task: ' :
+                                                                    assignment.taskOrder === '3' ? '3rd Task: ' :
+                                                                        `${assignment.taskOrder}th Task: `
+                                                        ) : ''}
+                                                    </span>
+                                                    <span className="assignee-name">
+                                                        {assignment.assignee}
+                                                    </span>
+                                                    {assignment.percentage && (
+                                                        <span className="assignee-percentage">
+                                                            ({assignment.percentage}%)
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ))}
+                                            {/* Display any assignees from Assign_To that aren't in assignments */}
+                                            {project.Assign_To &&
+                                                !project.assignments?.some(a => a.assignee === project.Assign_To) && (
+                                                    <div className="assignee-row">
+                                                        {project.Assign_To}
+                                                    </div>
+                                                )}
                                         </td>
                                         <td>{project.ProjectType || project.projectType || 'N/A'}</td>
                                         <td>{formatDate(project.timeline)}</td>
-                                        <td>{project.advancePayment || 'N/A'}</td>
                                         <td>
-                                            {project.projectStatus || 'Start'}
+                                            {project.employeeAssignments.length > 0 ? (
+                                                project.employeeAssignments.map((assignment) => (
+                                                    <textarea key={assignment.index} readOnly>
+                                                        {assignment.description}
+                                                    </textarea>
+                                                ))
+                                            ) : (
+                                                'N/A'
+                                            )}
+                                        </td>
+                                        <td>{project.projectStatus }</td>
+                                        {/* <td>
+                                            
                                             {project.employeeAssignments.map((assignment) => (
                                                 <div key={assignment.index} className="work-status-section">
                                                     <textarea
                                                         placeholder="Enter work status"
                                                         value={
-                                                            workStatusUpdates[`${project.id}-${assignment.index}`] || 
+                                                            workStatusUpdates[`${project.id}-${assignment.index}`] ||
                                                             assignment.taskCompleted
                                                         }
                                                         onChange={(e) => setWorkStatusUpdates(prev => ({
@@ -846,12 +904,47 @@ const EmployeePanel = () => {
                                                         onClick={() => handleSaveWorkStatus(project.id, assignment.index)}
                                                         className="save-status-btn"
                                                     >
-                                                        <Save size={16} /> Save
+                                                        
+                                                        Complete
                                                     </button>
                                                 </div>
                                             ))}
+                                        </td> */}
+ <td>
+                                            {project.employeeAssignments.map((assignment) => (
+                                                <div key={assignment.index} className="work-status-section">
+                                                    {assignment.taskCompleted ? (
+                                                        <div className="completed-status">
+                                                            <div className="status-text">
+                                                                Status: {assignment.taskCompleted}
+                                                            </div>
+                                                            <div className="completion-info">
+                                                                ✓ Completed on: {formatDate(assignment.assignee)}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <textarea
+                                                                placeholder="Enter your work status/progress"
+                                                                value={workStatusUpdates[`${project.id}-${assignment.index}`] || ''}
+                                                                onChange={(e) => setWorkStatusUpdates(prev => ({
+                                                                    ...prev,
+                                                                    [`${project.id}-${assignment.index}`]: e.target.value
+                                                                }))}
+                                                                rows={3}
+                                                                className="work-status-textarea"
+                                                            />
+                                                            <button
+                                                                onClick={() => handleSaveWorkStatus(project.id, assignment.index)}
+                                                                className="save-status-btn"
+                                                            >
+                                                                Mark Complete
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            ))}
                                         </td>
-                                        
                                     </tr>
                                 ))}
                             </tbody>

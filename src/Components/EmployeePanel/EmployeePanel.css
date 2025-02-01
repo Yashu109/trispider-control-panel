@@ -211,3 +211,90 @@
       padding: 8px 10px;
   }
 }
+.employee-assignees-cell {
+  padding: 0.75rem;
+}
+
+.assignee-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  color: #4b5563;
+}
+
+.assignee-row.current-employee {
+  color: #1e40af;
+  font-weight: bold;
+}
+
+.task-order {
+  color: #3b82f6;
+  font-weight: 500;
+}
+
+.assignee-name {
+  flex: 1;
+}
+
+.assignee-percentage {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+.projects-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.projects-table th,
+.projects-table td {
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+}
+
+.work-status-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.work-status-textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.25rem;
+  resize: vertical;
+}
+
+.save-status-btn {
+  padding: 0.5rem 1rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.save-status-btn:hover {
+  background-color: #2563eb;
+}
+
+.completed-status {
+  background-color: #f0fdf4;
+  border: 1px solid #10b981;
+  padding: 0.75rem;
+  border-radius: 0.25rem;
+}
+
+.status-text {
+  color: #065f46;
+  font-weight: 500;
+}
+
+.completion-info {
+  color: #059669;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}

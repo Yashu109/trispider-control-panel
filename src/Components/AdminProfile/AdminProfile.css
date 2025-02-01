@@ -790,3 +790,44 @@ tr:hover {
     margin-left: 4px;
     color: #666;
 }
+.assignment-row {
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.assignment-row.has-order {
+    border-color: #3b82f6;
+}
+
+.assignment-main-inputs {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.task-order-select {
+    min-width: 200px;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.25rem;
+}
+
+/* .task-order-select.required {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+} */
+
+.task-info {
+    display: flex;
+    gap: 2rem;
+    margin-top: 0.5rem;
+}
+
+.order-display {
+    font-weight: 500;
+    color: #3b82f6;
+}
