@@ -6,7 +6,7 @@
     --text-light: #666;
     --success-color: #10b981;
     --error-color: #ef4444;
-    /* --bg-color: #ffffff; */
+    --bg-color: #ffffff;
     --card-bg: #ffffff;
     --border-color: #e2e8f0;
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -163,7 +163,8 @@
     border-radius: 0.5rem;
     font-size: 1rem;
     transition: all 0.3s ease;
-    /* background-color: #fff; */
+    background-color: #fff;
+    color: #000;
 }
 .form-group-Project-description label {
     display: flex;
@@ -181,8 +182,7 @@
     transition: all 0.3s ease;
     background-color: #fff;
 }
-.form-group input,
-.form-group textarea {
+.form-group input {
     width: 72%;
     padding: 0.75rem 1rem;
     border: 2px solid var(--border-color);
@@ -190,19 +190,28 @@
     font-size: 1rem;
     transition: all 0.3s ease;
     background-color: #fff;
+    color: #000;
 }
 
 .form-group input:focus,
 .form-group textarea:focus {
-    outline: none;
+    /* outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1); */
 }
-
+.form-group input:focus{
+    /* outline: none;
+    border-color: var(--primary-color); */
+}
 .form-group textarea {
-    resize: vertical;
-    min-height: 100px;
     width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background-color: #fff;
+    color: #000;
 }
 
 /* Scope of Work Specific Styles */
