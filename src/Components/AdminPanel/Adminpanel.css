@@ -6,7 +6,7 @@
     --text-light: #666;
     --success-color: #10b981;
     --error-color: #ef4444;
-    --bg-color: #ffffff;
+    /* --bg-color: #ffffff; */
     --card-bg: #ffffff;
     --border-color: #e2e8f0;
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -163,7 +163,7 @@
     border-radius: 0.5rem;
     font-size: 1rem;
     transition: all 0.3s ease;
-    background-color: #fff;
+    /* background-color: #fff; */
 }
 .form-group-Project-description label {
     display: flex;

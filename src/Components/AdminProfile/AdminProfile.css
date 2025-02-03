@@ -3,6 +3,7 @@
     flex-direction: column; /* Default to column for smaller screens */
     min-height: 100vh;
     background-color: #f0f2f5;
+    color: #000000;
 }
 
 /* Sidebar Styles */
