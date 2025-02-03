@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { database, auth, storage } from '../../firebase';
-import { ref, set, get, getDatabase, onValue  } from 'firebase/database';
+import { ref, set, get, getDatabase, onValue } from 'firebase/database';
 import { useNavigate } from 'react-router-dom';
 import './Adminpanel.css';
 import Quotation from '../Quotation/Quotation'
@@ -59,7 +59,7 @@ const AdminPanel = () => {
         projectSelection: '',
         totalPayment: '',
         advancePayment: '',
-        discount: '',
+        discount: '0',
         totalRemaining: '',
         timeline: '',
         Assign_To: '',
@@ -228,61 +228,63 @@ const AdminPanel = () => {
     //         [name]: value
     //     }));
     // };
-   
-const handleChange = (e) => {
-    const { name, value } = e.target;
-    let newValue = value;
 
-    // Input validations based on field type
-    switch (name) {
-        case 'phoneNumber':
-        case 'whatsappNumber':
-        case 'alternativeNumber':
-            // Only allow numbers and limit to 10 digits
-            newValue = value.replace(/\D/g, '').slice(0, 10);
-            break;
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        let newValue = value;
 
-        case 'totalPayment':
-        case 'advancePayment':
-        case 'discount':
-            // Only allow positive numbers
-            if (value && parseFloat(value) < 0) {
-                newValue = '0';
-            }
-            break;
+        // Input validations based on field type
+        switch (name) {
+            case 'phoneNumber':
+            case 'whatsappNumber':
+            case 'alternativeNumber':
+                // Only allow numbers and limit to 10 digits
+                newValue = value.replace(/\D/g, '').slice(0, 10);
+                break;
 
-        case 'email':
-            // Convert email to lowercase
-            newValue = value.toLowerCase();
-            break;
+            case 'totalPayment':
+            case 'advancePayment':
+            case 'discount':
+                // Only allow positive numbers
+                if (value === '') {
+                    newValue = '0'; // Reset to 0 if cleared
+                } else if (parseFloat(value) < 0) {
+                    newValue = '0';
+                }
+                break;
 
-        default:
-            // For other text fields, prevent leading spaces
-            if (name !== 'description' && name !== 'scopeOfWork') {
-                newValue = value.trimStart();
-            }
-    }
+            case 'email':
+                // Convert email to lowercase
+                newValue = value.toLowerCase();
+                break;
 
-    setProjectData(prevState => {
-        const newState = {
-            ...prevState,
-            [name]: newValue
-        };
-
-        // Auto-calculate remaining amount for payment fields
-        if (['totalPayment', 'advancePayment', 'discount'].includes(name)) {
-            const total = parseFloat(name === 'totalPayment' ? newValue : newState.totalPayment) || 0;
-            const advance = parseFloat(name === 'advancePayment' ? newValue : newState.advancePayment) || 0;
-            const discount = parseFloat(name === 'discount' ? newValue : newState.discount) || 0;
-
-            // Calculate remaining amount
-            const remaining = Math.max(0, total - advance - discount);
-            newState.totalRemaining = remaining.toString();
+            default:
+                // For other text fields, prevent leading spaces
+                if (name !== 'description' && name !== 'scopeOfWork') {
+                    newValue = value.trimStart();
+                }
         }
 
-        return newState;
-    });
-};
+        setProjectData(prevState => {
+            const newState = {
+                ...prevState,
+                [name]: newValue
+            };
+
+            // Auto-calculate remaining amount for payment fields
+            if (['totalPayment', 'advancePayment', 'discount'].includes(name)) {
+                const total = parseFloat(name === 'totalPayment' ? newValue : newState.totalPayment) || 0;
+                const advance = parseFloat(name === 'advancePayment' ? newValue : newState.advancePayment) || 0;
+                const discount = parseFloat(name === 'discount' ? newValue : newState.discount) || 0;
+
+                // Calculate remaining amount
+                const remaining = Math.max(0, total - advance - discount);
+                newState.totalRemaining = remaining.toString();
+            }
+
+            return newState;
+        });
+    };
     // Canvas handlers
     useEffect(() => {
         if (inputMode === 'pen' && canvasRef.current) {
@@ -439,68 +441,68 @@ const handleChange = (e) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const errors = validateDetailsForm();
-        
+
         if (errors.length > 0) {
             setMessage(errors.join('\n'));
             return;
         }
-    
+
         setIsLoading(true);
         setMessage('');
-    
+
         try {
             // Generate project ID
             const projectId = editingId || await generateProjectId();
             const projectRef = ref(database, `projects/${projectId}`);
             const timestamp = new Date().toISOString();
-    
+
             // Filter out empty assignments
             const validAssignments = assignments.filter(a => a.assignee.trim() !== '');
-    
+
             const finalProjectData = {
                 ...projectData,
                 assignments: validAssignments,
                 timestamp,
                 projectId,
             };
-    
+
             // Save to database
             await set(projectRef, finalProjectData);
-    
+
             // Generate and save PDF
             if (!quotationRef.current) {
                 throw new Error('Quotation component reference is missing');
             }
-    
+
             const canvas = await html2canvas(quotationRef.current, {
                 scale: 2,
                 useCORS: true,
                 logging: true,
                 backgroundColor: '#ffffff'
             });
-    
+
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
             const imgWidth = 110;
             // const imgHeight = (canvas.height * imgWidth) / canvas.width;
             const imgHeight = 300
-    
+
             pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
             const pdfData = pdf.output('datauristring');
-    
+
             // Upload PDF
             const pdfRef = storageRef(storage, `quotations/${projectId}.pdf`);
             await uploadString(pdfRef, pdfData, 'data_url');
             const downloadUrl = await getDownloadURL(pdfRef);
             setPdfUrl(downloadUrl);
-    
+
             // Success message and reset
             setMessage('Order created successfully!');
             setTimeout(() => {
                 resetForm();
                 setMessage('');
             }, 2000);
-    
+
         } catch (error) {
             console.error('Submission error:', error);
             setMessage(`Error: ${error.message}`);
@@ -615,7 +617,7 @@ const handleChange = (e) => {
             projectSelection: '',
             totalPayment: '',
             advancePayment: '',
-            discount: '',
+            discount: '0',
             totalRemaining: '',
             timeline: '',
             Assign_To: '',
@@ -719,93 +721,93 @@ const handleChange = (e) => {
 
     const validateBasicForm = () => {
         const errors = [];
-        
+
         if (!projectData.title.trim()) {
             errors.push('Project title is required');
         } else if (projectData.title.length < 3) {
             errors.push('Project title must be at least 3 characters');
         }
-    
+
         if (!projectData.description.trim()) {
             errors.push('Project description is required');
         } else if (projectData.description.length < 10) {
             errors.push('Project description must be at least 10 characters');
         }
-    
+
         if (inputMode === 'keyboard' && !projectData.scopeOfWork.trim()) {
             errors.push('Scope of work is required');
         }
-    
+
         return errors;
     };
-    
+
     const validateDetailsForm = () => {
         const errors = [];
-        
+
         // Client Name validation
         if (!projectData.clientName.trim()) {
             errors.push('Client name is required');
         } else if (projectData.clientName.length < 3) {
             errors.push('Client name must be at least 3 characters');
         }
-    
+
         // Phone Number validation
         if (!projectData.phoneNumber) {
             errors.push('Phone number is required');
         } else if (!/^\d{10}$/.test(projectData.phoneNumber)) {
             errors.push('Phone number must be 10 digits');
         }
-    
+
         // WhatsApp Number validation
         if (!projectData.whatsappNumber) {
             errors.push('WhatsApp number is required');
         } else if (!/^\d{10}$/.test(projectData.whatsappNumber)) {
             errors.push('WhatsApp number must be 10 digits');
         }
-    
+
         // Email validation
         if (!projectData.email) {
             errors.push('Email is required');
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(projectData.email)) {
             errors.push('Please enter a valid email address');
         }
-    
+
         // College Name validation
         if (!projectData.collegeName.trim()) {
             errors.push('College name is required');
         }
-    
+
         // Project Type validation
         if (!projectData.ProjectType) {
             errors.push('Please select a project type');
         }
-    
+
         // Project Selection validation
         if (!projectData.projectSelection) {
             errors.push('Please select project selection');
         }
-    
+
         // Payment validations
         if (!projectData.totalPayment || projectData.totalPayment <= 0) {
             errors.push('Total payment must be greater than 0');
         }
-    
+
         if (!projectData.advancePayment || projectData.advancePayment < 0) {
             errors.push('Advance payment cannot be negative');
         }
-    
+
         if (parseFloat(projectData.advancePayment) > parseFloat(projectData.totalPayment)) {
             errors.push('Advance payment cannot be greater than total payment');
         }
-    
+
         if (projectData.discount && parseFloat(projectData.discount) < 0) {
             errors.push('Discount cannot be negative');
         }
-    
+
         if (projectData.discount && parseFloat(projectData.discount) > parseFloat(projectData.totalPayment)) {
             errors.push('Discount cannot be greater than total payment');
         }
-    
+
         // Timeline validation
         if (!projectData.timeline) {
             errors.push('Project timeline is required');
@@ -817,27 +819,27 @@ const handleChange = (e) => {
                 errors.push('Project timeline cannot be in the past');
             }
         }
-    
+
         // Assignment validation
         const validAssignments = assignments.filter(a => a.assignee.trim() !== '');
         if (validAssignments.length === 0) {
             errors.push('At least one assignee is required');
         }
-    
+
         // Description validation for assignments
         validAssignments.forEach((assignment) => {
             if (!assignment.description || assignment.description.trim() === '') {
                 errors.push(`Task description is required for assignee ${assignment.assignee}`);
             }
         });
-    
+
         return errors;
     };
 
     // const handleChange  = (e) => {
     //     const { name, value } = e.target;
     //     let newValue = value;
-    
+
     //     // Input validations based on field type
     //     switch (name) {
     //         case 'phoneNumber':
@@ -846,7 +848,7 @@ const handleChange = (e) => {
     //             // Only allow numbers and limit to 10 digits
     //             newValue = value.replace(/\D/g, '').slice(0, 10);
     //             break;
-    
+
     //         case 'totalPayment':
     //         case 'advancePayment':
     //         case 'discount':
@@ -855,42 +857,42 @@ const handleChange = (e) => {
     //                 newValue = '0';
     //             }
     //             break;
-    
+
     //         case 'email':
     //             // Convert email to lowercase
     //             newValue = value.toLowerCase();
     //             break;
-    
+
     //         default:
     //             // For other text fields, prevent leading spaces
     //             if (name !== 'description' && name !== 'scopeOfWork') {
     //                 newValue = value.trimStart();
     //             }
     //     }
-    
+
     //     setProjectData(prevState => {
     //         const newState = {
     //             ...prevState,
     //             [name]: newValue
     //         };
-    
+
     //         // Auto-calculate remaining amount for payment fields
     //         if (['totalPayment', 'advancePayment', 'discount'].includes(name)) {
     //             const total = parseFloat(name === 'totalPayment' ? newValue : newState.totalPayment) || 0;
     //             const advance = parseFloat(name === 'advancePayment' ? newValue : newState.advancePayment) || 0;
     //             const discount = parseFloat(name === 'discount' ? newValue : newState.discount) || 0;
-    
+
     //             // Calculate remaining amount
     //             const remaining = Math.max(0, total - advance - discount);
     //             newState.totalRemaining = remaining.toString();
     //         }
-    
+
     //         return newState;
     //     });
     // };
-    
-    
-    
+
+
+
     return (
         <Splitslayout
             quotationPreview={
@@ -1221,7 +1223,8 @@ const handleChange = (e) => {
                                         name="discount"
                                         value={projectData.discount}
                                         onChange={handleChange}
-                                        placeholder="Enter discount amount"
+                                        placeholder="0"
+                                        min="0"
                                     />
                                 </div>
 

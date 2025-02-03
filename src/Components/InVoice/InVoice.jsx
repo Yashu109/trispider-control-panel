@@ -288,7 +288,7 @@ const InvoiceComponent = ({ invoiceData, project, onClose }) => {
                             </div>
                             <div className="invoice-details-right">
                                 <p><strong>Place Of Supply :</strong> Karnataka (29)</p>
-                                <p>DATE : {getCurrentDate()}</p>
+                                <p className='Date'><strong>Date </strong>: {getCurrentDate()}</p>
                             </div>
                         </div>
 
@@ -316,8 +316,7 @@ const InvoiceComponent = ({ invoiceData, project, onClose }) => {
                                         <th>S/UT GST</th>
                                         <th>CGST Amt.</th>
                                         <th>S/UT GST Amt.</th>
-                                        <th>Cess</th>
-                                        <th>Cess Amt.</th>
+                                        
                                         <th>Total Amt.</th>
                                     </tr>
                                 </thead>
@@ -342,8 +341,7 @@ const InvoiceComponent = ({ invoiceData, project, onClose }) => {
                                         <td>9%</td>
                                         <td>{formatCurrency(cgstAmount)}</td>
                                         <td>{formatCurrency(sgstAmount)}</td>
-                                        <td>0.0</td>
-                                        <td>0.0</td>
+                                        
                                         <td>{formatCurrency(grandTotal)}</td>
                                     </tr>
                                 </tbody>
@@ -354,8 +352,7 @@ const InvoiceComponent = ({ invoiceData, project, onClose }) => {
                                         <td colSpan="2"></td>
                                         <td>{formatCurrency(cgstAmount)}</td>
                                         <td>{formatCurrency(sgstAmount)}</td>
-                                        <td>0.0</td>
-                                        <td>0.0</td>
+                                       
                                         <td>{formatCurrency(grandTotal)}</td>
                                     </tr>
                                 </tfoot>
@@ -394,7 +391,7 @@ const InvoiceComponent = ({ invoiceData, project, onClose }) => {
                     </div>
 
                     {/* Page 2 - Annexure */}
-                    <div className="invoice-page annexure">
+                    {/* <div className="invoice-page annexure">
                         <div className="invoice-header">
                             <div className="company-info">
                                 <h1>TRISPIDER PRIVATE LIMITED</h1>
@@ -432,7 +429,7 @@ const InvoiceComponent = ({ invoiceData, project, onClose }) => {
                                 </tbody>
                             </table>
                         </div>
-                    </div>
+                    </div> */}
                 </div>
                 <div className="modal-actions">
                     <button onClick={onClose} className="invoice-close-button">
