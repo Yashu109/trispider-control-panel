@@ -1,15 +1,16 @@
-.split-container {
+.sidebar-split-container {
     display: flex;
-    height: 100vh;
+    /* height: 100vh; */
   }
   
-  .form-side {
+  .sidebar-form-side {
     width: 50%;
     overflow-y: auto;
-    padding: 20px;
+    /* padding: 20px; */
+    color: #000;
   }
   
-  .preview-side {
+  .split-preview-side {
     width: 50%;
     position: fixed;
     right: 0;

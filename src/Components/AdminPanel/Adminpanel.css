@@ -34,7 +34,7 @@
     /* max-height: 100vh; */
     /* Adjust the max height as needed */
     overflow-y: auto;
-    /* width: 54%; */
+    width: 82%;
     /* margin-left: 22.5%; */
     /* padding: 2rem; */
     border-radius: 10px;
@@ -59,7 +59,7 @@
     margin-bottom: 2rem;
     text-align: center;
     height: 170px;
-    /* width: 55rem;     */
+    width: 99%;    
     position: sticky;
     top: 0;
     z-index: 10;
