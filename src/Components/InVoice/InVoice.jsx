@@ -181,60 +181,92 @@
 // export default Invoice;
 
 
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Printer } from "lucide-react";
-import './InVoice.css'
+import './InVoice.css';
+
 const InvoiceComponent = ({ invoiceData, project, onClose }) => {
+    const [quantity, setQuantity] = useState(parseFloat(project?.quantity || 1));
+
+    const handleQuantityChange = (e) => {
+        const newQuantity = parseFloat(e.target.value);
+        setQuantity(newQuantity);
+    };
+
     const rate = parseFloat(project?.totalPayment || 0);
-    const quantity = parseFloat(project?.quantity || 1);
+    const discountRate = 36.47 / 100;
+    const gstRate = 5 / 100;
+    const packagingFee = 12.91;
+
     const baseAmount = rate * quantity;
-    const gstRate = 9;
-    const cgstAmount = parseFloat((baseAmount * gstRate) / 100);
-    const sgstAmount = parseFloat((baseAmount * gstRate) / 100);
-    const grandTotal = parseFloat(baseAmount + cgstAmount + sgstAmount);
+    const discountAmount = baseAmount * discountRate;
+    const taxableAmount = baseAmount - discountAmount;
+    const cgstAmount = taxableAmount * (gstRate / 2);
+    const sgstAmount = taxableAmount * (gstRate / 2);
+    const grandTotal = taxableAmount + cgstAmount + sgstAmount + packagingFee;
 
     const formatCurrency = (amount) => {
-        const numberAmount = parseFloat(amount);
-        if (isNaN(numberAmount)) return '0.00';
-        return new Intl.NumberFormat('en-IN', {
+        return new Intl.NumberFormat("en-IN", {
             maximumFractionDigits: 2,
-            minimumFractionDigits: 2
-        }).format(numberAmount);
+            minimumFractionDigits: 2,
+        }).format(parseFloat(amount) || 0);
     };
 
     const getCurrentDate = () => {
         const today = new Date();
-        const day = String(today.getDate()).padStart(2, '0');
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const year = today.getFullYear();
-        return `${day}-${month}-${year}`;
+        return `${String(today.getDate()).padStart(2, "0")}-${String(today.getMonth() + 1).padStart(2, "0")}-${today.getFullYear()}`;
     };
 
     const getFinancialYear = () => {
         const today = new Date();
-        const currentYear = today.getFullYear();
-        const currentMonth = today.getMonth() + 1;
-
-        if (currentMonth > 3) {
-            return `${currentYear}-${String(currentYear + 1).slice(2)}`;
-        } else {
-            return `${currentYear - 1}-${String(currentYear).slice(2)}`;
-        }
+        const year = today.getFullYear();
+        const month = today.getMonth() + 1;
+        return month >= 4 ? `${year}-${String(year + 1).slice(-2)}` : `${year - 1}-${String(year).slice(-2)}`;
     };
+
+    const getStoredSerialNumber = (key) => {
+        return parseInt(localStorage.getItem(key) || "0", 10) || 0;
+    };
+
+    const [invoiceSerial, setInvoiceSerial] = useState(getStoredSerialNumber("lastInvoiceSerialNumber"));
+    const [orderSerial, setOrderSerial] = useState(getStoredSerialNumber("lastOrderSerialNumber"));
+
+    const generateInvoiceNumber = () => {
+        return `TRY${getFinancialYear()}-${String(invoiceSerial + 1).padStart(4, "0")}`;
+    };
+
+    const generateOrderNumber = () => {
+        const today = new Date();
+        return `ORD${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}-${String(orderSerial + 1).padStart(4, "0")}`;
+    };
+
     const handlePrint = () => {
-        const printContent = document.querySelector('.invoice-modal-content');
+        const printContent = document.querySelector(".invoice-modal-content");
         const originalContent = document.body.innerHTML;
-    
+
         document.body.innerHTML = printContent.innerHTML;
         window.print();
         document.body.innerHTML = originalContent;
-        window.location.reload(); // Reload to restore the original view
+        window.location.reload();
+
+        const newInvoiceSerial = invoiceSerial + 1;
+        const newOrderSerial = orderSerial + 1;
+
+        localStorage.setItem("lastInvoiceSerialNumber", newInvoiceSerial);
+        localStorage.setItem("lastOrderSerialNumber", newOrderSerial);
+
+        setInvoiceSerial(newInvoiceSerial);
+        setOrderSerial(newOrderSerial);
     };
-    
+    const annexureData = [
+        { taxRate: "5.0%", cessRate: "0.0%", taxableValue: 9.59, cgst: 0.24, sgst: 0.24, cess: 0.0 },
+        { taxRate: "18.0%", cessRate: "0.0%", taxableValue: 2.4, cgst: 0.22, sgst: 0.22, cess: 0.0 },
+        { taxRate: "Total", cessRate: "", taxableValue: taxableAmount, cgst: cgstAmount, sgst: sgstAmount, cess: 0.0 },
+    ];
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="invoice-modal-content" onClick={(e) => e.stopPropagation()}>
-               
+
                 <div className="invoice-container">
                     {/* Page 1 */}
                     <div className="invoice-page">
@@ -251,8 +283,8 @@ const InvoiceComponent = ({ invoiceData, project, onClose }) => {
 
                         <div className="invoice-details">
                             <div className="invoice-details-left">
-                                <p><strong>Invoice No. :</strong> G290125-7202678</p>
-                                <p><strong>Order No :</strong> 9B525BULP00813A</p>
+                                <p><strong>Invoice No. :</strong> {generateInvoiceNumber()}</p>
+                                <p><strong>Order No :</strong> {generateOrderNumber()}</p>
                             </div>
                             <div className="invoice-details-right">
                                 <p><strong>Place Of Supply :</strong> Karnataka (29)</p>
@@ -276,7 +308,6 @@ const InvoiceComponent = ({ invoiceData, project, onClose }) => {
                                     <tr>
                                         <th>SR No</th>
                                         <th>Item & Description</th>
-                                        <th>HSN</th>
                                         <th>Qty</th>
                                         <th>Product Rate</th>
                                         <th>Disc.</th>
@@ -294,47 +325,56 @@ const InvoiceComponent = ({ invoiceData, project, onClose }) => {
                                     <tr>
                                         <td>1</td>
                                         <td>{project?.title || ''}</td>
-                                        <td>996331</td>
-                                        <td>1</td>
-                                        <td>85.0</td>
-                                        <td>36.47%</td>
-                                        <td>54.0</td>
-                                        <td>2.5%</td>
-                                        <td>2.5%</td>
-                                        <td>1.35</td>
-                                        <td>1.35</td>
+                                        <td>{quantity}
+                                            {handleQuantityChange}
+                                            {/* Dynamic Quantity Input */}
+                                            {/* <input
+                                                type="number"
+                                                value={quantity}
+                                                onChange={handleQuantityChange}
+                                                min="1"
+                                            /> */}
+                                        </td>
+                                        <td>{project?.totalPayment || ''}</td>
+                                        <td>{project?.discount || ''}%</td>
+                                        <td>{formatCurrency(taxableAmount)}</td>
+                                        <td>9%</td>
+                                        <td>9%</td>
+                                        <td>{formatCurrency(cgstAmount)}</td>
+                                        <td>{formatCurrency(sgstAmount)}</td>
                                         <td>0.0</td>
                                         <td>0.0</td>
-                                        <td>56.7</td>
+                                        <td>{formatCurrency(grandTotal)}</td>
                                     </tr>
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colSpan="6"></td>
-                                        <td>120.58</td>
+                                        <td colSpan="5"></td>
+                                        <td>{formatCurrency(taxableAmount)}</td>
                                         <td colSpan="2"></td>
-                                        <td>4.61</td>
-                                        <td>4.61</td>
+                                        <td>{formatCurrency(cgstAmount)}</td>
+                                        <td>{formatCurrency(sgstAmount)}</td>
                                         <td>0.0</td>
                                         <td>0.0</td>
-                                        <td>129.8</td>
+                                        <td>{formatCurrency(grandTotal)}</td>
                                     </tr>
                                 </tfoot>
+
                             </table>
                         </div>
 
                         <div className="invoice-summary">
                             <div className="summary-item">
                                 <span>Item Total</span>
-                                <span>129.8</span>
+                                <span>{formatCurrency(grandTotal)}</span>
                             </div>
-                            <div className="summary-item">
+                            {/* <div className="summary-item">
                                 <span>Packaging Fee (Inclusive of Taxes)</span>
                                 <span>12.91</span>
-                            </div>
+                            </div> */}
                             <div className="summary-item total">
                                 <span>Invoice Value</span>
-                                <span>142.71</span>
+                                <span>{formatCurrency(grandTotal)}</span>
                             </div>
                         </div>
 
@@ -357,9 +397,9 @@ const InvoiceComponent = ({ invoiceData, project, onClose }) => {
                     <div className="invoice-page annexure">
                         <div className="invoice-header">
                             <div className="company-info">
-                                <h1>Geddit Convenience Private Limited</h1>
-                                <p>No 567/2, 60ft rd, 5th block, 3rd Cross rd, Sir M V layout, Bangalore - 560056</p>
-                                <p>GSTIN: 29AAJCG0980D1ZK</p>
+                                <h1>TRISPIDER PRIVATE LIMITED</h1>
+                                <p>Dodhmane complex, 1st floor, Muddinaplaya main road, Vishwaneedam, Post, Bangalore-560091</p>
+                                <p>GSTIN: 29AALCT3687J1ZI</p>
                                 <p>FSSAI: 11521998000248</p>
                             </div>
                         </div>
@@ -372,11 +412,6 @@ const InvoiceComponent = ({ invoiceData, project, onClose }) => {
                                     <tr>
                                         <th>Tax Rate</th>
                                         <th>Cess Rate</th>
-                                        <th colSpan="4">Packaging Fee</th>
-                                    </tr>
-                                    <tr>
-                                        <th></th>
-                                        <th></th>
                                         <th>Taxable Value</th>
                                         <th>CGST</th>
                                         <th>S/UT GST</th>
@@ -384,43 +419,29 @@ const InvoiceComponent = ({ invoiceData, project, onClose }) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>5.0%</td>
-                                        <td>0.0%</td>
-                                        <td>9.59</td>
-                                        <td>0.24</td>
-                                        <td>0.24</td>
-                                        <td>0.0</td>
-                                    </tr>
-                                    <tr>
-                                        <td>18.0%</td>
-                                        <td>0.0%</td>
-                                        <td>2.4</td>
-                                        <td>0.22</td>
-                                        <td>0.22</td>
-                                        <td>0.0</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Total</td>
-                                        <td></td>
-                                        <td>11.99</td>
-                                        <td>0.46</td>
-                                        <td>0.46</td>
-                                        <td>0</td>
-                                    </tr>
+                                    {annexureData.map((item, index) => (
+                                        <tr key={index}>
+                                            <td>{item.taxRate}</td>
+                                            <td>{item.cessRate}</td>
+                                            <td>{formatCurrency(item.taxableValue)}</td>
+                                            <td>{formatCurrency(item.cgst)}</td>
+                                            <td>{formatCurrency(item.sgst)}</td>
+                                            <td>{formatCurrency(item.cess)}</td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
                 <div className="modal-actions">
-                <button onClick={onClose} className="invoice-close-button"> 
+                    <button onClick={onClose} className="invoice-close-button">
                         <X size={20} /> Cancel
                     </button>
                     <button onClick={handlePrint} className="print-button">
                         <Printer size={20} /> Print
                     </button>
-                   
+
                 </div>
             </div>
         </div>

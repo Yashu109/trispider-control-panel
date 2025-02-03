@@ -414,6 +414,22 @@ const AdminDashboard = () => {
         }
     });
 
+    // const handleViewPDF = async (projectId) => {
+    //     try {
+    //         const storage = getStorage();
+    //         const pdfRef = storageRef(storage, `quotations/${projectId}.pdf`);
+    //         const url = await getDownloadURL(pdfRef);
+    //         setViewingPDF({
+    //             show: true,
+    //             url: url,
+    //             projectId: projectId
+    //         });
+    //     } catch (error) {
+    //         console.error('Error viewing PDF:', error);
+    //         alert('Error viewing PDF. Please try again.');
+    //     }
+    // };
+
     const handleViewPDF = async (projectId) => {
         try {
             const storage = getStorage();
@@ -428,6 +444,8 @@ const AdminDashboard = () => {
             console.error('Error viewing PDF:', error);
             alert('Error viewing PDF. Please try again.');
         }
+console.log(projectId,'projectId')
+        
     };
     useEffect(() => {
         const db = getDatabase();
@@ -585,7 +603,6 @@ const AdminDashboard = () => {
             </div>
         );
     };
-
 
 
 

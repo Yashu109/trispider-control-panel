@@ -474,7 +474,7 @@ const AuthForm = () => {
                 });
               }}
             >
-              {isLogin ? 'Need an account? Sign up' : 'Already have an account? Sign in'}
+              {/* {isLogin ? 'Need an account? Sign up' : 'Already have an account? Sign in'} */}
             </button>
           )}
         </form>
