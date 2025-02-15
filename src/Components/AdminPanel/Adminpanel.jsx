@@ -34,6 +34,12 @@ const AdminPanel = () => {
     const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [projectDataPayment, setProjectDataPayment] = useState({
+        // ... (previous projectData fields)
+        advancePaymentMethod: 'cash', // default to cash
+    });
+    const [useSameNumber, setUseSameNumber] = useState(true);
+
     // Helper function to calculate even percentage splits
     const calculateEvenSplit = (numberOfPeople) => {
         const percentage = (100 / numberOfPeople).toFixed(0);
@@ -384,60 +390,7 @@ const AdminPanel = () => {
             return `KS5000`; // Fallback to KS5000 if error
         }
     };
-    // const handleSubmit = async (e) => {
-    //     e.preventDefault();
-    //     setIsLoading(true);
-    //     setMessage('');
 
-    //     try {
-    //         // Generate project ID and save to main database
-    //         const projectId = editingId || await generateProjectId();
-    //         const projectRef = ref(database, `projects/${projectId}`);
-    //         const timestamp = new Date().toISOString().split("T")[0];
-
-    //         const finalProjectData = {
-    //             ...projectData,
-    //             assignments: assignments.filter(a => a.assignee.trim() !== ''),
-    //             timestamp,
-    //             projectId,
-    //         };
-
-    //         await set(projectRef, finalProjectData);
-
-    //         // Generate PDF from quotation component
-    //         if (!quotationRef.current) {
-    //             throw new Error('Quotation component reference is missing');
-    //         }
-
-    //         const canvas = await html2canvas(quotationRef.current, {
-    //             scale: 2,
-    //             useCORS: true,
-    //             logging: true,
-    //             backgroundColor: '#ffffff'
-    //         });
-
-    //         const imgData = canvas.toDataURL('image/png');
-    //         const pdf = new jsPDF('p', 'mm', 'a4');
-    //         const imgWidth = 120;
-    //         const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-    //         pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-    //         const pdfData = pdf.output('datauristring');
-
-    //         // Upload PDF to secondary storage
-    //         const pdfRef = storageRef(storage, `quotations/${projectId}.pdf`);
-    //         await uploadString(pdfRef, pdfData, 'data_url');
-    //         const downloadUrl = await getDownloadURL(pdfRef);
-    //         setPdfUrl(downloadUrl);
-    //         alert(`Order Created Successfully!\nProject ID: ${projectId}`);
-    //         resetForm();
-    //     } catch (error) {
-    //         console.error('Submission error:', error);
-    //         setMessage(`Error: ${error.message}`);
-    //     } finally {
-    //         setIsLoading(false);
-    //     }
-    // };
     const handleSubmit = async (e) => {
         e.preventDefault();
         const errors = validateDetailsForm();
@@ -766,9 +719,7 @@ const AdminPanel = () => {
         }
 
         // Email validation
-        if (!projectData.email) {
-            errors.push('Email is required');
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(projectData.email)) {
+        if (projectData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(projectData.email)) {
             errors.push('Please enter a valid email address');
         }
 
@@ -836,63 +787,47 @@ const AdminPanel = () => {
         return errors;
     };
 
-    // const handleChange  = (e) => {
-    //     const { name, value } = e.target;
-    //     let newValue = value;
+    const handleChangeNumber = (e) => {
+        const { name, value, type, checked } = e.target;
 
-    //     // Input validations based on field type
-    //     switch (name) {
-    //         case 'phoneNumber':
-    //         case 'whatsappNumber':
-    //         case 'alternativeNumber':
-    //             // Only allow numbers and limit to 10 digits
-    //             newValue = value.replace(/\D/g, '').slice(0, 10);
-    //             break;
+        if (name === 'useSameNumber') {
+            setUseSameNumber(checked);
+            // If checked, set WhatsApp number to phone number
+            setProjectData(prevState => ({
+                ...prevState,
+                whatsappNumber: checked ? prevState.phoneNumber : ''
+            }));
+            return;
+        }
 
-    //         case 'totalPayment':
-    //         case 'advancePayment':
-    //         case 'discount':
-    //             // Only allow positive numbers
-    //             if (value && parseFloat(value) < 0) {
-    //                 newValue = '0';
-    //             }
-    //             break;
+        let newValue = value;
 
-    //         case 'email':
-    //             // Convert email to lowercase
-    //             newValue = value.toLowerCase();
-    //             break;
+        // Input validations based on field type
+        switch (name) {
+            case 'phoneNumber':
+                // Only allow numbers and limit to 10 digits
+                newValue = value.replace(/\D/g, '').slice(0, 10);
+                setProjectData(prevState => ({
+                    ...prevState,
+                    phoneNumber: newValue,
+                    // If using same number, update WhatsApp number too
+                    ...(useSameNumber && { whatsappNumber: newValue })
+                }));
+                return;
 
-    //         default:
-    //             // For other text fields, prevent leading spaces
-    //             if (name !== 'description' && name !== 'scopeOfWork') {
-    //                 newValue = value.trimStart();
-    //             }
-    //     }
+            case 'whatsappNumber':
+            case 'alternativeNumber':
+                newValue = value.replace(/\D/g, '').slice(0, 10);
+                break;
 
-    //     setProjectData(prevState => {
-    //         const newState = {
-    //             ...prevState,
-    //             [name]: newValue
-    //         };
+            // ... (rest of the switch cases remain the same)
+        }
 
-    //         // Auto-calculate remaining amount for payment fields
-    //         if (['totalPayment', 'advancePayment', 'discount'].includes(name)) {
-    //             const total = parseFloat(name === 'totalPayment' ? newValue : newState.totalPayment) || 0;
-    //             const advance = parseFloat(name === 'advancePayment' ? newValue : newState.advancePayment) || 0;
-    //             const discount = parseFloat(name === 'discount' ? newValue : newState.discount) || 0;
-
-    //             // Calculate remaining amount
-    //             const remaining = Math.max(0, total - advance - discount);
-    //             newState.totalRemaining = remaining.toString();
-    //         }
-
-    //         return newState;
-    //     });
-    // };
-
-
-
+        setProjectData(prevState => ({
+            ...prevState,
+            [name]: newValue
+        }));
+    };
     return (
         <Splitslayout
             quotationPreview={
@@ -1058,10 +993,22 @@ const AdminPanel = () => {
                                         onChange={handleChange}
                                         required
                                         placeholder="Enter phone number"
+                                        className="phone-input"
                                     />
                                 </div>
+                                <div className="same-number-toggle">
+                                    <label className="checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            name="useSameNumber"
+                                            checked={useSameNumber}
+                                            onChange={handleChangeNumber}
+                                        />
+                                        Use same number for WhatsApp
+                                    </label>
+                                </div>
 
-                                <div className="form-group">
+                                {/* <div className="form-group">
                                     <label htmlFor="whatsappNumber">WhatsApp Number:</label>
                                     <input
                                         type="tel"
@@ -1072,8 +1019,22 @@ const AdminPanel = () => {
                                         required
                                         placeholder="Enter WhatsApp number"
                                     />
-                                </div>
-
+                                </div> */}
+                                {!useSameNumber && (
+                                    <div className="form-group">
+                                        <label htmlFor="whatsappNumber">WhatsApp Number:</label>
+                                        <input
+                                            type="tel"
+                                            id="whatsappNumber"
+                                            name="whatsappNumber"
+                                            value={projectData.whatsappNumber}
+                                            onChange={handleChangeNumber}
+                                            required
+                                            placeholder="Enter WhatsApp number"
+                                            className="whatsapp-input"
+                                        />
+                                    </div>
+                                )}
                                 <div className="form-group">
                                     <label htmlFor="alternativeNumber">Alternative Number:</label>
                                     <input
@@ -1094,8 +1055,7 @@ const AdminPanel = () => {
                                         name="email"
                                         value={projectData.email}
                                         onChange={handleChange}
-                                        required
-                                        placeholder="Enter email ID"
+                                        placeholder="Enter email ID (optional)"
                                     />
                                 </div>
 
@@ -1201,17 +1161,44 @@ const AdminPanel = () => {
                                 </div>
 
                                 {/* Advance Payment Field */}
-                                <div className="form-group">
-                                    <label htmlFor="advancePayment">Advance Payment:</label>
-                                    <input
-                                        type="number"
-                                        id="advancePayment"
-                                        name="advancePayment"
-                                        value={projectData.advancePayment}
-                                        onChange={handleChange}
-                                        required
-                                        placeholder="Enter advance payment"
-                                    />
+                                <div className="form-group-advance">
+                                    <div className="payment-method-group">
+                                        <label className="payment-method-label">
+                                            <input
+                                                type="radio"
+                                                name="advancePaymentMethod"
+                                                value="cash"
+                                                checked={projectData.advancePaymentMethod === "cash"}
+                                                onChange={handleChange}
+                                            />
+                                            Cash
+                                        </label>
+                                        <label className="payment-method-label">
+                                            <input
+                                                type="radio"
+                                                name="advancePaymentMethod"
+                                                value="upi"
+                                                checked={projectData.advancePaymentMethod === "upi"}
+                                                onChange={handleChange}
+                                            />
+                                            UPI
+                                        </label>
+                                    </div>
+                                    <div className='form-group-advance1'>
+                                        <label htmlFor="advancePayment">Advance Payment:</label>
+                                        <input
+                                            type="number"
+                                            id="advancePayment"
+                                            name="advancePayment"
+                                            value={projectData.advancePayment}
+                                            onChange={handleChange}
+                                            required
+                                            placeholder="Enter advance payment"
+                                        />
+                                    </div>
+
+
+
                                 </div>
 
                                 {/* Discount Field */}
@@ -1253,70 +1240,13 @@ const AdminPanel = () => {
                                     />
                                 </div>
 
-                                {/* Task Assignment Section */}
-                                {/* <div className="form-group assignments-section">
-                                    <div className='part1'>
-                                        <label htmlFor="Assign_To">Task Assignments: <span className="assignment-info"></span></label>
-                                        {assignments.map((assignment) => (
-                                            <div key={assignment.id} className="assignment-row">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Assignee name"
-                                                    value={assignment.assignee}
-                                                    onChange={(e) => handleAssignmentChange(assignment.id, 'assignee', e.target.value)}
-                                                    className="assignee-input"
-                                                />
-                                                <textarea
-                                                    placeholder="Task description"
-                                                    value={assignment.description || ''}
-                                                    onChange={(e) => handleAssignmentChange(assignment.id, 'description', e.target.value)}
-                                                    className="description-input"
-                                                    rows="3"
-                                                />
-                                                <div className="percentage-display">
-                                                    {assignment.percentage}%
-                                                </div>
-                                                {assignments.length > 1 && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRemoveAssignment(assignment.id)}
-                                                        className="remove-assignment-btn"
-                                                    >
-                                                        Remove
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
 
-                                    <div className='part2'>
-                                        <button
-                                            type="button"
-                                            onClick={handleAddAssignment}
-                                            className="add-assignment-btn"
-                                        >
-                                            Add Assignee
-                                        </button>
-                                    </div>
-                                </div> */}
-                                {/* Task Assignment Section */}
                                 <div className="form-group assignments-section">
                                     <div className='part1'>
                                         <label htmlFor="Assign_To">Task Assignments: <span className="assignment-info"></span></label>
                                         {assignments.map((assignment) => (
                                             <div key={assignment.id} className="assignment-row">
-                                                {/* <select
-                                                    value={assignment.assignee}
-                                                    onChange={(e) => handleAssignmentChange(assignment.id, 'assignee', e.target.value)}
-                                                    className="assignee-dropdown"
-                                                >
-                                                    <option value="">Select Assignee</option>
-                                                    {assigneesList.map((assignee) => (
-                                                        <option key={assignee.id} value={assignee.name}>
-                                                            {assignee.name}
-                                                        </option>
-                                                    ))}
-                                                </select> */}
+
                                                 <select
                                                     value={assignment.assignee}
                                                     onChange={(e) => handleAssignmentChange(assignment.id, 'assignee', e.target.value)}
@@ -1387,7 +1317,7 @@ const AdminPanel = () => {
                                     className="submit-button"
                                     disabled={isLoading || isProcessing}
                                 >
-                                    {isLoading ? 'Saving...' : (editingId ? 'Update Project' : 'Order Created')}
+                                    {isLoading ? 'Saving...' : (editingId ? 'Update Project' : 'Create Order')}
                                 </button>
                             )}
                             {pdfUrl && (

@@ -193,6 +193,123 @@
     color: #000;
 }
 
+
+.form-group-advance {
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+}
+.form-group-advance select{
+    width: 72%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background-color: #fff;
+}
+.form-group-advance-Project-Title {
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+}
+.form-group-advance-Project-description {
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+}
+.form-group-advance-Project-Title label {
+    display: flex;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 1rem;
+}
+
+.form-group-advance label {
+    display: flex;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 1rem;
+}
+
+.form-group-advance-Project-Title input {
+    width: 81%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background-color: #fff;
+    color: #000;
+}
+.form-group-advance-Project-description label {
+    display: flex;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 1rem;
+}
+.form-group-advance-Project-description textarea {
+    width: 81%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background-color: #fff;
+}
+.form-group-advance input {
+    width: 72%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background-color: #fff;
+    color: #000;
+}
+.form-group-advance1{
+    display: flex;
+    gap: 5%;
+}
+.payment-method-group{
+    display: flex;
+    gap: 20%;
+    justify-content: center;
+}
+.payment-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.payment-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.payment-method-group {
+    display: flex;
+    gap: 16px;
+    margin-top: 4px;
+}
+
+.payment-method-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+
+.payment-method-label input[type="radio"] {
+    margin: 0;
+    cursor: pointer;
+}
 .form-group input:focus,
 .form-group textarea:focus {
     /* outline: none;
