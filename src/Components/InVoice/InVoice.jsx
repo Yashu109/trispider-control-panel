@@ -194,12 +194,12 @@ const InvoiceComponent = ({ invoiceData, project, onClose }) => {
     };
 
     const rate = parseFloat(project?.totalPayment || 0);
-    const discountRate = 36.47 / 100;
+    // const discountRate = parseFloat(project?.discount)/100;
     const gstRate = 5 / 100;
     const packagingFee = 12.91;
 
     const baseAmount = rate * quantity;
-    const discountAmount = baseAmount * discountRate;
+    const discountAmount = parseFloat(project?.discount)
     const taxableAmount = baseAmount - discountAmount;
     const cgstAmount = taxableAmount * (gstRate / 2);
     const sgstAmount = taxableAmount * (gstRate / 2);
@@ -335,7 +335,7 @@ const InvoiceComponent = ({ invoiceData, project, onClose }) => {
                                             /> */}
                                         </td>
                                         <td>{project?.totalPayment || ''}</td>
-                                        <td>{project?.discount || ''}%</td>
+                                        <td>{project?.discount || ''}</td>
                                         <td>{formatCurrency(taxableAmount)}</td>
                                         <td>9%</td>
                                         <td>9%</td>

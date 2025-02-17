@@ -81,7 +81,7 @@
 
 .toggle-password {
     position: absolute;
-    /* right: 14px; */
+    right: 14px;
     top: 50%;
     transform: translateY(-50%);
     background: none;
@@ -89,7 +89,8 @@
     cursor: pointer;
     color: #64748b;
     padding: 4px;
-    display: flex;
+    /* display: flex
+; */
     align-items: center;
     transition: color 0.2s;
 }
@@ -152,12 +153,13 @@
 /* Summary Cards */
 .summary-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
     gap: 25px;
     margin-bottom: 35px;
 }
 
 .summary-card {
+    cursor: pointer;
     background: #ffffff;
     padding: 25px;
     border-radius: 12px;
@@ -336,6 +338,179 @@
   .action-button.cancel {
     background-color: #ef4444;
     color: white;
+  }
+  /* Spend Card Styles */
+.clickable {
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .clickable:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+  
+  .spend-summary-card {
+    position: relative;
+    padding-bottom: 40px;
+  }
+  
+  .spend-icon {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    opacity: 0.7;
+  }
+  
+  .spend-summary-text {
+    font-size: 12px;
+    margin-top: 10px;
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .spend-actions {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+  }
+  
+  .quick-add-spend {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  
+  .click-to-view {
+    position: absolute;
+    bottom: 10px;
+    right: 30px;
+    font-size: 12px;
+    color: #666;
+  }
+  
+  /* Spend Page Styles */
+  .spend-page {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .spend-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+  }
+  
+  .spend-header h1 {
+    margin: 0;
+  }
+  
+  .back-button {
+    padding: 8px 16px;
+    background-color: #f1f1f1;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  
+  .show-add-spend-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 20px;
+  }
+  
+  .add-spend-form {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+  }
+  
+  .spend-input-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  
+  .spend-amount-input, .spend-purpose-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    flex: 1;
+  }
+  
+  .add-spend-button {
+    padding: 8px 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .Protected-cancel-button {
+    padding: 8px 16px;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .spends-table-container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .spends-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .spends-table th, .spends-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .spends-table th {
+    background-color: #f8f8f8;
+    font-weight: 500;
+  }
+  
+  .spend-amount {
+    text-align: right;
+    font-weight: 500;
+  }
+  
+  .no-spends {
+    text-align: center;
+    color: #999;
+    padding: 20px;
   }
 /* Responsive Design */
 @media (max-width: 768px) {
