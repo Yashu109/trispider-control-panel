@@ -3,7 +3,7 @@ import { database } from '../../firebase';
 import { ref, onValue, update, push, get } from 'firebase/database';
 import { useNavigate } from 'react-router-dom';
 import {
-    Loader2, Clock, CheckCircle, XCircle,History
+    Loader2, Clock, CheckCircle, XCircle, History
 } from "lucide-react";
 import './EmployeePanel.css'
 const EmployeePanel = () => {
@@ -170,7 +170,7 @@ const EmployeePanel = () => {
     const handleClockIn = async () => {
         const currentEmployee = JSON.parse(sessionStorage.getItem('currentEmployee'));
         if (!currentEmployee) return;
-    
+
         setIsLoading(true);
         try {
             const now = new Date();
@@ -181,14 +181,14 @@ const EmployeePanel = () => {
                 clockIn: now.toISOString(),
                 status: 'active'
             };
-    
+
             // Add to current shift
             await update(ref(database, `attendance/${currentEmployee.employeeId}/current`), clockInData);
-            
+
             // Add to history immediately
             const historyRef = ref(database, `attendance/${currentEmployee.employeeId}/history`);
             await push(historyRef, clockInData);
-            
+
             setAttendanceStatus('in');
         } catch (error) {
             console.error('Error clocking in:', error);
@@ -197,29 +197,29 @@ const EmployeePanel = () => {
             setIsLoading(false);
         }
     };
-    
+
     const handleClockOut = async () => {
         const currentEmployee = JSON.parse(sessionStorage.getItem('currentEmployee'));
         if (!currentEmployee || !currentShift) return;
-    
+
         setIsLoading(true);
         try {
             const now = new Date();
             const clockOutTime = now.toISOString();
-    
+
             // Calculate duration in hours
             const duration = (new Date(clockOutTime) - new Date(currentShift.clockIn)) / (1000 * 60 * 60);
-    
+
             // Find the active record in history
             const historyRef = ref(database, `attendance/${currentEmployee.employeeId}/history`);
             const snapshot = await get(historyRef);
-            
+
             if (snapshot.exists()) {
                 const histories = Object.entries(snapshot.val());
-                const activeEntry = histories.find(([_, record]) => 
+                const activeEntry = histories.find(([_, record]) =>
                     record.status === 'active' && record.clockIn === currentShift.clockIn
                 );
-    
+
                 if (activeEntry) {
                     const [activeKey] = activeEntry;
                     // Update the existing history entry
@@ -230,10 +230,10 @@ const EmployeePanel = () => {
                     });
                 }
             }
-    
+
             // Clear current shift
             await update(ref(database, `attendance/${currentEmployee.employeeId}/current`), {});
-            
+
             setAttendanceStatus('out');
             setCurrentShift(null);
         } catch (error) {
@@ -395,8 +395,12 @@ const EmployeePanel = () => {
                     <h2>Attendance Tracking</h2>
                     <div className="current-status">
                         <Clock className="clock-icon" />
-                        <span>Current Status: {attendanceStatus === 'in' ? 'Checked In' : 'Checked Out'}</span>
+                        <span>Current Status:</span>
+                        <span className={`checkIn-Out ${attendanceStatus === 'in' ? 'checked-in' : 'checked-out'}`}>
+                            {attendanceStatus === 'in' ? 'Checked In' : 'Checked Out'}
+                        </span>
                     </div>
+
                 </div>
                 <button
                     className="view-history-button"
