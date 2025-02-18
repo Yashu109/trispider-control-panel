@@ -1,6 +1,6 @@
 /* src/Components/AdminProfile/ProtectedPayments.css */
 .protected-payments {
-    min-height: calc(115vh - 100px);
+    min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -17,6 +17,33 @@
     width: 100%;
     max-width: 450px;
     transition: transform 0.2s;
+}
+
+.collected-amount {
+    min-width: 200px;
+}
+
+.amount-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.amount-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 0;
+}
+
+.amount-label {
+    font-weight: 500;
+    color: #666;
+    margin-right: 8px;
+}
+
+.amount-value {
+    font-family: monospace;
 }
 
 .password-container:hover {
@@ -79,7 +106,7 @@
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
-.toggle-password {
+.protected-toggle-password {
     position: absolute;
     right: 14px;
     top: 50%;
@@ -89,8 +116,6 @@
     cursor: pointer;
     color: #64748b;
     padding: 4px;
-    /* display: flex
-; */
     align-items: center;
     transition: color 0.2s;
 }
@@ -275,48 +300,49 @@
     background-color: #f1f5f9;
     color: #475569;
 }
+
 .payment-edit-container {
     display: flex;
     flex-direction: column;
     gap: 8px;
-  }
-  
-  .payment-inputs {
+}
+
+.payment-inputs {
     display: flex;
     gap: 8px;
-  }
-  
-  .payment-method-select {
+}
+
+.payment-method-select {
     padding: 4px 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
     min-width: 80px;
-  }
-  
-  .amount-input {
+}
+
+.amount-input {
     width: 100px;
     padding: 4px 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
-  }
-  
-  .cash-amount {
+}
+
+.cash-amount {
     color: #15803d;
     font-weight: 500;
-  }
-  
-  .upi-amount {
+}
+
+.upi-amount {
     color: #0369a1;
     font-weight: 500;
-  }
-  
-  .action-buttons {
+}
+
+.action-buttons {
     display: flex;
     gap: 8px;
     justify-content: center;
-  }
-  
-  .action-button {
+}
+
+.action-button {
     padding: 4px 8px;
     border: none;
     border-radius: 4px;
@@ -324,61 +350,62 @@
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-  
-  .action-button.edit {
+}
+
+.action-button.edit {
     background-color: #e2e8f0;
-  }
-  
-  .action-button.save {
+}
+
+.action-button.save {
     background-color: #10b981;
     color: white;
-  }
-  
-  .action-button.cancel {
+}
+
+.action-button.cancel {
     background-color: #ef4444;
     color: white;
-  }
-  /* Spend Card Styles */
+}
+
+/* Spend Card Styles */
 .clickable {
     cursor: pointer;
     position: relative;
     transition: transform 0.2s, box-shadow 0.2s;
-  }
-  
-  .clickable:hover {
+}
+
+.clickable:hover {
     transform: translateY(-3px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  }
-  
-  .spend-summary-card {
+}
+
+.spend-summary-card {
     position: relative;
     padding-bottom: 40px;
-  }
-  
-  .spend-icon {
+}
+
+.spend-icon {
     position: absolute;
     bottom: 10px;
     right: 10px;
     opacity: 0.7;
-  }
-  
-  .spend-summary-text {
+}
+
+.spend-summary-text {
     font-size: 12px;
     margin-top: 10px;
     color: #666;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-  
-  .spend-actions {
+}
+
+.spend-actions {
     position: absolute;
     bottom: 10px;
     left: 10px;
-  }
-  
-  .quick-add-spend {
+}
+
+.quick-add-spend {
     display: flex;
     align-items: center;
     gap: 5px;
@@ -389,45 +416,45 @@
     border-radius: 4px;
     cursor: pointer;
     font-size: 12px;
-  }
-  
-  .click-to-view {
+}
+
+.click-to-view {
     position: absolute;
     bottom: 10px;
     right: 30px;
     font-size: 12px;
     color: #666;
-  }
-  
-  /* Spend Page Styles */
-  .spend-page {
+}
+
+/* Spend Page Styles */
+.spend-page {
     padding: 20px;
     max-width: 1200px;
     margin: 0 auto;
-  }
-  
-  .spend-header {
+}
+
+.spend-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 30px;
     flex-wrap: wrap;
-  }
-  
-  .spend-header h1 {
+}
+
+.spend-header h1 {
     margin: 0;
-  }
-  
-  .back-button {
+}
+
+.back-button {
     padding: 8px 16px;
     background-color: #f1f1f1;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-weight: 500;
-  }
-  
-  .show-add-spend-button {
+}
+
+.show-add-spend-button {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -438,80 +465,81 @@
     border-radius: 4px;
     cursor: pointer;
     margin-bottom: 20px;
-  }
-  
-  .add-spend-form {
+}
+
+.add-spend-form {
     background-color: white;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     margin-bottom: 30px;
-  }
-  
-  .spend-input-container {
+}
+
+.spend-input-container {
     display: flex;
     gap: 10px;
     margin-top: 10px;
-  }
-  
-  .spend-amount-input, .spend-purpose-input {
+}
+
+.spend-amount-input, .spend-purpose-input {
     padding: 8px 12px;
     border: 1px solid #ddd;
     border-radius: 4px;
     flex: 1;
-  }
-  
-  .add-spend-button {
+}
+
+.add-spend-button {
     padding: 8px 16px;
     background-color: #4CAF50;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-  }
-  
-  .Protected-cancel-button {
+}
+
+.Protected-cancel-button {
     padding: 8px 16px;
     background-color: #f44336;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-  }
-  
-  .spends-table-container {
+}
+
+.spends-table-container {
     background-color: white;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }
-  
-  .spends-table {
+}
+
+.spends-table {
     width: 100%;
     border-collapse: collapse;
-  }
-  
-  .spends-table th, .spends-table td {
+}
+
+.spends-table th, .spends-table td {
     padding: 12px;
     text-align: left;
     border-bottom: 1px solid #eee;
-  }
-  
-  .spends-table th {
+}
+
+.spends-table th {
     background-color: #f8f8f8;
     font-weight: 500;
-  }
-  
-  .spend-amount {
+}
+
+.spend-amount {
     text-align: right;
     font-weight: 500;
-  }
-  
-  .no-spends {
+}
+
+.no-spends {
     text-align: center;
     color: #999;
     padding: 20px;
-  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .protected-payments {
@@ -570,5 +598,140 @@
     .payments-table-container {
         box-shadow: none;
         border: 1px solid #e2e8f0;
+    }
+
+    .submit-button,
+    .action-button,
+    .back-button,
+    .show-add-spend-button,
+    .add-spend-button,
+    .Protected-cancel-button {
+        display: none;
+    }
+
+    .spend-summary-card .spend-icon,
+    .spend-summary-card .spend-actions,
+    .spend-summary-card .click-to-view {
+        display: none;
+    }
+
+    .amount-breakdown {
+        page-break-inside: avoid;
+    }
+
+    .payments-table {
+        page-break-inside: auto;
+    }
+
+    .payments-table tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+
+    .payments-table td,
+    .payments-table th {
+        border: 1px solid #e2e8f0;
+    }
+
+    .status-badge {
+        border: 1px solid currentColor;
+    }
+}
+
+/* Additional Styles */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #f8fafc;
+}
+
+.loading-container p {
+    margin-top: 16px;
+    color: #64748b;
+    font-size: 16px;
+}
+
+.toggle-password {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #64748b;
+    padding: 4px;
+    align-items: center;
+    transition: color 0.2s;
+}
+
+.payment-summary {
+    font-size: 13px;
+    color: #64748b;
+    margin: 4px 0;
+}
+
+.button-text {
+    margin-left: 4px;
+}
+
+.spend-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.add-spend-form h3 {
+    color: #1e293b;
+    margin-bottom: 16px;
+}
+
+.spends-table-container h3 {
+    color: #1e293b;
+    margin-bottom: 16px;
+}
+.select-wrapper select{
+border-radius: 10px;
+background-color: whitesmoke;
+}
+.select-wrapper {
+display: flex;
+}
+/* Toast Notifications */
+.toast-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 1000;
+    animation: slideIn 0.3s ease-out;
+}
+
+.toast-success {
+    border-left: 4px solid #10b981;
+}
+
+.toast-error {
+    border-left: 4px solid #ef4444;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
     }
 }

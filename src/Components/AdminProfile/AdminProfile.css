@@ -4,10 +4,11 @@
     min-height: 100vh;
     background-color: #f0f2f5;
     color: #000000;
+    width: 100%;
 }
 
 /* Sidebar Styles */
-.sidebar {
+/* .sidebar {
     width: 280px;
     background-color: #1a1a1a;
     color: white;
@@ -15,8 +16,178 @@
     height: 100vh;
     position: fixed;
     overflow-y: auto;
+} */
+/* Add these styles to your AdminProfile.css */
+
+.dashboard-container {
+    display: flex;
+    min-height: 100vh;
+}
+.sidebar:hover {
+    width: 250px;
+}
+.sidebar {
+    position: fixed;
+    width: 70px; /* Mini variant width */
+    height: 100vh;
+    background-color: #1f2937;
+    color: white;
+    transition: width 0.3s ease;
+    z-index: 1000;
 }
 
+.sidebar:hover,
+.sidebar.expanded {
+    width: 250px;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #374151;
+}
+
+.menu-toggle {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0.5rem;
+    margin-right: 0.5rem;
+}
+
+.header-text {
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar:hover .header-text,
+.sidebar.expanded .header-text {
+    opacity: 1;
+}
+
+.nav-item-container {
+    padding: 1rem 0;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    white-space: nowrap;
+}
+
+.nav-item:hover {
+    background-color: #374151;
+}
+
+.nav-item.active {
+    background-color: #374151;
+}
+
+.nav-icon {
+    min-width: 24px;
+    margin-right: 1rem;
+}
+
+.nav-text {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar:hover .nav-text,
+.sidebar.expanded .nav-text {
+    opacity: 1;
+}
+
+.nav-folder-header {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.nav-folder-header:hover {
+    background-color: #374151;
+}
+
+.nav-folder-content {
+    /* margin-left: 3rem; */
+    border-left: 1px solid #374151;
+    padding-left: 15px;
+
+}
+
+.nav-item.sub-item {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+.arrow-icon {
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar:hover .arrow-icon,
+.sidebar.expanded .arrow-icon {
+    opacity: 1;
+}
+
+.main-content {
+    margin-left: 70px;
+    flex: 1;
+    transition: margin-left 0.3s ease;
+    width: calc(100% - 70px);
+}
+
+.sidebar:hover ~ .main-content,
+.sidebar.expanded ~ .main-content {
+    margin-left: 250px;
+    width: calc(100% - 250px);
+}
+.sidebar:hover ~ .main-content {
+    margin-left: 250px;
+}
+/* Ensure proper responsive behavior */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 0;
+    }
+    
+    .sidebar:hover,
+    .sidebar.expanded {
+        width: 250px;
+    }
+    
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    .sidebar:hover ~ .main-content,
+    .sidebar.expanded ~ .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
+/* Hide scrollbar */
+.sidebar::-webkit-scrollbar {
+    display: none;
+}
+
+/* Ensure table container adjusts properly */
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    /* transition: width 0.3s ease; */
+}
 @media (max-width: 768px) {
     .sidebar {
         position: static;
@@ -84,9 +255,12 @@
 
 /* Main Content */
 .main-content {
+    /* flex: 1;
+    margin-left: 280px; */
+    margin-left: 70px; /* Exactly match sidebar width */
     flex: 1;
-    margin-left: 280px;
-    /* padding: 20px; */
+    transition: margin-left 0.3s ease;
+    padding: 0;
 }
 
 @media (max-width: 768px) {
@@ -649,6 +823,7 @@ tr:hover {
 .nav-folder {
     border-radius: 4px;
     margin-bottom: 4px;
+    margin-left: 8px;
 }
 
 .nav-folder-header {
@@ -672,10 +847,10 @@ tr:hover {
     color: white;
 }
 
-.nav-folder-content {
+/* .nav-folder-content {
     padding-left: 15px;
     margin-top: 4px;
-}
+} */
 
 .nav-item.sub-item {
     padding-left: 25px;
@@ -700,6 +875,10 @@ tr:hover {
     background-color: #b60a0a;
     color: #fff;
     border: none;
+}
+
+.admin-panel-header{
+    display: none;
 }
 .admin-panel-header h2{
     color: #1E3A8A;
@@ -739,7 +918,7 @@ tr:hover {
 
 /* If you need to adjust the actions column width */
 .actions-column {
-    min-width: 160px; /* Increased to accommodate the new button */
+    /* min-width: 160px;  */
 }
 /* Add to your AdminProfile.css */
 

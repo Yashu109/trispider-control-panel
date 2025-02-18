@@ -100,125 +100,111 @@
 
 import React, { useState } from 'react';
 import { 
-  ChevronDown, 
-  ChevronRight, 
-  Plus, 
-  Users,
-  CreditCard,
-  FileText,
-  LogOut
+    ChevronDown, 
+    ChevronRight, 
+    Plus, 
+    Users,
+    FileText,
+    CreditCard,
+    Clock,
+    LogOut,
+    Menu
 } from "lucide-react";
 
 const SidebarNav = ({
-  activeTab,
-  setActiveTab,
-  projects,
-  getReadyCount,
-  getInProgressCount,
-  getNearbyCount,
-  handleSignOut,
-  setShowAdminPanel
+    activeTab,
+    setActiveTab,
+    projects,
+    getReadyCount,
+    getInProgressCount,
+    getNearbyCount,
+    handleSignOut,
+    setShowAdminPanel
 }) => {
-  const [isTrackOrdersOpen, setIsTrackOrdersOpen] = useState(false);
+    const [isTrackOrdersOpen, setIsTrackOrdersOpen] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
 
-  const toggleTrackOrders = (e) => {
-    e.stopPropagation();
-    setIsTrackOrdersOpen(!isTrackOrdersOpen);
-  };
+    const toggleTrackOrders = (e) => {
+        e.stopPropagation();
+        setIsTrackOrdersOpen(!isTrackOrdersOpen);
+    };
 
-  const handleAddNew = () => {
-    setShowAdminPanel(true);
-    setActiveTab('new');
-  };
+    const handleAddNew = () => {
+        setShowAdminPanel(true);
+        setActiveTab('new');
+    };
 
-  return (
-    <div className="sidebar-wrapper">
-      <div className="sidebar-container">
-        <nav className="sidebar-nav">
-          {/* Add New Order */}
-          <div
-            className={`nav-item ${activeTab === 'new' ? 'active' : ''}`}
-            onClick={handleAddNew}
-          >
-            <Plus size={16} className="nav-icon" />
-            <span className="nav-text">Add New Order</span>
-          </div>
-
-          {/* Track Orders Folder */}
-          <div className="nav-folder">
-            <div
-              className={`nav-folder-header ${
-                (activeTab === 'orders' || activeTab === 'ready') ? 'active' : ''
-              }`}
-              onClick={toggleTrackOrders}
-            >
-              <FileText size={16} className="nav-icon" />
-              <span className="nav-text">Track Orders</span>
-              <span className="nav-arrow">
-                {isTrackOrdersOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-              </span>
+    return (
+        <nav className={`sidebar-nav ${isExpanded ? 'expanded' : ''}`}
+             onMouseEnter={() => setIsExpanded(true)}
+             onMouseLeave={() => setIsExpanded(false)}>
+            <div className="sidebar-header">
+                <button className="menu-toggle" onClick={() => setIsExpanded(!isExpanded)}>
+                    <Menu size={20} />
+                </button>
+                <span className="header-text">Admin Dashboard</span>
             </div>
 
-            {isTrackOrdersOpen && (
-              <div className="nav-folder-content">
-                <div
-                  className={`nav-item sub-item ${activeTab === 'orders' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('orders')}
-                >
-                  Total Orders ({projects.length})
+            <div className="nav-item-container">
+                <div className={`nav-item ${activeTab === 'new' ? 'active' : ''}`}
+                     onClick={handleAddNew}>
+                    <Plus size={20} className="nav-icon" />
+                    <span className="nav-text">Add New Order</span>
                 </div>
-                <div
-                  className={`nav-item sub-item ${activeTab === 'ready' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('ready')}
-                >
-                  Ready to Deliver ({getReadyCount()})
+
+                <div className="nav-folder">
+                    <div className={`nav-folder-header ${(activeTab === 'orders' || activeTab === 'ready') ? 'active' : ''}`}
+                         onClick={toggleTrackOrders}>
+                        <FileText size={20} className="nav-icon" />
+                        <span className="nav-text">Track Orders</span>
+                        <span className="arrow-icon">
+                            {isTrackOrdersOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                        </span>
+                    </div>
+
+                    {isTrackOrdersOpen && (
+                        <div className="nav-folder-content">
+                            <div className={`nav-item sub-item ${activeTab === 'orders' ? 'active' : ''}`}
+                                 onClick={() => setActiveTab('orders')}>
+                                <span className="nav-text">Total Orders ({projects.length})</span>
+                            </div>
+                            <div className={`nav-item sub-item ${activeTab === 'ready' ? 'active' : ''}`}
+                                 onClick={() => setActiveTab('ready')}>
+                                <span className="nav-text">Ready to Deliver ({getReadyCount()})</span>
+                            </div>
+                            <div className={`nav-item sub-item ${activeTab === 'progress' ? 'active' : ''}`}
+                                 onClick={() => setActiveTab('progress')}>
+                                <span className="nav-text">In Progress ({getInProgressCount()})</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
-                <div
-                  className={`nav-item sub-item ${activeTab === 'progress' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('progress')}
-                >
-                  In Progress ({getInProgressCount()})
+
+                <div className={`nav-item ${activeTab === 'payments' ? 'active' : ''}`}
+                     onClick={() => setActiveTab('payments')}>
+                    <CreditCard size={20} className="nav-icon" />
+                    <span className="nav-text">All Payments(Restricted)</span>
                 </div>
-              </div>
-            )}
-          </div>
 
-          {/* Payments */}
-          <div
-            className={`nav-item ${activeTab === 'payments' ? 'active' : ''}`}
-            onClick={() => setActiveTab('payments')}
-          >
-            <CreditCard size={16} className="nav-icon" />
-            <span className="nav-text">All Payments(Restricted)</span>
-          </div>
+                <div className={`nav-item ${activeTab === 'nearby' ? 'active' : ''}`}
+                     onClick={() => setActiveTab('nearby')}>
+                    <Clock size={20} className="nav-icon" />
+                    <span className="nav-text">Nearby Submission ({getNearbyCount()})</span>
+                </div>
 
-          {/* Nearby Submission */}
-          <div
-            className={`nav-item ${activeTab === 'nearby' ? 'active' : ''}`}
-            onClick={() => setActiveTab('nearby')}
-          >
-            <FileText size={16} className="nav-icon" />
-            <span className="nav-text">Nearby Submission ({getNearbyCount()})</span>
-          </div>
+                <div className={`nav-item ${activeTab === 'employees' ? 'active' : ''}`}
+                     onClick={() => setActiveTab('employees')}>
+                    <Users size={20} className="nav-icon" />
+                    <span className="nav-text">Manage Employees</span>
+                </div>
 
-          {/* Manage Employees */}
-          <div
-            className={`nav-item ${activeTab === 'employees' ? 'active' : ''}`}
-            onClick={() => setActiveTab('employees')}
-          >
-            <Users size={16} className="nav-icon" />
-            <span className="nav-text">Manage Employees</span>
-          </div>
-
-          {/* Sign Out */}
-          <div className="nav-item signout" onClick={handleSignOut}>
-            <LogOut size={16} className="nav-icon" />
-            <span className="nav-text">Sign Out</span>
-          </div>
+                <div className="nav-item signout" onClick={handleSignOut}>
+                    <LogOut size={20} className="nav-icon" />
+                    <span className="nav-text">Sign Out</span>
+                </div>
+            </div>
         </nav>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default SidebarNav;

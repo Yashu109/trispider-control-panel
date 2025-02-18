@@ -203,54 +203,6 @@ const AdminDashboard = () => {
         setFilterField('all');
     };
 
-    // const handleQueryAction = (query, action) => {
-    //     const database = getDatabase();
-
-    //     if (action === 'accepted') {
-    //         const projectRef = ref(database, `Accepted_Queries/${query.parentKey}`);
-    //         update(projectRef, {
-    //             queryStatus: 'Your query has been accepted and will be addressed soon.',
-    //             queryText: query.queryText,
-    //             // queryType: query.queryType,
-    //         })
-    //             .then(() => {
-    //                 const queryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
-    //                 return remove(queryRef);
-    //             })
-    //             .then(() => setShowQueriesModal(false))
-    //             .catch(error => console.error('Acceptance error:', error));
-    //     } else if (action === 'rejected') {
-    //         // setEditableQueryText(query.queryText);
-    //         setIsEditing(true);
-    //     }
-    // };
-    // const handleQueryAction = (query, action) => {
-    //     const database = getDatabase();
-
-    //     if (action === 'accepted') {
-    //         const projectRef = ref(database, `Accepted_Queries/${query.parentKey}`);
-    //         update(projectRef, {
-    //             queryStatus: 'Your query has been accepted and will be addressed soon.',
-    //             queryText: query.queryText,
-    //         })
-    //             .then(() => {
-    //                 const queryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
-    //                 return remove(queryRef);
-    //             })
-    //             .then(() => setShowQueriesModal(false))
-    //             .catch(error => console.error('Acceptance error:', error));
-    //     } else if (action === 'rejected') {
-    //         // Delete the query directly when rejected
-    //         const queryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
-    //         remove(queryRef)
-    //             .then(() => {
-    //                 setShowQueriesModal(false);
-    //             })
-    //             .catch(error => console.error('Rejection error:', error));
-    //     }
-    // };
-
-    // In AdminDashboard.js
     const handleQueryAction = (query, action) => {
         const database = getDatabase();
 
@@ -413,23 +365,6 @@ const AdminDashboard = () => {
             }
         }
     });
-
-    // const handleViewPDF = async (projectId) => {
-    //     try {
-    //         const storage = getStorage();
-    //         const pdfRef = storageRef(storage, `quotations/${projectId}.pdf`);
-    //         const url = await getDownloadURL(pdfRef);
-    //         setViewingPDF({
-    //             show: true,
-    //             url: url,
-    //             projectId: projectId
-    //         });
-    //     } catch (error) {
-    //         console.error('Error viewing PDF:', error);
-    //         alert('Error viewing PDF. Please try again.');
-    //     }
-    // };
-
     const handleViewPDF = async (projectId) => {
         try {
             const storage = getStorage();
@@ -604,9 +539,6 @@ console.log(projectId,'projectId')
         );
     };
 
-
-
-    // Render Functions
     const renderMainContent = () => {
         if (showAdminPanel) {
             return (
@@ -772,69 +704,7 @@ console.log(projectId,'projectId')
                                     <td className="truncate-cell" data-full-text={project.referredBy}>{project.referredBy}</td>
                                     <td>{project.timeline ? new Date(project.timeline).toLocaleDateString() : 'Not set'}</td>
                                     <td>{project.projectStatus || 'Start'}</td>
-                                    {/* <td className="assignee-cell">
-                                        {project.assignments && project.assignments.length > 0 ? (
-                                            project.assignments
-                                                .filter(assignment => assignment.assignee && assignment.assignee.trim() !== '')
-                                                .map((assignment, index) => (
-                                                    <div key={index} className="assignment-details">
-                                                        <div className="assignee-info">
-                                                            <div className="truncate-cell"
-                                                                data-full-text={`${assignment.assignee} (${assignment.percentage}%)`}>
-                                                                <strong>{assignment.assignee}</strong>
-                                                                <span className="assignment-percentage">
-                                                                    ({assignment.percentage || 'N/A'}%)
-                                                                </span>
-                                                            </div>
-                                                            {assignment.description && (
-                                                                <div className="truncate-cell description-cell"
-                                                                    data-full-text={assignment.description}>
-                                                                    {assignment.description}
-                                                                </div>
-                                                            )}
-                                                            
-                                                        </div>
-                                                    </div>
-                                                ))
-                                        ) : null}
-                                    </td> */}
-                                    {/* <td className="assignee-cell">
-                                        {project.assignments && project.assignments.length > 0 ? (
-                                            project.assignments
-                                                .filter((assignment) => assignment.assignee && assignment.assignee.trim() !== '')
-                                                .map((assignment, index) => (
-                                                    <div key={index} className="assignment-details">
-                                                        <div className="assignee-info">
-                                                            <div
-                                                                className="truncate-cell"
-                                                                data-full-text={`${assignment.assignee} (${assignment.percentage}%)`}
-                                                            >
-                                                                <strong>{assignment.assignee}</strong>
-                                                                <span className="assignment-percentage">
-                                                                    ({assignment.percentage || 'N/A'}%)
-                                                                </span>
-                                                            </div>
-                                                            {assignment.taskCompleted && (
-                                                                <div
-                                                                    className="truncate-cell task-completed-cell"
-                                                                    data-full-text={assignment.taskCompleted}
-                                                                >
-                                                                    <strong>Task Status:</strong> {assignment.taskCompleted}
-                                                                </div>
-                                                            )}
-                                                            {assignment.description && (
-                                                                <div
-                                                                    className="truncate-cell description-cell"
-                                                                    data-full-text={assignment.description}
-                                                                >
-                                                                    <strong>Description:</strong> {assignment.description}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ))
-                                        ) : null}
-                                    </td> */}
+                                    
                                     <td className="assignee-cell">
                                         {project.assignments && project.assignments.length > 0 ? (
                                             [...project.assignments]
@@ -943,28 +813,24 @@ console.log(projectId,'projectId')
     // Main Render
     return (
         <div className="dashboard-container">
-            <div className="sidebar">
-                <div className="admin-info">
-                    <h2>Admin Dashboard</h2>
-                    <p>{auth.currentUser?.email}</p>
-                </div>
-                <SidebarNav
-                    activeTab={activeTab}
-                    setActiveTab={handleTabChange}
-                    projects={projects}
-                    getReadyCount={getReadyCount}
-                    getInProgressCount={getInProgressCount}
-                    getNearbyCount={getNearbyCount}
-                    handleSignOut={handleSignOut}
-                    setShowAdminPanel={setShowAdminPanel}
-                />
-            </div>
+             <aside className="sidebar">
+            <SidebarNav
+                activeTab={activeTab}
+                setActiveTab={handleTabChange}
+                projects={projects}
+                getReadyCount={getReadyCount}
+                getInProgressCount={getInProgressCount}
+                getNearbyCount={getNearbyCount}
+                handleSignOut={handleSignOut}
+                setShowAdminPanel={setShowAdminPanel}
+            />
+        </aside>
 
-            <div className="main-content">
-                <div className="table-section">
-                    {renderMainContent()}
-                </div>
+        <main className="main-content">
+            <div className="table-section">
+                {renderMainContent()}
             </div>
+        </main>
 
             {/* Edit Modal */}
             {showEditModal && editingProject && (
@@ -1095,158 +961,6 @@ console.log(projectId,'projectId')
                                     </select>
                                 </div>
 
-                                {/* <div className="form-group assignments-section">
-                                    <label>Assignments</label>
-                                    {(editingProject.assignments || [{ assignee: '', description: '', percentage: '100' }]).map((assignment, index) => (
-                                        <div key={index} className="assignment-row">
-                                            {assignment.taskCompleted && (
-                                                <div className="task-completed-display">
-                                                    <strong>Task Status:</strong> {assignment.taskCompleted}
-                                                </div>
-                                            )}
-                                            <div className="assignment-inputs">
-                                                <select
-                                                    value={assignment.assignee || ''}
-                                                    onChange={(e) => {
-                                                        const updatedAssignments = [...(editingProject.assignments || [])];
-                                                        updatedAssignments[index] = {
-                                                            ...updatedAssignments[index],
-                                                            assignee: e.target.value
-                                                        };
-                                                        const totalAssignees = updatedAssignments.filter(a => a.assignee.trim() !== '').length;
-                                                        if (totalAssignees > 0) {
-                                                            const equalPercentage = Math.floor(100 / totalAssignees);
-                                                            const remainder = 100 - (equalPercentage * totalAssignees);
-
-                                                            updatedAssignments.forEach((a, i) => {
-                                                                if (a.assignee.trim() !== '') {
-                                                                    // Add remainder to first assignee to ensure total is 100%
-                                                                    a.percentage = i === 0 ?
-                                                                        (equalPercentage + remainder).toString() :
-                                                                        equalPercentage.toString();
-                                                                } else {
-                                                                    a.percentage = '0';
-                                                                }
-                                                            });
-                                                        }
-                                                        setEditingProject({
-                                                            ...editingProject,
-                                                            assignments: updatedAssignments,
-                                                            Assign_To: updatedAssignments
-                                                                .map(a => a.assignee)
-                                                                .filter(name => name.trim() !== '')
-                                                                .join(', ')
-                                                        });
-                                                    }}
-                                                    className="assignee-input"
-                                                    disabled={employeesLoading}
-                                                >
-                                                    <option value="">Select Employee</option>
-                                                    {employees.map((employee) => (
-                                                        <option key={employee.id} value={employee.name}>
-                                                            {employee.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <textarea
-                                                    placeholder="Task description"
-                                                    value={assignment.description || ''}
-                                                    onChange={(e) => {
-                                                        const updatedAssignments = [...(editingProject.assignments || [])];
-                                                        updatedAssignments[index] = {
-                                                            ...updatedAssignments[index],
-                                                            description: e.target.value
-                                                        };
-                                                        setEditingProject({
-                                                            ...editingProject,
-                                                            assignments: updatedAssignments
-                                                        });
-                                                    }}
-                                                    className="description-input"
-                                                    rows="3"
-                                                />
-
-                                                <div className="percentage-display">
-                                                    Percentage: {assignment.percentage}%
-                                                </div>
-                                                {index > 0 && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            const updatedAssignments = editingProject.assignments.filter((_, i) => i !== index);
-
-                                                            // Recalculate percentages after removing
-                                                            const totalRemaining = updatedAssignments.filter(a => a.assignee.trim() !== '').length;
-                                                            if (totalRemaining > 0) {
-                                                                const equalPercentage = Math.floor(100 / totalRemaining);
-                                                                const remainder = 100 - (equalPercentage * totalRemaining);
-
-                                                                updatedAssignments.forEach((a, i) => {
-                                                                    if (a.assignee.trim() !== '') {
-                                                                        a.percentage = i === 0 ?
-                                                                            (equalPercentage + remainder).toString() :
-                                                                            equalPercentage.toString();
-                                                                    } else {
-                                                                        a.percentage = '0';
-                                                                    }
-                                                                });
-                                                            }
-
-                                                            setEditingProject({
-                                                                ...editingProject,
-                                                                assignments: updatedAssignments,
-                                                                Assign_To: updatedAssignments
-                                                                    .map(a => a.assignee)
-                                                                    .filter(name => name.trim() !== '')
-                                                                    .join(', ')
-                                                            });
-                                                        }}
-                                                        className="remove-assignment-btn"
-                                                    >
-                                                        Remove
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            const currentAssignments = editingProject.assignments || [];
-                                            const updatedAssignments = [
-                                                ...currentAssignments,
-                                                { assignee: '', description: '', percentage: '0' }
-                                            ];
-
-                                            // Recalculate percentages for existing assignees
-                                            const totalAssignees = updatedAssignments.filter(a => a.assignee.trim() !== '').length;
-                                            if (totalAssignees > 0) {
-                                                const equalPercentage = Math.floor(100 / totalAssignees);
-                                                const remainder = 100 - (equalPercentage * totalAssignees);
-
-                                                updatedAssignments.forEach((a, i) => {
-                                                    if (a.assignee.trim() !== '') {
-                                                        a.percentage = i === 0 ?
-                                                            (equalPercentage + remainder).toString() :
-                                                            equalPercentage.toString();
-                                                    } else {
-                                                        a.percentage = '0';
-                                                    }
-                                                });
-                                            }
-
-                                            setEditingProject({
-                                                ...editingProject,
-                                                assignments: updatedAssignments
-                                            });
-                                        }}
-                                        className="add-assignment-btn"
-                                    >
-                                        Add Assignment
-                                    </button>
-
-                                </div> */}
                                 <div className="form-group assignments-section">
                                     <label>Assignments (Task Order Required)</label>
                                     {(editingProject.assignments || [{
