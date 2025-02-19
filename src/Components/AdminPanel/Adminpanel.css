@@ -822,6 +822,7 @@
     box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
 }
 .view-button {
+    display: none;
     background-color: #4CAF50;
     color: white;
     padding: 8px 16px;
@@ -833,4 +834,149 @@
 
 .view-button:hover {
     background-color: #45a049;
+}
+.pdf-list-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-left: 8px;
+}
+
+.pdf-list-button:hover {
+    background-color: #357abd;
+}
+
+.pdf-list-modal {
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.pdf-list-container {
+    padding: 20px;
+    overflow-y: auto;
+    max-height: calc(80vh - 100px);
+}
+
+.pdf-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+.pdf-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    transition: transform 0.2s;
+}
+
+.pdf-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.pdf-name {
+    margin: 8px 0;
+    font-weight: 500;
+    text-align: center;
+    word-break: break-word;
+}
+
+.view-pdf-button {
+    padding: 6px 12px;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-top: 8px;
+}
+
+.view-pdf-button:hover {
+    background-color: #45a049;
+}
+
+.loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+.spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.no-pdfs {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-style: italic;
+}
+.status-label {
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 12px;
+    margin-left: 10px;
+}
+
+.status-label.saved {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.action-buttons {
+    margin-top: 10px;
+}
+
+.save-button, .cancel-button {
+    padding: 5px 10px;
+    margin-right: 5px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.save-button {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.cancel-button {
+    background-color: #f44336;
+    color: white;
+}
+
+.save-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
 }

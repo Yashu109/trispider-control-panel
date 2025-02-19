@@ -7,7 +7,9 @@ import Quotation from '../Quotation/Quotation'
 import Splitslayout from '../Splitslayout/Splitslayout'
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-import { uploadString, ref as storageRef, getDownloadURL } from 'firebase/storage';
+// import { listAll, uploadString,uploadBytes, ref as storageRef, getDownloadURL } from 'firebase/storage';
+import { ref as storageRef, getDownloadURL,uploadString, getBytes, deleteObject,uploadBytes, listAll } from 'firebase/storage';
+import { FileText, X } from 'lucide-react';
 
 const AdminPanel = () => {
     const navigate = useNavigate();
@@ -34,12 +36,16 @@ const AdminPanel = () => {
     const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [projectDataPayment, setProjectDataPayment] = useState({
-        // ... (previous projectData fields)
-        advancePaymentMethod: 'cash', // default to cash
-    });
+    // const [projectDataPayment, setProjectDataPayment] = useState({
+    //     // ... (previous projectData fields)
+    //     advancePaymentMethod: 'cash', // default to cash
+    // });
     const [useSameNumber, setUseSameNumber] = useState(true);
 
+    const [showPdfList, setShowPdfList] = useState(false);
+    const [pdfList, setPdfList] = useState([]);
+    const [pdfLoading, setPdfLoading] = useState(false);
+    const [quotationActions, setQuotationActions] = useState({});
     // Helper function to calculate even percentage splits
     const calculateEvenSplit = (numberOfPeople) => {
         const percentage = (100 / numberOfPeople).toFixed(0);
@@ -78,29 +84,6 @@ const AdminPanel = () => {
     const [message, setMessage] = useState('');
     const [editingId, setEditingId] = useState(null);
 
-    // Assignment handlers
-    // const handleAddAssignment = () => {
-    //     const newAssignments = [
-    //         ...assignments,
-    //         { id: assignments.length + 1, assignee: '' }
-    //     ];
-
-    //     // Calculate even split for all assignees
-    //     const evenPercentage = calculateEvenSplit(newAssignments.length);
-    //     newAssignments.forEach(assignment => {
-    //         assignment.percentage = evenPercentage;
-    //     });
-
-    //     setAssignments(newAssignments);
-    //     setProjectData(prev => ({
-    //         ...prev,
-    //         assignments: newAssignments
-    //     }));
-
-    //     // Display message showing the split
-    //     setMessage(`Work split evenly: ${evenPercentage}% per person`);
-    //     setTimeout(() => setMessage(''), 3000);
-    // };
     const handleAddAssignment = () => {
         const newAssignments = [
             ...assignments,
@@ -123,27 +106,7 @@ const AdminPanel = () => {
         setMessage(`Work split evenly: ${evenPercentage}% per person`);
         setTimeout(() => setMessage(''), 3000);
     };
-    //  
-    //     if (assignments.length > 1) {
-    //         const newAssignments = assignments.filter(assignment => assignment.id !== id);
 
-    //         // Recalculate even split for remaining assignees
-    //         const evenPercentage = calculateEvenSplit(newAssignments.length);
-    //         newAssignments.forEach(assignment => {
-    //             assignment.percentage = evenPercentage;
-    //         });
-
-    //         setAssignments(newAssignments);
-    //         setProjectData(prev => ({
-    //             ...prev,
-    //             assignments: newAssignments
-    //         }));
-
-    //         // Display message showing the new split
-    //         setMessage(`Work split evenly: ${evenPercentage}% per person`);
-    //         setTimeout(() => setMessage(''), 3000);
-    //     }
-    // };
     const handleRemoveAssignment = (id) => {
         if (assignments.length > 1) {
             const newAssignments = assignments.filter(assignment => assignment.id !== id);
@@ -165,30 +128,6 @@ const AdminPanel = () => {
             setTimeout(() => setMessage(''), 3000);
         }
     };
-    // const handleAssignmentChange = (id, field, value) => {
-    //     if (field === 'assignee') {
-    //         const updatedAssignments = assignments.map(assignment => {
-    //             if (assignment.id === id) {
-    //                 return { ...assignment, assignee: value };
-    //             }
-    //             return assignment;
-    //         });
-
-    //         setAssignments(updatedAssignments);
-
-    //         // Update both assignments array and Assign_To field
-    //         const assigneeNames = updatedAssignments
-    //             .map(a => a.assignee)
-    //             .filter(name => name.trim() !== '')
-    //             .join(', ');
-
-    //         setProjectData(prev => ({
-    //             ...prev,
-    //             assignments: updatedAssignments,
-    //             Assign_To: assigneeNames
-    //         }));
-    //     }
-    // };
 
     const handleAssignmentChange = (id, field, value) => {
         const updatedAssignments = assignments.map(assignment => {
@@ -226,14 +165,6 @@ const AdminPanel = () => {
         }
         setMessage('');
     };
-
-    // const handleChange = (e) => {
-    //     const { name, value } = e.target;
-    //     setProjectData(prevState => ({
-    //         ...prevState,
-    //         [name]: value
-    //     }));
-    // };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -427,34 +358,62 @@ const AdminPanel = () => {
                 throw new Error('Quotation component reference is missing');
             }
 
-            const canvas = await html2canvas(quotationRef.current, {
-                scale: 2,
-                useCORS: true,
-                logging: true,
-                backgroundColor: '#ffffff'
-            });
+            try {
+                // Create the PDF
+                const canvas = await html2canvas(quotationRef.current, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: true,
+                    backgroundColor: '#ffffff'
+                });
 
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const imgWidth = 110;
-            // const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            const imgHeight = 300
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const imgWidth = 110;
+                const imgHeight = 300;
 
-            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-            const pdfData = pdf.output('datauristring');
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                const pdfData = pdf.output('datauristring');
 
-            // Upload PDF
-            const pdfRef = storageRef(storage, `quotations/${projectId}.pdf`);
-            await uploadString(pdfRef, pdfData, 'data_url');
-            const downloadUrl = await getDownloadURL(pdfRef);
-            setPdfUrl(downloadUrl);
+                // Upload PDF with retry mechanism
+                const pdfRef = storageRef(storage, `quotations/${projectId}.pdf`);
+                await uploadString(pdfRef, pdfData, 'data_url');
 
-            // Success message and reset
-            setMessage('Order created successfully!');
-            setTimeout(() => {
-                resetForm();
-                setMessage('');
-            }, 2000);
+                // Add a small delay to ensure Firebase has processed the upload
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Try to get the download URL with retries
+                let attempts = 0;
+                const maxAttempts = 3;
+                let downloadUrl = null;
+
+                while (attempts < maxAttempts && !downloadUrl) {
+                    try {
+                        downloadUrl = await getDownloadURL(pdfRef);
+                    } catch (error) {
+                        attempts++;
+                        if (attempts === maxAttempts) {
+                            throw error;
+                        }
+                        // Wait before retrying
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                }
+
+                setPdfUrl(downloadUrl);
+
+                // Success message and reset
+                setMessage('Order created successfully!');
+                setTimeout(() => {
+                    resetForm();
+                    setMessage('');
+                }, 2000);
+
+            } catch (pdfError) {
+                console.error('PDF generation/upload error:', pdfError);
+                setMessage('Order saved but PDF generation failed. Please try viewing the PDF later.');
+                // The order is still created even if PDF fails
+            }
 
         } catch (error) {
             console.error('Submission error:', error);
@@ -463,90 +422,6 @@ const AdminPanel = () => {
             setIsLoading(false);
         }
     };
-    //    const handleSubmit = async (e) => {
-    //     e.preventDefault();
-    //     setIsLoading(true);
-    //     setMessage('');
-
-    //     try {
-    //         const projectId = editingId || await generateProjectId();
-    //         const projectRef = ref(database, `projects/${projectId}`);
-    //         const timestamp = new Date().toISOString().split("T")[0];
-
-    //         const finalProjectData = {
-    //             ...projectData,
-    //             assignments: assignments.filter(a => a.assignee.trim() !== ''),
-    //             timestamp,
-    //             projectId,
-    //         };
-
-    //         await set(projectRef, finalProjectData);
-
-    //         if (!quotationRef.current) {
-    //             throw new Error('Quotation component reference is missing.');
-    //         }
-
-    //         const options = {
-    //             scale: 2,
-    //             useCORS: true,
-    //             logging: true,
-    //             backgroundColor: '#ffffff',
-    //         };
-
-    //         // Debug logging
-    //         console.log('Generating canvas for quotation');
-    //         const canvas = await html2canvas(quotationRef.current, options);
-    //         console.log('Canvas generation successful');
-
-    //         const blob = await new Promise((resolve, reject) => {
-    //             canvas.toBlob((blob) => {
-    //                 if (blob) resolve(blob);
-    //                 else reject(new Error('Failed to create PNG blob.'));
-    //             }, 'image/png');
-    //         });
-
-    //         const imgData = await new Promise((resolve, reject) => {
-    //             const reader = new FileReader();
-    //             reader.onload = () => resolve(reader.result);
-    //             reader.onerror = () => reject(new Error('Failed to read PNG blob.'));
-    //             reader.readAsDataURL(blob);
-    //         });
-
-    //         const imgWidth = 210;
-    //         const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-    //         const pdf = new jsPDF('p', 'mm', 'a4');
-    //         pdf.setFillColor(255, 255, 255);
-    //         pdf.rect(0, 0, imgWidth, 297, 'F');
-    //         pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight, '', 'FAST');
-
-    //         const pdfBase64 = pdf.output('datauristring');
-
-    //         // Debug logging for PDF upload
-    //         console.log('Preparing to upload PDF to secondary database');
-    //         const secondaryRef = ref(storage, `quotations/${projectId}`);
-
-    //         try {
-    //             await set(secondaryRef, {
-    //                 quotationPDF: pdfBase64,
-    //                 projectId,
-    //                 timestamp,
-    //             });
-    //             console.log('PDF uploaded successfully');
-    //         } catch (uploadError) {
-    //             console.error('Error uploading PDF to secondary database:', uploadError);
-    //             throw uploadError;
-    //         }
-
-    //         alert(`Order Created Successfully!\nProject ID: ${projectId}`);
-    //         resetForm();
-    //     } catch (error) {
-    //         console.error('Full submission error:', error);
-    //         setMessage(`Error: ${error.message}`);
-    //     } finally {
-    //         setIsLoading(false);
-    //     }
-    // };
 
     const handleViewPdf = () => {
         if (pdfUrl) {
@@ -788,7 +663,7 @@ const AdminPanel = () => {
     };
 
     const handleChangeNumber = (e) => {
-        const { name, value, type, checked } = e.target;
+        const { name, value, checked } = e.target;
 
         if (name === 'useSameNumber') {
             setUseSameNumber(checked);
@@ -827,6 +702,127 @@ const AdminPanel = () => {
             ...prevState,
             [name]: newValue
         }));
+    }; 
+    
+    const handleSaveQuotation = async (projectId) => {
+        try {
+            setMessage('Moving quotation to final...');
+    
+            // Ensure projectId doesn't have .pdf extension
+            const cleanProjectId = projectId.replace('.pdf', '');
+    
+            // Create storage references
+            const sourceRef = storageRef(storage, `quotations/${cleanProjectId}.pdf`);
+            const finalRef = storageRef(storage, `finalquotation/${cleanProjectId}.pdf`);
+    
+            // Check if the source file exists and get its bytes
+            const sourceBytes = await getBytes(sourceRef);
+    
+            // Upload to final quotation folder
+            await uploadBytes(finalRef, sourceBytes, {
+                contentType: 'application/pdf',
+            });
+    
+            // Delete the original file after successful copy
+            await deleteObject(sourceRef);
+    
+            // Update the quotation actions state to mark as saved
+            setQuotationActions(prev => ({
+                ...prev,
+                [`${cleanProjectId}.pdf`]: 'saved',
+            }));
+    
+            // Update the PDF list to reflect that this PDF is now final
+            setPdfList(prevList =>
+                prevList.map(pdf =>
+                    pdf.name === `${cleanProjectId}.pdf`
+                        ? { ...pdf, isFinal: true, action: 'saved' }
+                        : pdf
+                )
+            );
+    
+            setMessage('Quotation moved to final quotations successfully!');
+    
+            // Refresh the list
+            await fetchPdfList();
+    
+        } catch (error) {
+            console.error('Error moving quotation:', error);
+            if (error.code === 'storage/object-not-found') {
+                setMessage('Error: Source PDF not found.');
+            } else {
+                setMessage(`Error: Failed to move quotation - ${error.message}`);
+            }
+        }
+    };
+    const fetchPdfList = async () => {
+        setPdfLoading(true);
+        try {
+            // List all items in quotations folder
+            const listRef = storageRef(storage, 'quotations');
+            const result = await listAll(listRef);
+    
+            // List all items in finalquotation folder
+            const finalRef = storageRef(storage, 'finalquotation');
+            const finalResult = await listAll(finalRef);
+            const finalFiles = finalResult.items.map(item => item.name);
+    
+            // Get metadata and check if they exist in finalquotation
+            const pdfs = await Promise.all(
+                result.items.map(async (itemRef) => {
+                    try {
+                        const url = await getDownloadURL(itemRef);
+                        const fileName = itemRef.name;
+    
+                        return {
+                            name: fileName,
+                            url,
+                            isFinal: finalFiles.includes(fileName),
+                            action: quotationActions[fileName] || (finalFiles.includes(fileName) ? 'saved' : 'pending'),
+                        };
+                    } catch (error) {
+                        console.error(`Error fetching metadata for ${itemRef.name}:`, error);
+                        return null;
+                    }
+                })
+            );
+    
+            // Sort PDFs in descending order based on numeric values
+            const validPdfs = pdfs.filter(pdf => pdf !== null).sort((a, b) => {
+                const numA = parseInt(a.name.replace('KS', '').replace('.pdf', '')) || 0;
+                const numB = parseInt(b.name.replace('KS', '').replace('.pdf', '')) || 0;
+                return numB - numA; // Descending order
+            });
+    
+            setPdfList(validPdfs);
+    
+            if (validPdfs.length === 0) {
+                setMessage('No PDFs found');
+            }
+        } catch (error) {
+            console.error('Error fetching PDF list:', error);
+            setMessage('Error loading PDF list. Please try again.');
+        } finally {
+            setPdfLoading(false);
+        }
+    };
+    
+    const handleCancelQuotation = (projectId) => {
+        setQuotationActions(prev => ({
+            ...prev,
+            [`${projectId}.pdf`]: 'canceled'
+        }));
+
+        setPdfList(prevList =>
+            prevList.filter(pdf => pdf.name !== `${projectId}.pdf`)
+        );
+
+        setMessage(`Quotation ${projectId} removed from list.`);
+    };
+
+    const handleOpenPdfList = () => {
+        setShowPdfList(true);
+        fetchPdfList();
     };
     return (
         <Splitslayout
@@ -1311,6 +1307,14 @@ const AdminPanel = () => {
                             >
                                 {formStage === 'basic' ? 'Next' : 'Back'}
                             </button>
+                            <button
+                                type="button"
+                                className="pdf-list-button"
+                                onClick={handleOpenPdfList}
+                            >
+                                <FileText size={16} />
+                                PDF List
+                            </button>
                             {formStage === 'details' && (
                                 <button
                                     type="submit"
@@ -1343,6 +1347,82 @@ const AdminPanel = () => {
                     </div>
                 </form>
             </div>
+            {showPdfList && (
+            <div className="modal-overlay">
+                <div className="modal-content pdf-list-modal">
+                    <div className="modal-header">
+                        <h2>Saved Quotations</h2>
+                        <button
+                            onClick={() => setShowPdfList(false)}
+                            className="close-button"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+                    <div className="pdf-list-container">
+                        {pdfLoading ? (
+                            <div className="loading-spinner">
+                                <div className="spinner"></div>
+                                <p>Loading PDFs...</p>
+                            </div>
+                        ) : pdfList.length === 0 ? (
+                            <div className="no-pdfs">
+                                No PDFs found
+                            </div>
+                        ) : (
+                            <div className="pdf-grid">
+                                {pdfList.map((pdf, index) => (
+                                    <div key={index} className="pdf-item">
+                                        <FileText size={24} />
+                                        <span className="pdf-name">
+                                            {pdf.name.replace('.pdf', '')}
+                                        </span>
+                                        <div className="pdf-actions">
+                                            <button
+                                                onClick={() => window.open(pdf.url, '_blank')}
+                                                className="view-pdf-button"
+                                            >
+                                                View PDF
+                                            </button>
+                                            {!pdf.isFinal && (
+                                                <div className="action-buttons">
+                                                    <button
+                                                        onClick={() => handleSaveQuotation(pdf.name.replace('.pdf', ''))}
+                                                        className="save-button"
+                                                        disabled={pdf.action === 'saved'}
+                                                    >
+                                                        Save to Final
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleCancelQuotation(pdf.name.replace('.pdf', ''))}
+                                                        className="cancel-button"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            )}
+                                            {pdf.isFinal && (
+                                                <span className="status-label saved">
+                                                    Already Saved
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {message && (
+                            <div className={`modal-message ${
+                                message.includes('Error') ? 'error' : 'success'
+                            }`}>
+                                {message}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        )}
+
         </Splitslayout>
     );
 };

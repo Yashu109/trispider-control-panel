@@ -187,7 +187,7 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
   const renderSortableHeader = (key, label) => (
     <th>
       <button 
-        className="sortable-header"
+        className="protected-sortable-header"
         onClick={() => handleSort(key)}
       >
         {label}

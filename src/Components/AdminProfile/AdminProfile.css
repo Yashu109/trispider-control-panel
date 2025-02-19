@@ -526,7 +526,12 @@ tr:hover {
     border-radius: 4px;
     transition: all 0.2s;
 }
-
+.action-button.view{
+    color: #2196f3;
+}
+.action-button.view:hover{
+   color: #e0e0e0;
+}
 .action-button.edit {
     color: #2196f3;
 }

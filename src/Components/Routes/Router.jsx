@@ -28,6 +28,8 @@ import UserDashboard from '../UserDashboard/UserDashboard';
 import EmployeePanel from '../../Components/EmployeePanel/EmployeePanel';
 // import Imageprocessing from '../../Components/Imageprocessing/Imageprocessing'
 import Invoice from '../InVoice/InVoice';
+// import DraftQuotations from '../Savedraft/DraftQuotations';
+
 function App() {
   return (
     <Router>
@@ -40,6 +42,7 @@ function App() {
         <Route path="/employee-panel" element={<EmployeePanel />} />
         {/* <Route path="/image-processing" element={<Imageprocessing/>}/> */}
         <Route path="/invoice" element={<Invoice/>}/>
+        {/* <Route path="/drafts" element={<DraftQuotations/>} /> */}
       </Routes>
     </Router>
   );
