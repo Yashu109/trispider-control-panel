@@ -8,7 +8,7 @@ import Splitslayout from '../Splitslayout/Splitslayout'
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 // import { listAll, uploadString,uploadBytes, ref as storageRef, getDownloadURL } from 'firebase/storage';
-import { ref as storageRef, getDownloadURL,uploadString, getBytes, deleteObject,uploadBytes, listAll } from 'firebase/storage';
+import { ref as storageRef, getDownloadURL, uploadString, getBytes, deleteObject, uploadBytes, listAll } from 'firebase/storage';
 import { FileText, X } from 'lucide-react';
 
 const AdminPanel = () => {
@@ -702,57 +702,61 @@ const AdminPanel = () => {
             ...prevState,
             [name]: newValue
         }));
-    }; 
-    
+    };
+
     const handleSaveQuotation = async (projectId) => {
         try {
-            setMessage('Moving quotation to final...');
-    
-            // Ensure projectId doesn't have .pdf extension
+            setMessage('Saving quotation...');
             const cleanProjectId = projectId.replace('.pdf', '');
+            const quotationRef = storageRef(storage, `quotations/${cleanProjectId}.pdf`);
     
-            // Create storage references
-            const sourceRef = storageRef(storage, `quotations/${cleanProjectId}.pdf`);
-            const finalRef = storageRef(storage, `finalquotation/${cleanProjectId}.pdf`);
+            // Fetch project data from Firebase Realtime Database
+            const projectRef = ref(database, `projects/${cleanProjectId}`);
+            const snapshot = await get(projectRef);
+            if (!snapshot.exists()) {
+                throw new Error(`Project ${cleanProjectId} not found in database`);
+            }
+            const projectDataFromDb = snapshot.val();
     
-            // Check if the source file exists and get its bytes
-            const sourceBytes = await getBytes(sourceRef);
+            // Generate the PDF programmatically
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const imgWidth = 110;
+            const imgHeight = 300;
     
-            // Upload to final quotation folder
-            await uploadBytes(finalRef, sourceBytes, {
-                contentType: 'application/pdf',
-            });
+            pdf.setFontSize(12);
+            pdf.text(`Project ID: ${cleanProjectId}`, 10, 10);
+            pdf.text(`Title: ${projectDataFromDb.title || ''}`, 10, 20);
+            pdf.text(`Client: ${projectDataFromDb.clientName || ''}`, 10, 30);
+            pdf.text(`Scope of Work: ${projectDataFromDb.scopeOfWork || ''}`, 10, 40, { maxWidth: 190 });
+            pdf.text(`Total Payment: ${projectDataFromDb.totalPayment || ''}`, 10, 60);
+            pdf.text(`Advance: ${projectDataFromDb.advancePayment || ''}`, 10, 70);
+            pdf.text(`Remaining: ${projectDataFromDb.totalRemaining || ''}`, 10, 80);
     
-            // Delete the original file after successful copy
-            await deleteObject(sourceRef);
+            const pdfData = pdf.output('blob');
     
-            // Update the quotation actions state to mark as saved
+            // Overwrite the existing PDF in quotations folder
+            await uploadBytes(quotationRef, pdfData, { contentType: 'application/pdf' });
+    
+            // Update UI states
             setQuotationActions(prev => ({
                 ...prev,
                 [`${cleanProjectId}.pdf`]: 'saved',
             }));
-    
-            // Update the PDF list to reflect that this PDF is now final
             setPdfList(prevList =>
                 prevList.map(pdf =>
                     pdf.name === `${cleanProjectId}.pdf`
-                        ? { ...pdf, isFinal: true, action: 'saved' }
+                        ? { ...pdf, action: 'saved' }
                         : pdf
                 )
             );
     
-            setMessage('Quotation moved to final quotations successfully!');
-    
-            // Refresh the list
+            // Show alert and update message
+            alert(`Quotation ${cleanProjectId}.pdf has been saved to the quotations folder.`);
+            setMessage('Quotation saved successfully!');
             await fetchPdfList();
-    
         } catch (error) {
-            console.error('Error moving quotation:', error);
-            if (error.code === 'storage/object-not-found') {
-                setMessage('Error: Source PDF not found.');
-            } else {
-                setMessage(`Error: Failed to move quotation - ${error.message}`);
-            }
+            console.error('Error saving quotation:', error);
+            setMessage(`Error: Failed to save quotation - ${error.message}`);
         }
     };
     const fetchPdfList = async () => {
@@ -761,19 +765,19 @@ const AdminPanel = () => {
             // List all items in quotations folder
             const listRef = storageRef(storage, 'quotations');
             const result = await listAll(listRef);
-    
+
             // List all items in finalquotation folder
             const finalRef = storageRef(storage, 'finalquotation');
             const finalResult = await listAll(finalRef);
             const finalFiles = finalResult.items.map(item => item.name);
-    
+
             // Get metadata and check if they exist in finalquotation
             const pdfs = await Promise.all(
                 result.items.map(async (itemRef) => {
                     try {
                         const url = await getDownloadURL(itemRef);
                         const fileName = itemRef.name;
-    
+
                         return {
                             name: fileName,
                             url,
@@ -786,16 +790,16 @@ const AdminPanel = () => {
                     }
                 })
             );
-    
+
             // Sort PDFs in descending order based on numeric values
             const validPdfs = pdfs.filter(pdf => pdf !== null).sort((a, b) => {
                 const numA = parseInt(a.name.replace('KS', '').replace('.pdf', '')) || 0;
                 const numB = parseInt(b.name.replace('KS', '').replace('.pdf', '')) || 0;
                 return numB - numA; // Descending order
             });
-    
+
             setPdfList(validPdfs);
-    
+
             if (validPdfs.length === 0) {
                 setMessage('No PDFs found');
             }
@@ -806,7 +810,7 @@ const AdminPanel = () => {
             setPdfLoading(false);
         }
     };
-    
+
     const handleCancelQuotation = (projectId) => {
         setQuotationActions(prev => ({
             ...prev,
@@ -1348,80 +1352,79 @@ const AdminPanel = () => {
                 </form>
             </div>
             {showPdfList && (
-            <div className="modal-overlay">
-                <div className="modal-content pdf-list-modal">
-                    <div className="modal-header">
-                        <h2>Saved Quotations</h2>
-                        <button
-                            onClick={() => setShowPdfList(false)}
-                            className="close-button"
-                        >
-                            <X size={20} />
-                        </button>
-                    </div>
-                    <div className="pdf-list-container">
-                        {pdfLoading ? (
-                            <div className="loading-spinner">
-                                <div className="spinner"></div>
-                                <p>Loading PDFs...</p>
-                            </div>
-                        ) : pdfList.length === 0 ? (
-                            <div className="no-pdfs">
-                                No PDFs found
-                            </div>
-                        ) : (
-                            <div className="pdf-grid">
-                                {pdfList.map((pdf, index) => (
-                                    <div key={index} className="pdf-item">
-                                        <FileText size={24} />
-                                        <span className="pdf-name">
-                                            {pdf.name.replace('.pdf', '')}
-                                        </span>
-                                        <div className="pdf-actions">
-                                            <button
-                                                onClick={() => window.open(pdf.url, '_blank')}
-                                                className="view-pdf-button"
-                                            >
-                                                View PDF
-                                            </button>
-                                            {!pdf.isFinal && (
-                                                <div className="action-buttons">
-                                                    <button
-                                                        onClick={() => handleSaveQuotation(pdf.name.replace('.pdf', ''))}
-                                                        className="save-button"
-                                                        disabled={pdf.action === 'saved'}
-                                                    >
-                                                        Save to Final
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleCancelQuotation(pdf.name.replace('.pdf', ''))}
-                                                        className="cancel-button"
-                                                    >
-                                                        Cancel
-                                                    </button>
-                                                </div>
-                                            )}
-                                            {pdf.isFinal && (
-                                                <span className="status-label saved">
-                                                    Already Saved
-                                                </span>
-                                            )}
+                <div className="modal-overlay">
+                    <div className="modal-content pdf-list-modal">
+                        <div className="modal-header">
+                            <h2>Saved Quotations</h2>
+                            <button
+                                onClick={() => setShowPdfList(false)}
+                                className="close-button"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="pdf-list-container">
+                            {pdfLoading ? (
+                                <div className="loading-spinner">
+                                    <div className="spinner"></div>
+                                    <p>Loading PDFs...</p>
+                                </div>
+                            ) : pdfList.length === 0 ? (
+                                <div className="no-pdfs">
+                                    No PDFs found
+                                </div>
+                            ) : (
+                                <div className="pdf-grid">
+                                    {pdfList.map((pdf, index) => (
+                                        <div key={index} className="pdf-item">
+                                            <FileText size={24} />
+                                            <span className="pdf-name">
+                                                {pdf.name.replace('.pdf', '')}
+                                            </span>
+                                            <div className="pdf-actions">
+                                                <button
+                                                    onClick={() => window.open(pdf.url, '_blank')}
+                                                    className="view-pdf-button"
+                                                >
+                                                    View PDF
+                                                </button>
+                                                {!pdf.isFinal && (
+                                                    <div className="action-buttons">
+                                                        <button
+                                                            onClick={() => handleSaveQuotation(pdf.name.replace('.pdf', ''))}
+                                                            className="save-button"
+                                                            disabled={pdf.action === 'saved'}
+                                                        >
+                                                            Save to Final
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleCancelQuotation(pdf.name.replace('.pdf', ''))}
+                                                            className="cancel-button"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                {pdf.isFinal && (
+                                                    <span className="status-label saved">
+                                                        Already Saved
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                        {message && (
-                            <div className={`modal-message ${
-                                message.includes('Error') ? 'error' : 'success'
-                            }`}>
-                                {message}
-                            </div>
-                        )}
+                                    ))}
+                                </div>
+                            )}
+                            {message && (
+                                <div className={`modal-message ${message.includes('Error') ? 'error' : 'success'
+                                    }`}>
+                                    {message}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
-        )}
+            )}
 
         </Splitslayout>
     );
