@@ -213,7 +213,7 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
           placeholder="Search projects..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-input"
+          className="protected-search-input"
         />
       </div>
       <span className="results-count">

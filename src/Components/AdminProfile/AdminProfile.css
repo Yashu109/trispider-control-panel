@@ -362,6 +362,8 @@
     border-radius: 4px;
     border: 1px solid #ddd;
     font-size: 14px;
+    background-color: #ffffff;
+    color: #000000;
 }
 
     .search-input-container {
@@ -376,6 +378,9 @@
     border: 1px solid #ddd;
     width: 100%;
     font-size: 14px;
+    background-color: white;
+    background-color: #ffffff;
+    color: #000000;
 }
 
 .search-input:focus {

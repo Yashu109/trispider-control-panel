@@ -95,6 +95,8 @@
   border-radius: 0.5rem;
   font-size: 0.875rem;
   transition: border-color 0.2s;
+  background-color: #ffffff;
+    color: #000000;
 }
 
 .auth-input:focus {

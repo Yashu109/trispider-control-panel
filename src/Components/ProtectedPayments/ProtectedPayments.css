@@ -98,6 +98,7 @@
     font-size: 16px;
     transition: all 0.2s;
     background-color: #ffffff;
+    color: #000000;
 }
 
 .password-input:focus {
@@ -324,6 +325,8 @@
     padding: 4px 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
+    background-color: #ffffff;
+    color: #000000;
 }
 
 .cash-amount {
@@ -486,6 +489,8 @@
     border: 1px solid #ddd;
     border-radius: 4px;
     flex: 1;
+    background-color: #ffffff;
+    color: #000000;
 }
 
 .add-spend-button {
@@ -749,15 +754,17 @@ display: flex;
     max-width: 400px;
   }
   
-  .search-input {
+  .protected-search-input {
     width: 100%;
     padding: 8px 36px;
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 14px;
+    background-color: #ffffff;
+    color: #000000;
   }
   
-  .search-input:focus {
+  .protected-search-input:focus {
     outline: none;
     border-color: #2684FF;
     box-shadow: 0 0 0 2px rgba(38, 132, 255, 0.2);
@@ -932,6 +939,8 @@ display: flex;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
+    background-color: #ffffff;
+    color: #000000;
   }
   
   .payment-method-select:focus,

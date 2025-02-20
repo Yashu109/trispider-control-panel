@@ -30,6 +30,8 @@
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
+    background-color: white;
+    color: #000000;
 }
 
 .employee-input:focus {
@@ -171,6 +173,8 @@ th {
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
+    background-color: #ffffff;
+    color: #000000;
 }
 
 .edit-employee-form .password-row {
@@ -190,6 +194,8 @@ th {
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
+    background-color: #ffffff;
+    color: #000000;
 }
 
 .edit-employee-form .password-input button {
