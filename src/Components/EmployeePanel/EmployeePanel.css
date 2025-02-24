@@ -1,6 +1,4 @@
-/* EmployeePanel.css */
 .employee-dashboard-container {
-  /* max-width: 1200px; */
   margin: 0 auto;
   padding: 20px;
   background-color: #f4f4f4;
@@ -68,7 +66,6 @@
 .projects-table-container {
   position: relative;
   max-height: 950px;
-  /* Adjust as needed */
   overflow: auto;
 }
 
@@ -92,13 +89,13 @@
 
 .projects-table td {
   padding: 12px 15px;
-  border-bottom: 1px solid #eee;
+  /* border-bottom: 1px solid #eee; */
   vertical-align: top;
   background-color: white;
 }
 
 .projects-table tr:last-child td {
-  border-bottom: none;
+  /* border-bottom: none; */
 }
 
 .projects-table tr:hover {
@@ -113,7 +110,7 @@
 }
 
 .projects-table tbody tr:last-child td {
-  border-bottom: none;
+  /* border-bottom: none; */
 }
 
 .projects-table tbody tr:hover {
@@ -121,35 +118,31 @@
 }
 
 .work-status-section {
-  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .work-status-textarea {
   width: 100%;
-  padding: 8px;
-  margin-bottom: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.25rem;
   resize: vertical;
-  min-height: 80px;
 }
 
 .save-status-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #52c41a;
+  padding: 0.5rem 1rem;
+  background-color: #3b82f6;
   color: white;
   border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
+  border-radius: 0.25rem;
   cursor: pointer;
-  transition: background-color 0.3s ease;
-  gap: 8px;
+  transition: all 0.2s;
 }
 
 .save-status-btn:hover {
-  background-color: #73d13d;
+  background-color: #2563eb;
 }
 
 .loading-container {
@@ -252,46 +245,6 @@
   font-size: 0.875rem;
 }
 
-.projects-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-}
-
-.projects-table th,
-.projects-table td {
-  padding: 1rem;
-  border: 1px solid #e2e8f0;
-}
-
-.work-status-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.work-status-textarea {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.25rem;
-  resize: vertical;
-}
-
-.save-status-btn {
-  padding: 0.5rem 1rem;
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.save-status-btn:hover {
-  background-color: #2563eb;
-}
-
 .completed-status {
   background-color: #f0fdf4;
   border: 1px solid #10b981;
@@ -311,179 +264,6 @@
 }
 
 /* Attendance Section Styles */
-.attendance-section {
-  background-color: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  margin: 20px 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.attendance-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.attendance-header h2 {
-  font-size: 1.5rem;
-  color: #333;
-  margin: 0;
-}
-
-.current-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1rem;
-  color: blue;
-  font-weight: bold;
-}
-
-/* .checkIn-Out {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1rem;
-  color: green;
-  font-weight: bold;
-
-} */
-.checked-in {
-  color: green;
-  font-weight: bold;
-}
-
-.checked-out {
-  color: red;
-  font-weight: bold;
-}
-
-.clock-icon {
-  color: #2684FF;
-}
-
-.attendance-actions {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.clock-button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.clock-button:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.clock-in {
-  background-color: #10b981;
-  color: white;
-}
-
-.clock-in:hover:not(:disabled) {
-  background-color: #059669;
-}
-
-.clock-out {
-  background-color: #ef4444;
-  color: white;
-}
-
-.clock-out:hover:not(:disabled) {
-  background-color: #dc2626;
-}
-
-.spinner {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Attendance History Table Styles */
-.attendance-history {
-  margin-top: 24px;
-}
-
-.attendance-history h3 {
-  font-size: 1.2rem;
-  color: #333;
-  margin-bottom: 16px;
-}
-
-.history-table-container {
-  overflow-x: auto;
-}
-
-.history-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 600px;
-}
-
-.history-table th,
-.history-table td {
-  padding: 12px;
-  text-align: left;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.history-table th {
-  background-color: #f8f9fa;
-  font-weight: 600;
-  color: #4b5563;
-}
-
-.history-table tr:hover {
-  background-color: #f9fafb;
-}
-
-.no-records {
-  text-align: center;
-  color: #6b7280;
-  font-style: italic;
-  padding: 24px;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .attendance-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .attendance-actions {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .clock-button {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
 .attendance-section {
   background-color: #fff;
   border-radius: 8px;
@@ -574,18 +354,67 @@
   background-color: #dc2626;
 }
 
-.spinner {
-  animation: spin 1s linear infinite;
+/* Current Status Colors */
+.current-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
 }
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
+.current-status span.checkIn-Out.checked-in {
+  color: #10b981; /* Green for Checked In */
+  font-weight: bold;
+}
 
-  to {
-    transform: rotate(360deg);
-  }
+.current-status span.checkIn-Out.checked-out {
+  color: #ef4444; /* Red for Checked Out */
+  font-weight: bold;
+}
+
+/* Attendance History Table Styles */
+.attendance-history {
+  margin-top: 24px;
+}
+
+.attendance-history h3 {
+  font-size: 1.2rem;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.history-table-container {
+  overflow-x: auto;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+.history-table th,
+.history-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.history-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.history-table tr:hover {
+  background-color: #f9fafb;
+}
+
+.no-records {
+  text-align: center;
+  color: #6b7280;
+  font-style: italic;
+  padding: 24px;
 }
 
 /* History Page Styles */
@@ -597,22 +426,23 @@
 .history-header {
   display: flex;
   align-items: center;
+  flex-direction: column-reverse;
   gap: 20px;
   margin-bottom: 24px;
 }
 
 .back-button {
   padding: 8px 16px;
-  background-color: #f3f4f6;
+  background-color: #f44336;
   border: none;
   border-radius: 6px;
-  color: #4b5563;
+  color: #fff;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .back-button:hover {
-  background-color: #e5e7eb;
+  /* background-color: #e5e7eb; */
 }
 
 .history-table-container {
@@ -689,4 +519,81 @@
     width: 100%;
     justify-content: center;
   }
+}
+
+/* Summary Modal Styles */
+.summary-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.summary-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.summary-textarea {
+  width: 100%;
+  padding: 0.5rem;
+  margin: 10px 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.25rem;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.summary-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.submit-summary-btn {
+  background-color: #10b981; /* Green to match Check In button */
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submit-summary-btn:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+}
+
+.submit-summary-btn:hover:not(:disabled) {
+  background-color: #059669;
+}
+
+.cancel-summary-btn {
+  background-color: #ef4444; /* Red to match Check Out button */
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-summary-btn:hover {
+  background-color: #dc2626;
 }

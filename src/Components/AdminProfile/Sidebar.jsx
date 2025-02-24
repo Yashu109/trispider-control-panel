@@ -108,7 +108,8 @@ import {
     CreditCard,
     Clock,
     LogOut,
-    Menu
+    Menu,
+    ClipboardList  // Added for Tasks tab
 } from "lucide-react";
 
 const SidebarNav = ({
@@ -132,6 +133,12 @@ const SidebarNav = ({
     const handleAddNew = () => {
         setShowAdminPanel(true);
         setActiveTab('new');
+    };
+
+    // Function to calculate total tasks (you'll implement this in the Tasks management component)
+    const getTotalTasksCount = () => {
+        // This will be replaced with actual task counting logic
+        return 0;
     };
 
     return (
@@ -196,6 +203,12 @@ const SidebarNav = ({
                      onClick={() => setActiveTab('employees')}>
                     <Users size={20} className="nav-icon" />
                     <span className="nav-text">Manage Employees</span>
+                </div>
+
+                <div className={`nav-item ${activeTab === 'tasks' ? 'active' : ''}`}
+                     onClick={() => setActiveTab('tasks')}>
+                    <ClipboardList size={20} className="nav-icon" />
+                    <span className="nav-text">Manage Tasks </span>
                 </div>
 
                 <div className="nav-item signout" onClick={handleSignOut}>

@@ -28,18 +28,28 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
   const [newSpend, setNewSpend] = useState({
     amount: '',
     purpose: '',
-    employeeId: ''
+    employeeId: '',
+    paymentMethod: 'cash'
   });
   const [showAddSpendForm, setShowAddSpendForm] = useState(false);
   const [spendSummary, setSpendSummary] = useState('');
   const [employees, setEmployees] = useState([]);
 
+  // Filter and sort states
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({
     key: null,
     direction: 'asc'
   });
   const [filteredProjects, setFilteredProjects] = useState(projects);
+
+  // Date filter state
+  const [dateFilter, setDateFilter] = useState({
+    startDate: null,
+    endDate: null,
+    preset: 'all'
+  });
+
   // Effects
   useEffect(() => {
     if (isAuthenticated) {
@@ -52,39 +62,58 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
       generateSpendSummary();
     }
   }, [spends]);
+
+  useEffect(() => {
+    let result = [...projects];
+    if (searchTerm) {
+      result = result.filter(project =>
+        Object.entries(project).some(([key, value]) => {
+          if (['projectId', 'totalPayment', 'totalRemaining', 'cashAmount', 'advancePayment'].includes(key)) {
+            return false;
+          }
+          return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+        })
+      );
+    }
+    if (sortConfig.key) {
+      result.sort((a, b) => {
+        let aVal = a[sortConfig.key];
+        let bVal = b[sortConfig.key];
+        if (['totalPayment', 'totalRemaining', 'cashAmount', 'advancePayment'].includes(sortConfig.key)) {
+          aVal = Number(aVal) || 0;
+          bVal = Number(bVal) || 0;
+        } else {
+          aVal = String(aVal || '').toLowerCase();
+          bVal = String(bVal || '').toLowerCase();
+        }
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    setFilteredProjects(result);
+  }, [projects, searchTerm, sortConfig]);
+
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
         const employeesRef = ref(database, 'employeesList');
         const snapshot = await get(employeesRef);
-
-        console.log('Raw snapshot:', snapshot.val()); // Logs the raw data from Firebase
-
         if (snapshot.exists()) {
           const employeesData = snapshot.val();
-
-          // Ensure `employees` exists within `employeesList`
           if (employeesData.employees) {
             const employeesArray = Object.keys(employeesData.employees).map(key => ({
               ...employeesData.employees[key],
               index: key
             }));
-
-            console.log('Converted employees array:', employeesArray); // Logs the transformed array
-
             const validEmployees = employeesArray
-              .filter(emp => emp && emp.name) // Ensure valid employee objects
+              .filter(emp => emp && emp.name)
               .sort((a, b) => a.name.localeCompare(b.name));
-
-            console.log('Filtered & sorted employees:', validEmployees); // Logs the final processed employees
-
             setEmployees(validEmployees);
           } else {
-            console.log('No employees found');
             setEmployees([]);
           }
         } else {
-          console.log('No data found');
           setEmployees([]);
         }
       } catch (error) {
@@ -94,66 +123,16 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
     };
 
     if (isAuthenticated) {
-      console.log('User is authenticated, fetching data...');
-      fetchSpends?.(); // Ensure fetchSpends exists before calling
+      fetchSpends();
       fetchEmployees();
-    } else {
-      console.log('User is not authenticated');
     }
   }, [isAuthenticated]);
 
-  useEffect(() => {
-    let result = [...projects];
-
-    // Apply search filter
-    if (searchTerm) {
-      result = result.filter(project =>
-        Object.entries(project).some(([key, value]) => {
-          // Skip non-searchable fields
-          if (['projectId', 'totalPayment', 'totalRemaining', 'cashAmount', 'advancePayment'].includes(key)) {
-            return false;
-          }
-          return String(value).toLowerCase().includes(searchTerm.toLowerCase());
-        })
-      );
-    }
-
-    // Apply sorting
-    if (sortConfig.key) {
-      result.sort((a, b) => {
-        let aVal = a[sortConfig.key];
-        let bVal = b[sortConfig.key];
-
-        // Handle numeric values
-        if (['totalPayment', 'totalRemaining', 'cashAmount', 'advancePayment'].includes(sortConfig.key)) {
-          aVal = Number(aVal) || 0;
-          bVal = Number(bVal) || 0;
-        } else {
-          // Convert to strings for text comparison
-          aVal = String(aVal || '').toLowerCase();
-          bVal = String(bVal || '').toLowerCase();
-        }
-
-        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-
-    setFilteredProjects(result);
-  }, [projects, searchTerm, sortConfig]);
-
-  useEffect(() => {
-    if (spends.length > 0) {
-      generateSpendSummary();
-    }
-  }, [spends]);
   useEffect(() => {
     const checkPassword = async () => {
       try {
         const passwordRef = ref(database, 'adminPassword');
         const snapshot = await get(passwordRef);
-
         if (snapshot.exists()) {
           setHasExistingPassword(true);
           setStoredPassword(snapshot.val());
@@ -165,9 +144,174 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
         setIsLoading(false);
       }
     };
-
     checkPassword();
   }, []);
+
+  // Date filtering functions
+  const handleDatePreset = (preset) => {
+    const now = new Date();
+    let startDate, endDate;
+    
+    switch (preset) {
+      case 'day':
+        startDate = new Date(now);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(now);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+        
+      case 'week':
+        endDate = new Date(now);
+        endDate.setHours(23, 59, 59, 999);
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 7);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+        
+      case 'month':
+        endDate = new Date(now);
+        endDate.setHours(23, 59, 59, 999);
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 30);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+        
+      case 'all':
+        startDate = null;
+        endDate = null;
+        break;
+        
+      default:
+        return;
+    }
+    
+    setDateFilter({ startDate, endDate, preset });
+  };
+
+  const handleCustomDateChange = (type, date) => {
+    if (type === 'start') {
+      const startDate = new Date(date);
+      startDate.setHours(0, 0, 0, 0);
+      setDateFilter(prev => ({
+        ...prev,
+        startDate,
+        preset: 'custom'
+      }));
+    } else {
+      const endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
+      setDateFilter(prev => ({
+        ...prev,
+        endDate,
+        preset: 'custom'
+      }));
+    }
+  };
+
+  // Calculate total payments with date filtering
+  const calculateTotalPayments = () => {
+    let filteredProjects = [...projects];
+
+    if (dateFilter.startDate && dateFilter.endDate) {
+      const start = new Date(dateFilter.startDate);
+      const end = new Date(dateFilter.endDate);
+
+      filteredProjects = filteredProjects.filter(project => {
+        if (!project.paymentDate) {
+          return false;
+        }
+
+        const paymentDate = new Date(project.paymentDate);
+        if (isNaN(paymentDate.getTime())) {
+          return false;
+        }
+
+        // Normalize to noon to avoid timezone issues
+        paymentDate.setHours(12, 0, 0, 0);
+        
+        return paymentDate >= start && paymentDate <= end;
+      });
+    }
+
+    return filteredProjects.reduce((sum, project) => {
+      return sum + (Number(project.totalPayment) || 0);
+    }, 0);
+  };
+
+  // Spend related functions
+  const fetchSpends = async () => {
+    try {
+      const spendsRef = ref(database, 'spends');
+      const snapshot = await get(spendsRef);
+      if (snapshot.exists()) {
+        const spendsData = snapshot.val();
+        const spendsArray = Object.keys(spendsData).map(key => ({
+          id: key,
+          ...spendsData[key]
+        }));
+        setSpends(spendsArray.sort((a, b) => new Date(b.date) - new Date(a.date)));
+      } else {
+        setSpends([]);
+      }
+    } catch (error) {
+      console.error('Error fetching spends:', error);
+      setError('Failed to fetch spends');
+    }
+  };
+
+  const generateSpendSummary = () => {
+    const latestSpends = spends.slice(0, 3);
+    if (latestSpends.length === 0) {
+      setSpendSummary('No recent spends');
+      return;
+    }
+    setSpendSummary(`Last ${latestSpends.length} spends: ${formatCurrency(latestSpends.reduce((sum, spend) => sum + Number(spend.amount), 0))}`);
+  };
+
+  const handleAddSpend = async () => {
+    if (!newSpend.amount || !newSpend.purpose || !newSpend.employeeId || !newSpend.paymentMethod) {
+      setError('Please fill in all fields including employee name and payment method');
+      return;
+    }
+    try {
+      const employee = employees.find(emp => emp.employeeId === newSpend.employeeId);
+      if (!employee) {
+        setError('Selected employee not found');
+        return;
+      }
+      const newSpendRef = ref(database, `spends/${Date.now()}`);
+      await set(newSpendRef, {
+        amount: Number(newSpend.amount),
+        purpose: newSpend.purpose,
+        date: new Date().toISOString(),
+        employeeId: newSpend.employeeId,
+        employeeName: employee.name,
+        paymentMethod: newSpend.paymentMethod
+      });
+      setNewSpend({ amount: '', purpose: '', employeeId: '', paymentMethod: 'cash' });
+      fetchSpends();
+      setShowAddSpendForm(false);
+      setError('');
+    } catch (error) {
+      console.error('Error adding spend:', error);
+      setError('Failed to add spend');
+    }
+  };
+
+  const calculateSpendTotals = () => {
+    return spends.reduce((acc, spend) => {
+      const amount = Number(spend.amount) || 0;
+      return {
+        total: acc.total + amount,
+        cash: spend.paymentMethod === 'cash' ? acc.cash + amount : acc.cash,
+        upi: spend.paymentMethod === 'upi' ? acc.upi + amount : acc.upi
+      };
+    }, {
+      total: 0,
+      cash: 0,
+      upi: 0
+    });
+  };
 
   // Payment functions
   const handleEditClick = (project) => {
@@ -177,50 +321,6 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
       paymentMethod: 'cash'
     });
   };
-  const handleSort = (key) => {
-    setSortConfig(prevSort => ({
-      key,
-      direction: prevSort.key === key && prevSort.direction === 'asc' ? 'desc' : 'asc'
-    }));
-  };
-
-  const renderSortableHeader = (key, label) => (
-    <th>
-      <button 
-        className="protected-sortable-header"
-        onClick={() => handleSort(key)}
-      >
-        {label}
-        <ArrowUpDown 
-          size={14}
-          className={`sort-icon ${
-            sortConfig.key === key 
-              ? sortConfig.direction === 'asc'
-                ? 'asc'
-                : 'desc'
-              : ''
-          }`}
-        />
-      </button>
-    </th>
-  );
-  const renderSearchBar = () => (
-    <div className="search-container">
-      <div className="search-wrapper">
-        <Search className="search-icon" size={20} />
-        <input
-          type="text"
-          placeholder="Search projects..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="protected-search-input"
-        />
-      </div>
-      <span className="results-count">
-        Showing {filteredProjects.length} of {projects.length} projects
-      </span>
-    </div>
-  );
 
   const handleSaveEdit = async (projectId) => {
     try {
@@ -229,21 +329,18 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
 
       const newAmount = Number(editValues.amount) || 0;
       const totalPayment = Number(project.totalPayment) || 0;
-
-      // Calculate current total collected (cash + upi)
       const currentCashAmount = Number(project.cashAmount) || 0;
       const currentUpiAmount = Number(project.advancePayment) || 0;
 
-      // Calculate new remaining amount
       let updates = {};
-
       if (editValues.paymentMethod === 'cash') {
         const newCashAmount = currentCashAmount + newAmount;
         const newRemaining = totalPayment - (newCashAmount + currentUpiAmount);
         updates = {
           cashAmount: newCashAmount,
           totalRemaining: newRemaining,
-          paymentMethod: 'cash'
+          paymentMethod: 'cash',
+          paymentDate: new Date().toISOString()
         };
       } else {
         const newUpiAmount = currentUpiAmount + newAmount;
@@ -252,7 +349,8 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
           advancePayment: newUpiAmount,
           advancePaymentMethod: 'upi',
           totalRemaining: newRemaining,
-          paymentMethod: 'upi'
+          paymentMethod: 'upi',
+          paymentDate: new Date().toISOString()
         };
       }
 
@@ -272,93 +370,68 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
     setEditValues({ amount: '', paymentMethod: 'cash' });
   };
 
-  // Spend functions
-  const fetchSpends = async () => {
-    try {
-      const spendsRef = ref(database, 'spends');
-      const snapshot = await get(spendsRef);
-
-      if (snapshot.exists()) {
-        const spendsData = snapshot.val();
-        const spendsArray = Object.keys(spendsData).map(key => ({
-          id: key,
-          ...spendsData[key]
-        }));
-        setSpends(spendsArray.sort((a, b) => new Date(b.date) - new Date(a.date)));
-      } else {
-        setSpends([]);
-      }
-    } catch (error) {
-      console.error('Error fetching spends:', error);
-      setError('Failed to fetch spends');
-    }
+  // Sorting functions
+  const handleSort = (key) => {
+    setSortConfig(prevSort => ({
+      key,
+      direction: prevSort.key === key && prevSort.direction === 'asc' ? 'desc' : 'asc'
+    }));
   };
 
-  const generateSpendSummary = () => {
-    const latestSpends = spends.slice(0, 3);
+  const renderSortableHeader = (key, label) => (
+    <th>
+      <button
+        className="protected-sortable-header"
+        onClick={() => handleSort(key)}
+      >
+        {label}
+        <ArrowUpDown
+          size={14}
+          className={`sort-icon ${sortConfig.key === key
+            ? sortConfig.direction === 'asc'
+              ? 'asc'
+              : 'desc'
+            : ''
+            }`}
+        />
+      </button>
+    </th>
+  );
 
-    if (latestSpends.length === 0) {
-      setSpendSummary('No recent spends');
-      return;
-    }
+  const renderSearchBar = () => (
+    <div className="search-container">
+      <div className="search-wrapper">
+        <Search className="search-icon" size={20} />
+        <input
+          type="text"
+          placeholder="Search projects..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="protected-search-input"
+        />
+      </div>
+      <span className="results-count">
+        Showing {filteredProjects.length} of {projects.length} projects
+      </span>
+    </div>
+  );
 
-  };
-
-  const handleAddSpend = async () => {
-    if (!newSpend.amount || !newSpend.purpose || !newSpend.employeeId) {
-      setError('Please fill in all fields including employee name');
-      return;
-    }
-
-    try {
-      const employee = employees.find(emp => emp.employeeId === newSpend.employeeId);
-      if (!employee) {
-        setError('Selected employee not found');
-        return;
-      }
-
-      const newSpendRef = ref(database, `spends/${Date.now()}`);
-      await set(newSpendRef, {
-        amount: Number(newSpend.amount),
-        purpose: newSpend.purpose,
-        date: new Date().toISOString(),
-        employeeId: newSpend.employeeId,
-        employeeName: employee.name
-      });
-
-      setNewSpend({ amount: '', purpose: '', employeeId: '' });
-      fetchSpends();
-      setShowAddSpendForm(false);
-      setError('');
-    } catch (error) {
-      console.error('Error adding spend:', error);
-      setError('Failed to add spend');
-    }
-  };
-
-
-  const calculateTotalSpend = () => {
-    return spends.reduce((total, spend) => total + (Number(spend.amount) || 0), 0);
-  };
-
+  // Authentication functions
   // Authentication functions
   const handleCreatePassword = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-
     if (password.length < 6) {
       setError('Password must be at least 6 characters long');
       setIsLoading(false);
       return;
     }
-
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       setIsLoading(false);
       return;
     }
-
     try {
       const passwordRef = ref(database, 'adminPassword');
       await set(passwordRef, password);
@@ -377,7 +450,6 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-
     if (password === storedPassword) {
       setIsAuthenticated(true);
       setError('');
@@ -387,14 +459,12 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
     setIsLoading(false);
   };
 
-  // Calculate totals for summary cards
-  const calculateTotals = () => {
+  // Calculate other totals
+  const calculateOtherTotals = () => {
     return projects.reduce((acc, project) => {
       const cashAmount = Number(project.cashAmount) || 0;
       const upiAmount = Number(project.advancePayment) || 0;
-
       return {
-        totalPayments: acc.totalPayments + (Number(project.totalPayment) || 0),
         totalRemaining: acc.totalRemaining + (Number(project.totalRemaining) || 0),
         totalProjects: acc.totalProjects + 1,
         totalCash: acc.totalCash + cashAmount,
@@ -402,7 +472,6 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
         completeProjects: acc.completeProjects + (project.projectStatus === 'Complete' ? 1 : 0)
       };
     }, {
-      totalPayments: 0,
       totalRemaining: 0,
       totalProjects: 0,
       totalCash: 0,
@@ -411,6 +480,60 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
     });
   };
 
+  // Render date filters
+  const renderDateFilters = () => {
+    return (
+      <div className="date-filter-container">
+        <h3>Filter Total Payments by Date</h3>
+        <div className="date-filter-controls">
+          <div className="preset-buttons">
+            <button
+              className={`filter-btn ${dateFilter.preset === 'day' ? 'active' : ''}`}
+              onClick={() => handleDatePreset('day')}
+            >
+              Today
+            </button>
+            <button
+              className={`filter-btn ${dateFilter.preset === 'week' ? 'active' : ''}`}
+              onClick={() => handleDatePreset('week')}
+            >
+              Last 7 Days
+            </button>
+            <button
+              className={`filter-btn ${dateFilter.preset === 'month' ? 'active' : ''}`}
+              onClick={() => handleDatePreset('month')}
+            >
+              Last 30 Days
+            </button>
+            <button
+              className={`filter-btn ${dateFilter.preset === 'all' ? 'active' : ''}`}
+              onClick={() => handleDatePreset('all')}
+            >
+              All Time
+            </button>
+          </div>
+          
+          <div className="custom-date-range">
+            <input
+              type="date"
+              value={dateFilter.startDate ? dateFilter.startDate.toISOString().split('T')[0] : ''}
+              onChange={(e) => handleCustomDateChange('start', e.target.value)}
+              className="date-input"
+            />
+            <span>to</span>
+            <input
+              type="date"
+              value={dateFilter.endDate ? dateFilter.endDate.toISOString().split('T')[0] : ''}
+              onChange={(e) => handleCustomDateChange('end', e.target.value)}
+              className="date-input"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Loading state
   if (isLoading) {
     return (
       <div className="loading-container">
@@ -420,6 +543,7 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
     );
   }
 
+  // Authentication screen
   if (!isAuthenticated) {
     return (
       <div className="protected-payments">
@@ -428,7 +552,6 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
             <Lock className="lock-icon" />
             <h2>{hasExistingPassword ? 'Enter Password' : 'Create Password'}</h2>
           </div>
-
           <form onSubmit={hasExistingPassword ? handlePasswordLogin : handleCreatePassword}
             className="password-form">
             <div className="password-input-group">
@@ -449,7 +572,6 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
-
             {!hasExistingPassword && (
               <div className="password-input-group">
                 <input
@@ -463,10 +585,8 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
                 />
               </div>
             )}
-
             {error && <div className="error-message">{error}</div>}
-
-            <button type="submit" disabled={isLoading} className="submit-button">
+            <button type="submit" disabled={isLoading} className="protected-submit-button">
               {isLoading && <Loader2 className="spinner" />}
               {hasExistingPassword ? 'Access Payment Details' : 'Create Password'}
             </button>
@@ -476,7 +596,9 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
     );
   }
 
+  // Spend page
   if (showSpendPage) {
+    const spendTotals = calculateSpendTotals();
     return (
       <div className="spend-page">
         <div className="spend-header">
@@ -486,8 +608,21 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
           >
             Back to Dashboard
           </button>
-          <h1>Spend Management</h1>
-          <p>Total Spend: {formatCurrency(calculateTotalSpend())}</p>
+          <h2>Spend Management</h2>
+        </div>
+        <div className="spend-totals-summary">
+          <div className="summary-card">
+            <h3>Total Spend</h3>
+            <p>{formatCurrency(spendTotals.total)}</p>
+          </div>
+          <div className="summary-card">
+            <h3>Cash Spend</h3>
+            <p>{formatCurrency(spendTotals.cash)}</p>
+          </div>
+          <div className="summary-card">
+            <h3>UPI Spend</h3>
+            <p>{formatCurrency(spendTotals.upi)}</p>
+          </div>
         </div>
 
         {showAddSpendForm ? (
@@ -512,30 +647,35 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
                 <select
                   value={newSpend.employeeId}
                   onChange={(e) => setNewSpend({ ...newSpend, employeeId: e.target.value })}
-                  className="employee-select "
+                  className="employee-select"
                   required
                 >
                   <option value="">Select Employee</option>
                   {employees.map((employee) => (
-                    <option
-                      key={employee.employeeId}
-                      value={employee.employeeId}
-                    >
+                    <option key={employee.employeeId} value={employee.employeeId}>
                       {employee.name}
                     </option>
                   ))}
                 </select>
               </div>
-              <button
-                onClick={handleAddSpend}
-                className="add-spend-button"
-              >
+              <div className="select-wrapper">
+                <select
+                  value={newSpend.paymentMethod}
+                  onChange={(e) => setNewSpend({ ...newSpend, paymentMethod: e.target.value })}
+                  className="payment-method-select"
+                  required
+                >
+                  <option value="cash">Cash</option>
+                  <option value="upi">UPI</option>
+                </select>
+              </div>
+              <button onClick={handleAddSpend} className="add-spend-button">
                 Add Spend
               </button>
               <button
                 onClick={() => {
                   setShowAddSpendForm(false);
-                  setNewSpend({ amount: '', purpose: '', employeeId: '' });
+                  setNewSpend({ amount: '', purpose: '', employeeId: '', paymentMethod: 'cash' });
                   setError('');
                 }}
                 className="cancel-button"
@@ -563,6 +703,7 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
                 <th>Date</th>
                 <th>Amount</th>
                 <th>Purpose</th>
+                <th>Payment Method</th>
                 <th>Added By</th>
               </tr>
             </thead>
@@ -572,12 +713,13 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
                   <td>{new Date(spend.date).toLocaleDateString()}</td>
                   <td className="spend-amount">{formatCurrency(spend.amount)}</td>
                   <td>{spend.purpose}</td>
+                  <td>{spend.paymentMethod || 'Not specified'}</td>
                   <td>{spend.employeeName || 'Unknown'}</td>
                 </tr>
               ))}
               {spends.length === 0 && (
                 <tr>
-                  <td colSpan="4" className="no-spends">No spends recorded yet</td>
+                  <td colSpan="5" className="no-spends">No spends recorded yet</td>
                 </tr>
               )}
             </tbody>
@@ -586,44 +728,48 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
       </div>
     );
   }
-  const totals = calculateTotals();
 
+  // Main dashboard
+  const otherTotals = calculateOtherTotals();
+  const totalPayments = calculateTotalPayments();
+
+  // Main dashboard return
   return (
     <div className="payments-dashboard">
-      {/* Summary Cards */}
+      {renderDateFilters()}
+      
       <div className="summary-cards">
         <div className="summary-card">
           <h3>Total Payments</h3>
-          <p className="total-payments">{formatCurrency(totals.totalPayments)}</p>
+          <p className="total-payments">{formatCurrency(totalPayments)}</p>
         </div>
         <div className="summary-card">
           <h3>Total Remaining</h3>
-          <p className="total-remaining">{formatCurrency(totals.totalRemaining)}</p>
+          <p className="total-remaining">{formatCurrency(otherTotals.totalRemaining)}</p>
         </div>
         <div className="summary-card">
           <h3>Total Projects</h3>
-          <p className="total-projects">{totals.totalProjects}</p>
-        </div>
-        <div className="summary-card">
-          <h3>Total Cash Collected</h3>
-          <p>{formatCurrency(totals.totalUpi)}</p>
+          <p className="total-projects">{otherTotals.totalProjects}</p>
         </div>
         <div className="summary-card">
           <h3>Total Upi Collected</h3>
-          <p>{formatCurrency(totals.totalCash)}</p>
+          <p>{formatCurrency(otherTotals.totalUpi)}</p>
+        </div>
+        <div className="summary-card">
+          <h3>Total Cash Collected</h3>
+          <p>{formatCurrency(otherTotals.totalCash)}</p>
         </div>
         <div className="summary-card">
           <h3>Completed Projects</h3>
-          <p className="completed-projects">{totals.completeProjects}</p>
+          <p className="completed-projects">{otherTotals.completeProjects}</p>
         </div>
         <div
           className="summary-card clickable spend-summary-card"
           onClick={() => setShowSpendPage(true)}
         >
           <h3>Total Spend</h3>
-          <p className="total-spend">{formatCurrency(calculateTotalSpend())}</p>
-
-          {spendSummary && <p className="spend-summary-text">{spendSummary}</p>}
+          <p className="total-spend">{formatCurrency(calculateSpendTotals().total)}</p>
+          {/* {spendSummary && <p className="spend-summary-text">{spendSummary}</p>} */}
           <div className="spend-actions">
             <button
               className="quick-add-spend"
@@ -637,11 +783,9 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
               Add Spend
             </button>
           </div>
-
         </div>
       </div>
 
-      {/* Payments Table */}
       <div className="payments-table-container">
         <div className="payments-table-header">
           <h2>Payment Details</h2>
@@ -681,7 +825,7 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
                     {formatCurrency(project.totalPayment || 0)}
                   </td>
                   <td className="total-remaining">
-                    {formatCurrency(project.totalRemaining || 0)}
+                  {formatCurrency(project.totalRemaining || 0)}
                   </td>
                   <td className="collected-amount">
                     <div className="amount-breakdown">
@@ -763,15 +907,13 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
                   </td>
                 </tr>
               ))}
-
               {filteredProjects.length === 0 && (
                 <tr>
-                  <td colSpan="15" className="text-center py-4 text-gray-500">
+                  <td colSpan="13" className="text-center py-4 text-gray-500">
                     No projects found matching your search
                   </td>
                 </tr>
               )}
-
             </tbody>
           </table>
         </div>
