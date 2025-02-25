@@ -312,13 +312,8 @@ const TrispiderQuotation = ({
                     <div className="scope-of-work">
                         <p className="section-title">Scope of Work:</p>
                         {scopeOfWork && (
-                            <div className='scope-of'>
-
-                                {scopeOfWork.split('\n').map((item, index) => (
-                                    <p key={index}>{item}</p>
-                                ))}
-                            </div>
-                        )}
+        <div className='scope-of' dangerouslySetInnerHTML={{ __html: scopeOfWork }}></div>
+    )}
                         
                         {/* <div className="section">
                             <h3>1. Mechanical System Design & Integration</h3>

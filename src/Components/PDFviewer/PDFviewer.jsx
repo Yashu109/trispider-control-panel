@@ -104,6 +104,7 @@ const PDFViewer = ({ pdfUrl, projectId, onClose }) => {
       color: '#ffffff',
     },
     secondaryButton: {
+      display:'none',
       backgroundColor: '#f3f4f6',
       color: '#1f2937',
     },

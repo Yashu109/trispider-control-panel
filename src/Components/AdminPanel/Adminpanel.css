@@ -1042,6 +1042,7 @@
     display: flex;
     gap: 5px;
     justify-content: end;
+    color: black;
 }
 .editor-content {
     white-space: pre-wrap;
@@ -1073,7 +1074,7 @@
 .editor-content {
     min-height: 150px;
     padding: 10px;
-    border: 1px solid #ddd;
+    border: none;
     border-radius: 3px;
     outline: none;
     background-color: #fff;

@@ -1754,6 +1754,79 @@ const AdminPanel = () => {
         }
     };
 
+    // const handleSubmit = async (e) => {
+    //     e.preventDefault();
+    //     const errors = validateDetailsForm();
+    //     if (errors.length > 0) {
+    //         setMessage(errors.join('\n'));
+    //         return;
+    //     }
+
+    //     setIsLoading(true);
+    //     setMessage('');
+
+    //     try {
+    //         const projectId = editingId || await generateProjectId();
+    //         const projectRef = ref(database, `projects/${projectId}`);
+    //         const timestamp = new Date().toISOString();
+    //         const validAssignments = assignments.filter(a => a.assignee.trim() !== '');
+    //         const finalProjectData = { ...projectData, assignments: validAssignments, timestamp, projectId };
+    //         await set(projectRef, finalProjectData);
+
+    //         if (!quotationRef.current) throw new Error('Quotation component reference is missing');
+
+    //         try {
+    //             const canvas = await html2canvas(quotationRef.current, {
+    //                 scale: 2,
+    //                 useCORS: true,
+    //                 logging: true,
+    //                 backgroundColor: '#ffffff'
+    //             });
+    //             const imgData = canvas.toDataURL('image/png');
+    //             const pdf = new jsPDF('p', 'mm', 'a4');
+    //             const imgWidth = 110;
+    //             const imgHeight = 300;
+    //             pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+    //             const pdfData = pdf.output('datauristring');
+
+    //             const pdfRef = storageRef(storage, `quotations/${projectId}.pdf`);
+    //             await uploadString(pdfRef, pdfData, 'data_url');
+    //             await new Promise(resolve => setTimeout(resolve, 1000));
+
+    //             let attempts = 0;
+    //             const maxAttempts = 3;
+    //             let downloadUrl = null;
+    //             while (attempts < maxAttempts && !downloadUrl) {
+    //                 try {
+    //                     downloadUrl = await getDownloadURL(pdfRef);
+    //                 } catch (error) {
+    //                     attempts++;
+    //                     if (attempts === maxAttempts) throw error;
+    //                     await new Promise(resolve => setTimeout(resolve, 1000));
+    //                 }
+    //             }
+
+    //             setPdfUrl(downloadUrl);
+    //             alert(`Order ${projectId} created successfully! PDF is available for viewing.`);
+    //             setMessage('Order created successfully!');
+    //             setTimeout(() => {
+    //                 resetForm();
+    //                 setMessage('');
+    //             }, 2000);
+    //         } catch (pdfError) {
+    //             console.error('PDF generation/upload error:', pdfError);
+    //             setMessage('Order saved but PDF generation failed. Please try viewing the PDF later.');
+    //             alert(`Order ${projectId} created successfully, but PDF generation failed. You can try viewing it later.`);
+    //         }
+    //     } catch (error) {
+    //         console.error('Submission error:', error);
+    //         setMessage(`Error: ${error.message}`);
+    //         alert(`Failed to create order: ${error.message}`);
+    //     } finally {
+    //         setIsLoading(false);
+    //     }
+    // };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         const errors = validateDetailsForm();
@@ -1761,10 +1834,10 @@ const AdminPanel = () => {
             setMessage(errors.join('\n'));
             return;
         }
-
+    
         setIsLoading(true);
         setMessage('');
-
+    
         try {
             const projectId = editingId || await generateProjectId();
             const projectRef = ref(database, `projects/${projectId}`);
@@ -1772,30 +1845,58 @@ const AdminPanel = () => {
             const validAssignments = assignments.filter(a => a.assignee.trim() !== '');
             const finalProjectData = { ...projectData, assignments: validAssignments, timestamp, projectId };
             await set(projectRef, finalProjectData);
-
+    
             if (!quotationRef.current) throw new Error('Quotation component reference is missing');
-
+    
             try {
-                const canvas = await html2canvas(quotationRef.current, {
+                // Wait a moment for any state updates to reflect in the DOM
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // Get the individual page elements
+                const page1Element = quotationRef.current.querySelector('.page');
+                const page2Element = quotationRef.current.querySelector('.page1');
+                
+                if (!page1Element || !page2Element) {
+                    throw new Error('Could not find page elements in the quotation');
+                }
+                
+                // Create PDF with A4 dimensions
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pageWidth = 210; // A4 width
+                
+                // Capture first page
+                const canvas1 = await html2canvas(page1Element, {
                     scale: 2,
                     useCORS: true,
-                    logging: true,
                     backgroundColor: '#ffffff'
                 });
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const imgWidth = 110;
-                const imgHeight = 300;
-                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                const imgData1 = canvas1.toDataURL('image/png');
+                const imgHeight1 = canvas1.height * pageWidth / canvas1.width;
+                pdf.addImage(imgData1, 'PNG', 0, 0, pageWidth, imgHeight1);
+                
+                // Add second page
+                pdf.addPage();
+                const canvas2 = await html2canvas(page2Element, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff'
+                });
+                const imgData2 = canvas2.toDataURL('image/png');
+                const imgHeight2 = canvas2.height * pageWidth / canvas2.width;
+                pdf.addImage(imgData2, 'PNG', 0, 0, pageWidth, imgHeight2);
+                
                 const pdfData = pdf.output('datauristring');
-
+    
                 const pdfRef = storageRef(storage, `quotations/${projectId}.pdf`);
                 await uploadString(pdfRef, pdfData, 'data_url');
+                
+                // Wait a moment for the upload to complete
                 await new Promise(resolve => setTimeout(resolve, 1000));
-
+    
                 let attempts = 0;
                 const maxAttempts = 3;
                 let downloadUrl = null;
+                
                 while (attempts < maxAttempts && !downloadUrl) {
                     try {
                         downloadUrl = await getDownloadURL(pdfRef);
@@ -1805,7 +1906,7 @@ const AdminPanel = () => {
                         await new Promise(resolve => setTimeout(resolve, 1000));
                     }
                 }
-
+    
                 setPdfUrl(downloadUrl);
                 alert(`Order ${projectId} created successfully! PDF is available for viewing.`);
                 setMessage('Order created successfully!');

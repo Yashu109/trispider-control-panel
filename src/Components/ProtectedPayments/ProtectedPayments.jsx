@@ -208,7 +208,7 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
     }
   };
 
-  // Calculate total payments with date filtering
+  
   const calculateTotalPayments = () => {
     let filteredProjects = [...projects];
 
@@ -238,7 +238,9 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
     }, 0);
   };
 
-  // Spend related functions
+  // Clean implementation without unused functions
+
+
   const fetchSpends = async () => {
     try {
       const spendsRef = ref(database, 'spends');
@@ -322,48 +324,112 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
     });
   };
 
-  const handleSaveEdit = async (projectId) => {
-    try {
-      const project = projects.find(p => p.projectId === projectId);
-      if (!project) return;
+  // const handleSaveEdit = async (projectId) => {
+  //   try {
+  //     const project = projects.find(p => p.projectId === projectId);
+  //     if (!project) return;
 
-      const newAmount = Number(editValues.amount) || 0;
-      const totalPayment = Number(project.totalPayment) || 0;
-      const currentCashAmount = Number(project.cashAmount) || 0;
-      const currentUpiAmount = Number(project.advancePayment) || 0;
+  //     const newAmount = Number(editValues.amount) || 0;
+  //     const totalPayment = Number(project.totalPayment) || 0;
+  //     const currentCashAmount = Number(project.cashAmount) || 0;
+  //     const currentUpiAmount = Number(project.advancePayment) || 0;
 
-      let updates = {};
-      if (editValues.paymentMethod === 'cash') {
-        const newCashAmount = currentCashAmount + newAmount;
-        const newRemaining = totalPayment - (newCashAmount + currentUpiAmount);
-        updates = {
-          cashAmount: newCashAmount,
-          totalRemaining: newRemaining,
-          paymentMethod: 'cash',
-          paymentDate: new Date().toISOString()
-        };
-      } else {
-        const newUpiAmount = currentUpiAmount + newAmount;
-        const newRemaining = totalPayment - (currentCashAmount + newUpiAmount);
-        updates = {
-          advancePayment: newUpiAmount,
-          advancePaymentMethod: 'upi',
-          totalRemaining: newRemaining,
-          paymentMethod: 'upi',
-          paymentDate: new Date().toISOString()
-        };
-      }
+  //     let updates = {};
+  //     if (editValues.paymentMethod === 'cash') {
+  //       const newCashAmount = currentCashAmount + newAmount;
+  //       const newRemaining = totalPayment - (newCashAmount + currentUpiAmount);
+  //       updates = {
+  //         cashAmount: newCashAmount,
+  //         totalRemaining: newRemaining,
+  //         paymentMethod: 'cash',
+  //         paymentDate: new Date().toISOString()
+  //       };
+  //     } else {
+  //       const newUpiAmount = currentUpiAmount + newAmount;
+  //       const newRemaining = totalPayment - (currentCashAmount + newUpiAmount);
+  //       updates = {
+  //         advancePayment: newUpiAmount,
+  //         advancePaymentMethod: 'upi',
+  //         totalRemaining: newRemaining,
+  //         paymentMethod: 'upi',
+  //         paymentDate: new Date().toISOString()
+  //       };
+  //     }
 
-      const projectRef = ref(database, `projects/${projectId}`);
-      await update(projectRef, updates);
+  //     const projectRef = ref(database, `projects/${projectId}`);
+  //     await update(projectRef, updates);
 
-      setEditingPayment(null);
-      setEditValues({ amount: '', paymentMethod: 'cash' });
-    } catch (error) {
-      console.error('Error updating payment:', error);
-      setError('Failed to update payment details');
+  //     setEditingPayment(null);
+  //     setEditValues({ amount: '', paymentMethod: 'cash' });
+  //   } catch (error) {
+  //     console.error('Error updating payment:', error);
+  //     setError('Failed to update payment details');
+  //   }
+  // };
+
+// Replace your current handleSaveEdit function with this one:
+const handleSaveEdit = async (projectId) => {
+  try {
+    const project = projects.find(p => p.projectId === projectId);
+    if (!project) return;
+
+    const newAmount = Number(editValues.amount) || 0;
+    if (newAmount <= 0) {
+      setError('Payment amount must be greater than 0');
+      return;
     }
-  };
+    
+    const totalPayment = Number(project.totalPayment) || 0;
+    const currentCashAmount = Number(project.cashAmount) || 0;
+    const currentUpiAmount = Number(project.advancePayment) || 0;
+    
+    // Create current date for payment tracking
+    const paymentDate = new Date().toISOString();
+
+    let updates = {};
+    if (editValues.paymentMethod === 'cash') {
+      const newCashAmount = currentCashAmount + newAmount;
+      const newRemaining = totalPayment - (newCashAmount + currentUpiAmount);
+      updates = {
+        cashAmount: newCashAmount,
+        totalRemaining: newRemaining,
+        paymentMethod: 'cash',
+        paymentDate: paymentDate,
+        lastPaymentAmount: newAmount // Store the most recent payment amount
+      };
+    } else {
+      const newUpiAmount = currentUpiAmount + newAmount;
+      const newRemaining = totalPayment - (currentCashAmount + newUpiAmount);
+      updates = {
+        advancePayment: newUpiAmount,
+        advancePaymentMethod: 'upi',
+        totalRemaining: newRemaining,
+        paymentMethod: 'upi',
+        paymentDate: paymentDate,
+        lastPaymentAmount: newAmount // Store the most recent payment amount
+      };
+    }
+
+    // Also store payment in payment history collection for better tracking
+    const paymentHistoryRef = ref(database, `paymentHistory/${projectId}/${Date.now()}`);
+    const paymentRecord = {
+      amount: newAmount,
+      paymentMethod: editValues.paymentMethod,
+      date: paymentDate
+    };
+    
+    // Update project and add payment history record
+    const projectRef = ref(database, `projects/${projectId}`);
+    await update(projectRef, updates);
+    await set(paymentHistoryRef, paymentRecord);
+
+    setEditingPayment(null);
+    setEditValues({ amount: '', paymentMethod: 'cash' });
+  } catch (error) {
+    console.error('Error updating payment:', error);
+    setError('Failed to update payment details');
+  }
+};
 
   const handleCancelEdit = () => {
     setEditingPayment(null);
