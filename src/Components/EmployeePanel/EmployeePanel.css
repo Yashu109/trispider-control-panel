@@ -89,13 +89,13 @@
 
 .projects-table td {
   padding: 12px 15px;
-  /* border-bottom: 1px solid #eee; */
+
   vertical-align: top;
   background-color: white;
 }
 
 .projects-table tr:last-child td {
-  /* border-bottom: none; */
+
 }
 
 .projects-table tr:hover {
@@ -110,7 +110,7 @@
 }
 
 .projects-table tbody tr:last-child td {
-  /* border-bottom: none; */
+  
 }
 
 .projects-table tbody tr:hover {
@@ -192,7 +192,7 @@
   background-color: #ff7875;
 }
 
-/* Responsive Adjustments */
+
 @media (max-width: 768px) {
   .employee-dashboard-container {
     padding: 10px;
@@ -263,7 +263,6 @@
   margin-top: 0.25rem;
 }
 
-/* Attendance Section Styles */
 .attendance-section {
   background-color: #fff;
   border-radius: 8px;
@@ -354,7 +353,7 @@
   background-color: #dc2626;
 }
 
-/* Current Status Colors */
+
 .current-status {
   display: flex;
   align-items: center;
@@ -363,16 +362,16 @@
 }
 
 .current-status span.checkIn-Out.checked-in {
-  color: #10b981; /* Green for Checked In */
+  color: #10b981; 
   font-weight: bold;
 }
 
 .current-status span.checkIn-Out.checked-out {
-  color: #ef4444; /* Red for Checked Out */
+  color: #ef4444;
   font-weight: bold;
 }
 
-/* Attendance History Table Styles */
+
 .attendance-history {
   margin-top: 24px;
 }
@@ -417,7 +416,6 @@
   padding: 24px;
 }
 
-/* History Page Styles */
 .history-page {
   padding: 20px;
   background-color: #fff;
@@ -442,7 +440,7 @@
 }
 
 .back-button:hover {
-  /* background-color: #e5e7eb; */
+
 }
 
 .history-table-container {
@@ -498,7 +496,7 @@
   padding: 24px;
 }
 
-/* Responsive Design */
+
 @media (max-width: 768px) {
   .attendance-header {
     flex-direction: column;
@@ -521,7 +519,7 @@
   }
 }
 
-/* Summary Modal Styles */
+
 .summary-modal {
   position: fixed;
   top: 0;
@@ -562,7 +560,7 @@
 }
 
 .submit-summary-btn {
-  background-color: #10b981; /* Green to match Check In button */
+  background-color: #10b981; 
   color: white;
   padding: 10px 20px;
   border: none;
@@ -583,7 +581,7 @@
 }
 
 .cancel-summary-btn {
-  background-color: #ef4444; /* Red to match Check Out button */
+  background-color: #ef4444; 
   color: white;
   padding: 10px 20px;
   border: none;
@@ -634,7 +632,7 @@
   color: #6c757d;
 }
 
-/* Additional style for the task column in admin table */
+
 .history-table td:nth-child(7) {
   max-width: 200px;
   white-space: normal;
@@ -685,4 +683,47 @@
 @keyframes workingPulse {
   from { box-shadow: 0 2px 6px rgba(23, 162, 184, 0.1); }
   to { box-shadow: 0 5px 15px rgba(23, 162, 184, 0.3); }
+}
+.today-task-display {
+  margin: 20px 0;
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.task-content {
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.task-content.pending {
+  background: #fff3e0;
+}
+
+.task-content.in-progress {
+  background: #e0f7fa;
+}
+
+.task-content.completed {
+  background: #e8f5e9;
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.task-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.status-message {
+  font-size: 0.9em;
+  color: #555;
 }

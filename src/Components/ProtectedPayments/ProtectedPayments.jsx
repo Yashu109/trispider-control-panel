@@ -1379,27 +1379,15 @@
 // export default ProtectedPayments;
 
 import React, { useState, useEffect } from 'react';
-import { Loader2, Lock, Eye, EyeOff, Edit2, Check, X, CheckCircle , PlusCircle, Search, ArrowUpDown, Mail, XCircle } from "lucide-react";
+import { Loader2, Lock, Eye, EyeOff, Edit2, Check, X, CheckCircle, PlusCircle, Search, ArrowUpDown, Mail, XCircle } from "lucide-react";
 import { database } from '../../firebase';
 import { ref, get, set, update, remove } from 'firebase/database';
 import './ProtectedPayments.css';
 
-// Email service (you'll need to implement this)
+// Email service (placeholder - replace with actual implementation)
 const sendVerificationEmail = async (email, code) => {
   try {
-    // Replace this with your actual email sending service
     console.log(`Verification code sent to ${email}: ${code}`);
-    
-    // Implement actual email sending logic here
-    // Options:
-    // 1. Use a backend API endpoint
-    // const response = await axios.post('/api/send-verification-email', { email, code });
-    
-    // 2. Use Firebase Cloud Functions
-    // const functions = getFunctions();
-    // const sendVerificationCode = httpsCallable(functions, 'sendVerificationCode');
-    // await sendVerificationCode({ email, code });
-    
     return true;
   } catch (error) {
     console.error('Failed to send verification email:', error);
@@ -1424,12 +1412,14 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
   const [verificationCode, setVerificationCode] = useState('');
   const [inputVerificationCode, setInputVerificationCode] = useState('');
 
-  // Existing states from original component
+  // Payment states
   const [editingPayment, setEditingPayment] = useState(null);
   const [editValues, setEditValues] = useState({
     amount: '',
     paymentMethod: 'cash'
   });
+
+  // Spend states
   const [showSpendPage, setShowSpendPage] = useState(false);
   const [spends, setSpends] = useState([]);
   const [newSpend, setNewSpend] = useState({
@@ -1439,13 +1429,18 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
     paymentMethod: 'cash'
   });
   const [showAddSpendForm, setShowAddSpendForm] = useState(false);
+  const [spendSummary, setSpendSummary] = useState('');
   const [employees, setEmployees] = useState([]);
+
+  // Filter and sort states
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({
     key: null,
     direction: 'asc'
   });
   const [filteredProjects, setFilteredProjects] = useState(projects);
+
+  // Date filter state
   const [dateFilter, setDateFilter] = useState({
     startDate: null,
     endDate: null,
@@ -1474,93 +1469,11 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
     return Math.floor(100000 + Math.random() * 900000).toString();
   };
 
-  // Effects (combine existing effects)
-  useEffect(() => {
-    const checkPassword = async () => {
-      try {
-        const passwordRef = ref(database, 'adminPassword');
-        const snapshot = await get(passwordRef);
-        if (snapshot.exists()) {
-          setHasExistingPassword(true);
-          setStoredPassword(snapshot.val());
-        }
-      } catch (err) {
-        console.error('Error checking password:', err);
-        setError('Error checking authentication status');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    checkPassword();
-  }, []);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchSpends();
-      fetchEmployees();
-    }
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (spends.length > 0) {
-      generateSpendSummary();
-    }
-  }, [spends]);
-
-  // Existing methods from original component
-  const fetchSpends = async () => {
-    try {
-      const spendsRef = ref(database, 'spends');
-      const snapshot = await get(spendsRef);
-      if (snapshot.exists()) {
-        const spendsData = snapshot.val();
-        const spendsArray = Object.keys(spendsData).map(key => ({
-          id: key,
-          ...spendsData[key]
-        }));
-        setSpends(spendsArray.sort((a, b) => new Date(b.date) - new Date(a.date)));
-      } else {
-        setSpends([]);
-      }
-    } catch (error) {
-      console.error('Error fetching spends:', error);
-      setError('Failed to fetch spends');
-    }
-  };
-
-  const fetchEmployees = async () => {
-    try {
-      const employeesRef = ref(database, 'employeesList');
-      const snapshot = await get(employeesRef);
-      if (snapshot.exists()) {
-        const employeesData = snapshot.val();
-        if (employeesData.employees) {
-          const employeesArray = Object.keys(employeesData.employees).map(key => ({
-            ...employeesData.employees[key],
-            index: key
-          }));
-          const validEmployees = employeesArray
-            .filter(emp => emp && emp.name)
-            .sort((a, b) => a.name.localeCompare(b.name));
-          setEmployees(validEmployees);
-        } else {
-          setEmployees([]);
-        }
-      } else {
-        setEmployees([]);
-      }
-    } catch (error) {
-      console.error('Error fetching employees:', error);
-      setError('Failed to fetch employees');
-    }
-  };
-
-  const generateSpendSummary = () => {
-    const latestSpends = spends.slice(0, 3);
-    if (latestSpends.length === 0) {
-      return 'No recent spends';
-    }
-    return `Last ${latestSpends.length} spends: ${formatCurrency(latestSpends.reduce((sum, spend) => sum + Number(spend.amount), 0))}`;
+  // Logout handler
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setPassword('');
+    setResetStage('login');
   };
 
   // Password reset methods
@@ -1570,27 +1483,21 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
     setIsLoading(true);
 
     try {
-      // Validate email
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(resetEmail)) {
         setError('Please enter a valid email address');
         return;
       }
 
-      // Check email authorization
       const normalizedEmail = resetEmail.toLowerCase();
       if (!AUTHORIZED_RESET_EMAILS.includes(normalizedEmail)) {
         setError('You are not authorized to reset the password');
         return;
       }
 
-      // Generate verification code
       const code = generateVerificationCode();
-      
-      // Sanitize email for Firebase path
       const sanitizedEmail = sanitizeEmailForPath(resetEmail);
 
-      // Store verification details in Firebase
       const verificationRef = ref(database, `passwordResetVerifications/${sanitizedEmail}`);
       await set(verificationRef, {
         email: normalizedEmail,
@@ -1599,10 +1506,8 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
         expiresAt: Date.now() + (15 * 60 * 1000) // 15 minutes expiration
       });
 
-      // Send verification email
       await sendVerificationEmail(normalizedEmail, code);
 
-      // Update reset stage
       setVerificationCode(code);
       setResetStage('verify');
     } catch (err) {
@@ -1619,13 +1524,10 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
     setIsLoading(true);
 
     try {
-      // Sanitize email for Firebase path
       const sanitizedEmail = sanitizeEmailForPath(resetEmail);
       const verificationRef = ref(database, `passwordResetVerifications/${sanitizedEmail}`);
-      
-      // Fetch verification details
       const snapshot = await get(verificationRef);
-      
+
       if (!snapshot.exists()) {
         setError('Verification request expired. Please start over.');
         setResetStage('initiate');
@@ -1634,21 +1536,18 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
 
       const verificationData = snapshot.val();
 
-      // Check code and expiration
       if (verificationData.code !== inputVerificationCode) {
         setError('Incorrect verification code');
         return;
       }
 
       if (Date.now() > verificationData.expiresAt) {
-        // Remove expired verification
         await remove(verificationRef);
         setError('Verification code expired. Please request a new one.');
         setResetStage('initiate');
         return;
       }
 
-      // Code is valid, move to reset stage
       setResetStage('reset');
     } catch (err) {
       console.error('Verification error:', err);
@@ -1664,7 +1563,6 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
     setIsLoading(true);
 
     try {
-      // Validate password
       if (password.length < 6) {
         setError('Password must be at least 6 characters long');
         return;
@@ -1675,26 +1573,22 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
         return;
       }
 
-      // Sanitize email for Firebase path
       const sanitizedEmail = sanitizeEmailForPath(resetEmail);
       const verificationRef = ref(database, `passwordResetVerifications/${sanitizedEmail}`);
-      
-      // Update password in Firebase
       const passwordRef = ref(database, 'adminPassword');
-      await set(passwordRef, password);
 
-      // Remove verification record
+      await set(passwordRef, password);
       await remove(verificationRef);
 
-      // Reset states
       setResetStage('login');
       setResetEmail('');
       setPassword('');
       setConfirmPassword('');
       setVerificationCode('');
       setInputVerificationCode('');
+      setHasExistingPassword(true);
+      setStoredPassword(password);
 
-      // Show success message
       alert('Password reset successful. Please log in with your new password.');
     } catch (err) {
       console.error('Password reset error:', err);
@@ -1746,14 +1640,7 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
     }
   };
 
-  // Logout handler
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setPassword('');
-    setResetStage('login');
-  };
-
-  // Render authentication screens
+  // Render authentication screen with password reset stages
   const renderAuthenticationScreen = () => {
     switch (resetStage) {
       case 'login':
@@ -1765,7 +1652,7 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
                 <h2>{hasExistingPassword ? 'Enter Password' : 'Create Password'}</h2>
               </div>
               <form 
-                onSubmit={hasExistingPassword ? handlePasswordLogin : handleCreatePassword}
+                onSubmit={hasExistingPassword ? handlePasswordLogin : handleCreatePassword} 
                 className="password-form"
               >
                 <div className="password-input-group">
@@ -1808,7 +1695,6 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
                   {isLoading && <Loader2 className="spinner" />}
                   {hasExistingPassword ? 'Access Payment Details' : 'Create Password'}
                 </button>
-                
                 {hasExistingPassword && (
                   <div className="reset-password-link">
                     <button
@@ -1855,8 +1741,8 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
                     {isLoading ? <Loader2 className="spinner" /> : 'Send Verification Code'}
                   </button>
                   <button 
-                    type="button"
-                    onClick={() => setResetStage('login')}
+                    type="button" 
+                    onClick={() => setResetStage('login')} 
                     className="cancel-button"
                   >
                     Cancel
@@ -1935,8 +1821,7 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="protected-toggle-password"
-                  >
-                    {showPassword ? <XCircle size={20} /> : <Eye size={20} />}
+                  >{showPassword ? <XCircle size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
                 <div className="password-input-group">
@@ -1968,109 +1853,106 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
     }
   };
 
-  // If still loading
-  if (isLoading) {
-    return (
-      <div className="loading-container">
-        <Loader2 className="spinner" />
-        <p>Loading...</p>
-      </div>
-    );
-  }
+  // Effects
+  useEffect(() => {
+    const checkPassword = async () => {
+      try {
+        const passwordRef = ref(database, 'adminPassword');
+        const snapshot = await get(passwordRef);
+        if (snapshot.exists()) {
+          setHasExistingPassword(true);
+          setStoredPassword(snapshot.val());
+        }
+      } catch (err) {
+        console.error('Error checking password:', err);
+        setError('Error checking authentication status');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkPassword();
+  }, []);
 
-  // If not authenticated, show authentication screens
-  if (!isAuthenticated) {
-    return renderAuthenticationScreen();
-  }
-
-  // Render methods for date filters, search, and sorting
-  const handleDatePreset = (preset) => {
-    const now = new Date();
-    let startDate, endDate;
-    
-    switch (preset) {
-      case 'day':
-        startDate = new Date(now);
-        startDate.setHours(0, 0, 0, 0);
-        endDate = new Date(now);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-        
-      case 'week':
-        endDate = new Date(now);
-        endDate.setHours(23, 59, 59, 999);
-        startDate = new Date(now);
-        startDate.setDate(startDate.getDate() - 7);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-        
-      case 'month':
-        endDate = new Date(now);
-        endDate.setHours(23, 59, 59, 999);
-        startDate = new Date(now);
-        startDate.setDate(startDate.getDate() - 30);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-        
-      case 'all':
-        startDate = null;
-        endDate = null;
-        break;
-        
-      default:
-        return;
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchSpends();
+      fetchEmployees();
     }
-    
-    setDateFilter({ startDate, endDate, preset });
+  }, [isAuthenticated]);
+
+  // Fetch methods
+  const fetchSpends = async () => {
+    try {
+      const spendsRef = ref(database, 'spends');
+      const snapshot = await get(spendsRef);
+      if (snapshot.exists()) {
+        const spendsData = snapshot.val();
+        const spendsArray = Object.keys(spendsData).map(key => ({
+          id: key,
+          ...spendsData[key]
+        }));
+        setSpends(spendsArray.sort((a, b) => new Date(b.date) - new Date(a.date)));
+      } else {
+        setSpends([]);
+      }
+    } catch (error) {
+      console.error('Error fetching spends:', error);
+      setError('Failed to fetch spends');
+    }
   };
 
-  const handleCustomDateChange = (type, date) => {
-    if (type === 'start') {
-      const startDate = new Date(date);
-      startDate.setHours(0, 0, 0, 0);
-      setDateFilter(prev => ({
-        ...prev,
-        startDate,
-        preset: 'custom'
-      }));
+  const fetchEmployees = async () => {
+    try {
+      const employeesRef = ref(database, 'employeesList');
+      const snapshot = await get(employeesRef);
+      if (snapshot.exists()) {
+        const employeesData = snapshot.val();
+        if (employeesData.employees) {
+          const employeesArray = Object.keys(employeesData.employees).map(key => ({
+            ...employeesData.employees[key],
+            index: key
+          }));
+          const validEmployees = employeesArray
+            .filter(emp => emp && emp.name && emp.employeeId)
+            .sort((a, b) => a.name.localeCompare(b.name));
+          setEmployees(validEmployees);
+        } else {
+          setEmployees([]);
+        }
+      } else {
+        setEmployees([]);
+      }
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      setError('Failed to fetch employees');
+    }
+  };
+
+  // Spend summary generator
+  const generateSpendSummary = () => {
+    const latestSpends = spends.slice(0, 3);
+    if (latestSpends.length === 0) {
+      setSpendSummary('No recent spends');
     } else {
-      const endDate = new Date(date);
-      endDate.setHours(23, 59, 59, 999);
-      setDateFilter(prev => ({
-        ...prev,
-        endDate,
-        preset: 'custom'
-      }));
+      setSpendSummary(`Last ${latestSpends.length} spends: ${formatCurrency(latestSpends.reduce((sum, spend) => sum + Number(spend.amount), 0))}`);
     }
   };
 
+  // Calculation methods
   const calculateTotalPayments = () => {
     let filteredProjects = [...projects];
-
     if (dateFilter.startDate && dateFilter.endDate) {
       const start = new Date(dateFilter.startDate);
       const end = new Date(dateFilter.endDate);
-
       filteredProjects = filteredProjects.filter(project => {
-        if (!project.paymentDate) {
-          return false;
-        }
-
+        if (!project.paymentDate) return false;
         const paymentDate = new Date(project.paymentDate);
-        if (isNaN(paymentDate.getTime())) {
-          return false;
-        }
-
-        // Normalize to noon to avoid timezone issues
+        if (isNaN(paymentDate.getTime())) return false;
         paymentDate.setHours(12, 0, 0, 0);
-        
         return paymentDate >= start && paymentDate <= end;
       });
     }
-
-    return filteredProjects.reduce((sum, project) => {
-      return sum + (Number(project.totalPayment) || 0);
-    }, 0);
+    return filteredProjects.reduce((sum, project) => sum + (Number(project.totalPayment) || 0), 0);
   };
 
   const calculateOtherTotals = () => {
@@ -2101,83 +1983,211 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
         cash: spend.paymentMethod === 'cash' ? acc.cash + amount : acc.cash,
         upi: spend.paymentMethod === 'upi' ? acc.upi + amount : acc.upi
       };
-    }, {
-      total: 0,
-      cash: 0,
-      upi: 0
+    }, { total: 0, cash: 0, upi: 0 });
+  };
+
+  // Add spend handler
+  const handleAddSpend = async () => {
+    if (!newSpend.amount || !newSpend.purpose || !newSpend.employeeId || !newSpend.paymentMethod) {
+      setError('Please fill in all fields including employee name and payment method');
+      return;
+    }
+
+    try {
+      const employee = employees.find(emp => emp.employeeId === newSpend.employeeId);
+      if (!employee) {
+        setError('Selected employee not found');
+        return;
+      }
+
+      const newSpendRef = ref(database, `spends/${Date.now()}`);
+      const spendData = {
+        amount: Number(newSpend.amount),
+        purpose: newSpend.purpose,
+        date: new Date().toISOString(),
+        employeeId: newSpend.employeeId,
+        employeeName: employee.name,
+        paymentMethod: newSpend.paymentMethod
+      };
+
+      await set(newSpendRef, spendData);
+      setNewSpend({ amount: '', purpose: '', employeeId: '', paymentMethod: 'cash' });
+      setShowAddSpendForm(false);
+      setError('');
+      await fetchSpends(); // Refresh spends list
+    } catch (error) {
+      console.error('Error adding spend:', error);
+      setError('Failed to add spend');
+    }
+  };
+
+  // Project payment handlers
+  const handleEditClick = (project) => {
+    setEditingPayment(project.projectId);
+    setEditValues({
+      amount: '',
+      paymentMethod: 'cash'
     });
   };
 
-  const renderDateFilters = () => {
-    return (
-      <div className="date-filter-container">
-        <h3>Filter Total Payments by Date</h3>
-        <div className="date-filter-controls">
-          <div className="preset-buttons">
-            <button
-              className={`filter-btn ${dateFilter.preset === 'day' ? 'active' : ''}`}
-              onClick={() => handleDatePreset('day')}
-            >
-              Today
-            </button>
-            <button
-              className={`filter-btn ${dateFilter.preset === 'week' ? 'active' : ''}`}
-              onClick={() => handleDatePreset('week')}
-            >
-              Last 7 Days
-            </button>
-            <button
-              className={`filter-btn ${dateFilter.preset === 'month' ? 'active' : ''}`}
-              onClick={() => handleDatePreset('month')}
-            >
-              Last 30 Days
-            </button>
-            <button
-              className={`filter-btn ${dateFilter.preset === 'all' ? 'active' : ''}`}
-              onClick={() => handleDatePreset('all')}
-            >
-              All Time
-            </button>
-          </div>
-          
-          <div className="custom-date-range">
-            <input
-              type="date"
-              value={dateFilter.startDate ? dateFilter.startDate.toISOString().split('T')[0] : ''}
-              onChange={(e) => handleCustomDateChange('start', e.target.value)}
-              className="date-input"
-            />
-            <span>to</span>
-            <input
-              type="date"
-              value={dateFilter.endDate ? dateFilter.endDate.toISOString().split('T')[0] : ''}
-              onChange={(e) => handleCustomDateChange('end', e.target.value)}
-              className="date-input"
-            />
-          </div>
-        </div>
-      </div>
-    );
+  const handleSaveEdit = async (projectId) => {
+    try {
+      const project = projects.find(p => p.projectId === projectId);
+      if (!project) return;
+
+      const newAmount = Number(editValues.amount) || 0;
+      if (newAmount <= 0) {
+        setError('Payment amount must be greater than 0');
+        return;
+      }
+
+      const totalPayment = Number(project.totalPayment) || 0;
+      const currentCashAmount = Number(project.cashAmount) || 0;
+      const currentUpiAmount = Number(project.advancePayment) || 0;
+      const paymentDate = new Date().toISOString();
+
+      let updates = {};
+      if (editValues.paymentMethod === 'cash') {
+        const newCashAmount = currentCashAmount + newAmount;
+        const newRemaining = totalPayment - (newCashAmount + currentUpiAmount);
+        updates = {
+          cashAmount: newCashAmount,
+          totalRemaining: newRemaining,
+          paymentMethod: 'cash',
+          paymentDate: paymentDate,
+          lastPaymentAmount: newAmount
+        };
+      } else {
+        const newUpiAmount = currentUpiAmount + newAmount;
+        const newRemaining = totalPayment - (currentCashAmount + newUpiAmount);
+        updates = {
+          advancePayment: newUpiAmount,
+          advancePaymentMethod: 'upi',
+          totalRemaining: newRemaining,
+          paymentMethod: 'upi',
+          paymentDate: paymentDate,
+          lastPaymentAmount: newAmount
+        };
+      }
+
+      const paymentHistoryRef = ref(database, `paymentHistory/${projectId}/${Date.now()}`);
+      const paymentRecord = {
+        amount: newAmount,
+        paymentMethod: editValues.paymentMethod,
+        date: paymentDate
+      };
+
+      const projectRef = ref(database, `projects/${projectId}`);
+      await update(projectRef, updates);
+      await set(paymentHistoryRef, paymentRecord);
+
+      setEditingPayment(null);
+      setEditValues({ amount: '', paymentMethod: 'cash' });
+      setError('');
+    } catch (error) {
+      console.error('Error updating payment:', error);
+      setError('Failed to update payment details');
+    }
   };
 
-  const renderSearchBar = () => (
-    <div className="search-container">
-      <div className="search-wrapper">
-        <Search className="search-icon" size={20} />
-        <input
-          type="text"
-          placeholder="Search projects..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="protected-search-input"
-        />
-      </div>
-      <span className="results-count">
-        Showing {filteredProjects.length} of {projects.length} projects
-      </span>
-    </div>
-  );
+  const handleCancelEdit = () => {
+    setEditingPayment(null);
+    setEditValues({ amount: '', paymentMethod: 'cash' });
+    setError('');
+  };
 
+  // Filtering and sorting methods
+  useEffect(() => {
+    let result = [...projects];
+    if (searchTerm) {
+      result = result.filter(project =>
+        Object.entries(project).some(([key, value]) => {
+          if (['projectId', 'totalPayment', 'totalRemaining', 'cashAmount', 'advancePayment'].includes(key)) {
+            return false;
+          }
+          return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+        })
+      );
+    }
+    if (sortConfig.key) {
+      result.sort((a, b) => {
+        let aVal = a[sortConfig.key];
+        let bVal = b[sortConfig.key];
+        if (['totalPayment', 'totalRemaining', 'cashAmount', 'advancePayment'].includes(sortConfig.key)) {
+          aVal = Number(aVal) || 0;
+          bVal = Number(bVal) || 0;
+        } else {
+          aVal = String(aVal || '').toLowerCase();
+          bVal = String(bVal || '').toLowerCase();
+        }
+        return sortConfig.direction === 'asc' ? aVal - bVal || aVal.localeCompare(bVal) : bVal - aVal || bVal.localeCompare(aVal);
+      });
+    }
+    setFilteredProjects(result);
+  }, [projects, searchTerm, sortConfig]);
+
+  // Date filtering methods
+  const handleDatePreset = (preset) => {
+    const now = new Date();
+    let startDate, endDate;
+
+    switch (preset) {
+      case 'day':
+        startDate = new Date(now);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(now);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+
+      case 'week':
+        endDate = new Date(now);
+        endDate.setHours(23, 59, 59, 999);
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 7);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+
+      case 'month':
+        endDate = new Date(now);
+        endDate.setHours(23, 59, 59, 999);
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 30);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+
+      case 'all':
+        startDate = null;
+        endDate = null;
+        break;
+
+      default:
+        return;
+    }
+
+    setDateFilter({ startDate, endDate, preset });
+  };
+
+  const handleCustomDateChange = (type, date) => {
+    if (type === 'start') {
+      const startDate = new Date(date);
+      startDate.setHours(0, 0, 0, 0);
+      setDateFilter(prev => ({
+        ...prev,
+        startDate,
+        preset: 'custom'
+      }));
+    } else {
+      const endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
+      setDateFilter(prev => ({
+        ...prev,
+        endDate,
+        preset: 'custom'
+      }));
+    }
+  };
+
+  // Render methods
   const handleSort = (key) => {
     setSortConfig(prevSort => ({
       key,
@@ -2205,45 +2215,258 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
     </th>
   );
 
-  // Main dashboard rendering continues in the next part...// Main dashboard rendering
+  const renderSearchBar = () => (
+    <div className="search-container">
+      <div className="search-wrapper">
+        <Search className="search-icon" size={20} />
+        <input
+          type="text"
+          placeholder="Search projects..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="protected-search-input"
+        />
+      </div>
+      <span className="results-count">
+        Showing {filteredProjects.length} of {projects.length} projects
+      </span>
+    </div>
+  );
+
+  const renderDateFilters = () => (
+    <div className="date-filter-container">
+      <h3>Filter Total Payments by Date</h3>
+      <div className="date-filter-controls">
+        <div className="preset-buttons">
+          <button 
+            className={`filter-btn ${dateFilter.preset === 'day' ? 'active' : ''}`} 
+            onClick={() => handleDatePreset('day')}
+          >
+            Today
+          </button>
+          <button 
+            className={`filter-btn ${dateFilter.preset === 'week' ? 'active' : ''}`} 
+            onClick={() => handleDatePreset('week')}
+          >
+            Last7 Days
+          </button>
+          <button 
+            className={`filter-btn ${dateFilter.preset === 'month' ? 'active' : ''}`} 
+            onClick={() => handleDatePreset('month')}
+          >
+            Last 30 Days
+          </button>
+          <button 
+            className={`filter-btn ${dateFilter.preset === 'all' ? 'active' : ''}`} 
+            onClick={() => handleDatePreset('all')}
+          >
+            All Time
+          </button>
+        </div>
+        <div className="custom-date-range">
+          <input
+            type="date"
+            value={dateFilter.startDate ? dateFilter.startDate.toISOString().split('T')[0] : ''}
+            onChange={(e) => handleCustomDateChange('start', e.target.value)}
+            className="date-input"
+          />
+          <span>to</span>
+          <input
+            type="date"
+            value={dateFilter.endDate ? dateFilter.endDate.toISOString().split('T')[0] : ''}
+            onChange={(e) => handleCustomDateChange('end', e.target.value)}
+            className="date-input"
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  // Main render method
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <Loader2 className="spinner" />
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  // Authentication screen
+  if (!isAuthenticated) {
+    return renderAuthenticationScreen();
+  }
+
+  // Spend page render
+  if (showSpendPage) {
+    const spendTotals = calculateSpendTotals();
+    return (
+      <div className="spend-page">
+        <div className="spend-header">
+          <button
+            className="back-button"
+            onClick={() => setShowSpendPage(false)}
+          >
+            Back to Dashboard
+          </button>
+          <h2>Spend Management</h2>
+        </div>
+        <div className="spend-totals-summary">
+          <div className="summary-card">
+            <h3>Total Spend</h3>
+            <p>{formatCurrency(spendTotals.total)}</p>
+          </div>
+          <div className="summary-card">
+            <h3>Cash Spend</h3>
+            <p>{formatCurrency(spendTotals.cash)}</p>
+          </div>
+          <div className="summary-card">
+            <h3>UPI Spend</h3>
+            <p>{formatCurrency(spendTotals.upi)}</p>
+          </div>
+        </div>
+
+        {showAddSpendForm ? (
+          <div className="add-spend-form">
+            <h3>Add New Spend</h3>
+            <div className="spend-input-container">
+              <input
+                type="number"
+                placeholder="Enter amount"
+                value={newSpend.amount}
+                onChange={(e) => setNewSpend({ ...newSpend, amount: e.target.value })}
+                className="spend-amount-input"
+                required
+              />
+              <input
+                type="text"
+                placeholder="Enter purpose"
+                value={newSpend.purpose}
+                onChange={(e) => setNewSpend({ ...newSpend, purpose: e.target.value })}
+                className="spend-purpose-input"
+                required
+              />
+              <div className="select-wrapper">
+                <select
+                  value={newSpend.employeeId}
+                  onChange={(e) => setNewSpend({ ...newSpend, employeeId: e.target.value })}
+                  className="employee-select"
+                  required
+                >
+                  <option value="">Select Employee</option>
+                  {employees.map((employee) => (
+                    <option key={employee.employeeId} value={employee.employeeId}>
+                      {employee.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="select-wrapper">
+                <select
+                  value={newSpend.paymentMethod}
+                  onChange={(e) => setNewSpend({ ...newSpend, paymentMethod: e.target.value })}
+                  className="payment-method-select"
+                  required
+                >
+                  <option value="cash">Cash</option>
+                  <option value="upi">UPI</option>
+                </select>
+              </div>
+              <button onClick={handleAddSpend} className="add-spend-button">
+                Add Spend
+              </button>
+              <button
+                onClick={() => {
+                  setShowAddSpendForm(false);
+                  setNewSpend({ amount: '', purpose: '', employeeId: '', paymentMethod: 'cash' });
+                  setError('');
+                }}
+                className="cancel-button"
+              >
+                Cancel
+              </button>
+            </div>
+            {error && <div className="error-message">{error}</div>}
+          </div>
+        ) : (
+          <button
+            className="show-add-spend-button"
+            onClick={() => setShowAddSpendForm(true)}
+          >
+            <PlusCircle size={16} /> Add New Spend
+          </button>
+        )}
+
+        <div className="spends-table-container">
+          <h3>Spend History</h3>
+          <table className="spends-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Purpose</th>
+                <th>Payment Method</th>
+                <th>Added By</th>
+              </tr>
+            </thead>
+            <tbody>
+              {spends.map((spend) => (
+                <tr key={spend.id}>
+                  <td>{new Date(spend.date).toLocaleDateString()}</td>
+                  <td className="spend-amount">{formatCurrency(spend.amount)}</td>
+                  <td>{spend.purpose}</td>
+                  <td>{spend.paymentMethod || 'Not specified'}</td>
+                  <td>{spend.employeeName || 'Unknown'}</td>
+                </tr>
+              ))}
+              {spends.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="no-spends">No spends recorded yet</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  // Main dashboard render
+  const otherTotals = calculateOtherTotals();
+  const totalPayments = calculateTotalPayments();
+
   return (
     <div className="payments-dashboard">
-      {/* Logout button */}
       <div className="logout-container">
-        <button 
-          onClick={handleLogout} 
-          className="logout-button"
-        >
-          Logout
-        </button>
+        <button onClick={handleLogout} className="logout-button">Logout</button>
       </div>
 
       {renderDateFilters()}
-      
+
       <div className="summary-cards">
         <div className="summary-card">
           <h3>Total Payments</h3>
-          <p className="total-payments">{formatCurrency(calculateTotalPayments())}</p>
+          <p className="total-payments">{formatCurrency(totalPayments)}</p>
         </div>
         <div className="summary-card">
           <h3>Total Remaining</h3>
-          <p className="total-remaining">{formatCurrency(calculateOtherTotals().totalRemaining)}</p>
+          <p className="total-remaining">{formatCurrency(otherTotals.totalRemaining)}</p>
         </div>
         <div className="summary-card">
           <h3>Total Projects</h3>
-          <p className="total-projects">{calculateOtherTotals().totalProjects}</p>
+          <p className="total-projects">{otherTotals.totalProjects}</p>
         </div>
         <div className="summary-card">
-          <h3>Total Upi Collected</h3>
-          <p>{formatCurrency(calculateOtherTotals().totalUpi)}</p>
+          <h3>Total UPI Collected</h3>
+          <p>{formatCurrency(otherTotals.totalUpi)}</p>
         </div>
         <div className="summary-card">
           <h3>Total Cash Collected</h3>
-          <p>{formatCurrency(calculateOtherTotals().totalCash)}</p>
+          <p>{formatCurrency(otherTotals.totalCash)}</p>
         </div>
         <div className="summary-card">
           <h3>Completed Projects</h3>
-          <p className="completed-projects">{calculateOtherTotals().completeProjects}</p>
+          <p className="completed-projects">{otherTotals.completeProjects}</p>
         </div>
         <div
           className="summary-card clickable spend-summary-card"
@@ -2251,6 +2474,7 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
         >
           <h3>Total Spend</h3>
           <p className="total-spend">{formatCurrency(calculateSpendTotals().total)}</p>
+          {spendSummary && <p className="spend-summary-text">{spendSummary}</p>}
           <div className="spend-actions">
             <button
               className="quick-add-spend"
@@ -2260,8 +2484,7 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
                 setShowAddSpendForm(true);
               }}
             >
-              <PlusCircle size={16} />
-              Add Spend
+              <PlusCircle size={16} /> Add Spend
             </button>
           </div>
         </div>
@@ -2399,137 +2622,6 @@ const ProtectedPayments = ({ projects, formatCurrency }) => {
           </table>
         </div>
       </div>
-
-      {/* Spend Page */}
-      {showSpendPage && (
-        <div className="spend-page">
-          <div className="spend-header">
-            <button
-              className="back-button"
-              onClick={() => setShowSpendPage(false)}
-            >
-              Back to Dashboard
-            </button>
-            <h2>Spend Management</h2>
-          </div>
-          
-          <div className="spend-totals-summary">
-            <div className="summary-card">
-              <h3>Total Spend</h3>
-              <p>{formatCurrency(calculateSpendTotals().total)}</p>
-            </div>
-            <div className="summary-card">
-              <h3>Cash Spend</h3>
-              <p>{formatCurrency(calculateSpendTotals().cash)}</p>
-            </div>
-            <div className="summary-card">
-              <h3>UPI Spend</h3>
-              <p>{formatCurrency(calculateSpendTotals().upi)}</p>
-            </div>
-          </div>
-
-          {showAddSpendForm ? (
-            <div className="add-spend-form">
-              <h3>Add New Spend</h3>
-              <div className="spend-input-container">
-                <input
-                  type="number"
-                  placeholder="Enter amount"
-                  value={newSpend.amount}
-                  onChange={(e) => setNewSpend({ ...newSpend, amount: e.target.value })}
-                  className="spend-amount-input"
-                />
-                <input
-                  type="text"
-                  placeholder="Enter purpose"
-                  value={newSpend.purpose}
-                  onChange={(e) => setNewSpend({ ...newSpend, purpose: e.target.value })}
-                  className="spend-purpose-input"
-                />
-                <div className="select-wrapper">
-                  <select
-                    value={newSpend.employeeId}
-                    onChange={(e) => setNewSpend({ ...newSpend, employeeId: e.target.value })}
-                    className="employee-select"
-                    required
-                  >
-                    <option value="">Select Employee</option>
-                    {employees.map((employee) => (
-                      <option key={employee.employeeId} value={employee.employeeId}>
-                        {employee.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="select-wrapper">
-                  <select
-                    value={newSpend.paymentMethod}
-                    onChange={(e) => setNewSpend({ ...newSpend, paymentMethod: e.target.value })}
-                    className="payment-method-select"
-                    required
-                  >
-                    <option value="cash">Cash</option>
-                    <option value="upi">UPI</option>
-                  </select>
-                </div>
-                <button onClick={handleAddSpend} className="add-spend-button">
-                  Add Spend
-                </button>
-                <button
-                  onClick={() => {
-                    setShowAddSpendForm(false);
-                    setNewSpend({ amount: '', purpose: '', employeeId: '', paymentMethod: 'cash' });
-                    setError('');
-                  }}
-                  className="cancel-button"
-                >
-                  Cancel
-                </button>
-              </div>
-              {error && <div className="error-message">{error}</div>}
-            </div>
-          ) : (
-            <button
-              className="show-add-spend-button"
-              onClick={() => setShowAddSpendForm(true)}
-            >
-              <PlusCircle size={16} />
-              Add New Spend
-            </button>
-          )}
-
-          <div className="spends-table-container">
-            <h3>Spend History</h3>
-            <table className="spends-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Amount</th>
-                  <th>Purpose</th>
-                  <th>Payment Method</th>
-                  <th>Added By</th>
-                </tr>
-              </thead>
-              <tbody>
-                {spends.map((spend) => (
-                  <tr key={spend.id}>
-                    <td>{new Date(spend.date).toLocaleDateString()}</td>
-                    <td className="spend-amount">{formatCurrency(spend.amount)}</td>
-                    <td>{spend.purpose}</td>
-                    <td>{spend.paymentMethod || 'Not specified'}</td>
-                    <td>{spend.employeeName || 'Unknown'}</td>
-                  </tr>
-                ))}
-                {spends.length === 0 && (
-                  <tr>
-                    <td colSpan="5" className="no-spends">No spends recorded yet</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     Loader2, Clock, CheckCircle, XCircle, History
 } from "lucide-react";
-import './EmployeePanel.css'
+import './EmployeePanel.css';
 
 const EmployeePanel = () => {
     const navigate = useNavigate();
@@ -25,6 +25,7 @@ const EmployeePanel = () => {
     const [checkInSummary, setCheckInSummary] = useState('');
     const [checkOutSummary, setCheckOutSummary] = useState('');
     const [todayTask, setTodayTask] = useState(null);
+    const [scheduledTasks, setScheduledTasks] = useState([]);
 
     useEffect(() => {
         const currentEmployee = JSON.parse(sessionStorage.getItem('currentEmployee'));
@@ -37,7 +38,6 @@ const EmployeePanel = () => {
         setEmployeeName(currentEmployee.name);
         setEmployeeId(currentEmployee.employeeId);
 
-        // Forcefully clear any existing current shift to ensure Checked Out state on login
         const attendanceRef = ref(database, `attendance/${currentEmployee.employeeId}/current`);
         set(attendanceRef, null)
             .then(() => {
@@ -51,12 +51,14 @@ const EmployeePanel = () => {
             });
 
         const projectsRef = ref(database, 'projects');
+        const scheduledTasksRef = ref(database, 'scheduledTasks');
+        const historyRef = ref(database, `attendance/${currentEmployee.employeeId}/history`);
+        const todayTaskRef = ref(database, `attendance/${currentEmployee.employeeId}/todayTask`);
 
-        const unsubscribe = onValue(projectsRef, (snapshot) => {
+        const unsubscribeProjects = onValue(projectsRef, (snapshot) => {
             try {
                 if (snapshot.exists()) {
                     const projectsData = [];
-
                     snapshot.forEach((childSnapshot) => {
                         const project = childSnapshot.val();
                         const projectId = childSnapshot.key;
@@ -67,15 +69,11 @@ const EmployeePanel = () => {
                             let employeeSpecificAssignments = [];
 
                             if (project.Assign_To) {
-                                const assignToNames = project.Assign_To.split(',').map(name => name.trim());
-                                assignees.push(...assignToNames);
+                                assignees.push(...project.Assign_To.split(',').map(name => name.trim()));
                             }
-
                             if (project.assignedTo) {
-                                const assignedToNames = project.assignedTo.split(',').map(name => name.trim());
-                                assignees.push(...assignedToNames);
+                                assignees.push(...project.assignedTo.split(',').map(name => name.trim()));
                             }
-
                             if (project.assignments) {
                                 const assignmentsArray = Array.isArray(project.assignments)
                                     ? project.assignments
@@ -84,11 +82,9 @@ const EmployeePanel = () => {
                                 assignmentsArray.forEach((assignment, index) => {
                                     if (typeof assignment === 'object') {
                                         const assigneeName = (assignment.assignee || assignment.name || '').trim();
-
                                         if (assigneeName) {
                                             assignees.push(assigneeName);
                                         }
-
                                         if (assigneeName.toLowerCase() === employeeNameLower) {
                                             employeeSpecificAssignments.push({
                                                 index,
@@ -105,15 +101,10 @@ const EmployeePanel = () => {
                             }
 
                             const uniqueAssignees = [...new Set(assignees)];
-
-                            return {
-                                allAssignees: uniqueAssignees,
-                                employeeAssignments: employeeSpecificAssignments
-                            };
+                            return { allAssignees: uniqueAssignees, employeeAssignments: employeeSpecificAssignments };
                         };
 
                         const { allAssignees, employeeAssignments } = getProjectAssignees();
-
                         if (employeeAssignments.length > 0) {
                             projectsData.push({
                                 id: projectId,
@@ -137,15 +128,32 @@ const EmployeePanel = () => {
             }
         });
 
-        const historyRef = ref(database, `attendance/${currentEmployee.employeeId}/history`);
-        const todayTaskRef = ref(database, `attendance/${currentEmployee.employeeId}/todayTask`);
+        const unsubscribeScheduledTasks = onValue(scheduledTasksRef, (snapshot) => {
+            if (snapshot.exists()) {
+                const tasksData = [];
+                snapshot.forEach((childSnapshot) => {
+                    const task = childSnapshot.val();
+                    if (task.employeeId === employeeId) {
+                        tasksData.push({
+                            id: childSnapshot.key,
+                            ...task
+                        });
+                    }
+                });
+                setScheduledTasks(tasksData);
+            } else {
+                setScheduledTasks([]);
+            }
+        });
 
         const unsubscribeCurrent = onValue(attendanceRef, (snapshot) => {
             if (snapshot.exists()) {
                 const currentData = snapshot.val();
                 setCurrentShift(currentData || null);
+                setAttendanceStatus('in');
             } else {
                 setCurrentShift(null);
+                setAttendanceStatus('out');
             }
         });
 
@@ -165,7 +173,6 @@ const EmployeePanel = () => {
         const unsubscribeTodayTask = onValue(todayTaskRef, (snapshot) => {
             if (snapshot.exists()) {
                 const taskData = snapshot.val();
-                // Check if the task is for today
                 const today = new Date().toISOString().split('T')[0];
                 if (taskData.date === today) {
                     setTodayTask(taskData);
@@ -178,69 +185,71 @@ const EmployeePanel = () => {
         });
 
         return () => {
-            unsubscribeHistory();
+            unsubscribeProjects();
+            unsubscribeScheduledTasks();
             unsubscribeCurrent();
-            unsubscribe();
+            unsubscribeHistory();
             unsubscribeTodayTask();
         };
-    }, [navigate]);
+    }, [navigate, employeeId]);
 
-    const handleTaskStatusUpdate = async (newStatus) => {
-        if (!employeeId || !todayTask) return;
+    const handleTaskStatusUpdate = async (taskId, newStatus) => {
+        if (!employeeId) return;
 
         setIsLoading(true);
         try {
             const now = new Date().toISOString();
+            let updatedTask = todayTask && todayTask.taskId === taskId ? { ...todayTask } : scheduledTasks.find(t => t.id === taskId);
+            if (!updatedTask) {
+                throw new Error('Task not found');
+            }
 
-            // Create updated task object with appropriate timestamps
-            const updatedTask = {
-                ...todayTask,
+            updatedTask = {
+                ...updatedTask,
                 status: newStatus,
                 lastUpdated: now
             };
 
-            // Add status-specific timestamps
             if (newStatus === 'in-progress') {
                 updatedTask.startedOn = now;
             } else if (newStatus === 'completed') {
                 updatedTask.completedOn = now;
-
-                // If the task was directly marked as completed without going through in-progress
                 if (!updatedTask.startedOn) {
                     updatedTask.startedOn = now;
                 }
             }
 
-            // Update in the attendance node
-            await update(ref(database, `attendance/${employeeId}/todayTask`), updatedTask);
+            // Update in attendance node if it’s the todayTask
+            if (todayTask && todayTask.taskId === taskId) {
+                await update(ref(database, `attendance/${employeeId}/todayTask`), updatedTask);
+                setTodayTask(updatedTask);
+            }
 
-            // Find and update in all project assignments for this employee
-            const projectsToUpdate = assignedProjects.filter(project => {
-                return project.assignments && project.assignments.some(assignment =>
-                    assignment.assignee === employeeName
-                );
-            });
+            // Update in scheduledTasks
+            if (taskId) {
+                await update(ref(database, `scheduledTasks/${taskId}`), updatedTask);
+            }
+
+            // Update in project assignments
+            const projectsToUpdate = assignedProjects.filter(project =>
+                project.assignments?.some(assignment =>
+                    assignment.assignee === employeeName &&
+                    assignment.todayTask?.taskId === taskId
+                )
+            );
 
             for (const project of projectsToUpdate) {
                 const updatedAssignments = [...project.assignments];
-
                 for (let i = 0; i < updatedAssignments.length; i++) {
-                    if (updatedAssignments[i].assignee === employeeName) {
+                    if (updatedAssignments[i].assignee === employeeName && updatedAssignments[i].todayTask?.taskId === taskId) {
                         updatedAssignments[i] = {
                             ...updatedAssignments[i],
                             todayTask: updatedTask
                         };
                     }
                 }
-
-                // Update the project with the new assignments
-                await update(ref(database, `projects/${project.id}`), {
-                    assignments: updatedAssignments
-                });
+                await update(ref(database, `projects/${project.id}`), { assignments: updatedAssignments });
             }
-
-            // Update local state to show changes immediately
-            setTodayTask(updatedTask);
 
             if (newStatus === 'in-progress') {
                 alert('You have started working on this task!');
@@ -256,65 +265,94 @@ const EmployeePanel = () => {
     };
 
     const TodayTaskDisplay = () => {
-        if (!todayTask) return null;
+        const today = new Date().toISOString().split('T')[0];
+        const todayTasks = [];
+
+        // Add todayTask if it exists
+        if (todayTask) {
+            todayTasks.push({ ...todayTask, source: 'project' });
+        }
+
+        // Add relevant scheduled tasks
+        scheduledTasks.forEach(task => {
+            if (
+                (task.type === 'daily' && task.date === today) ||
+                (task.type === 'weekly' && task.startDate <= today && task.endDate >= today) ||
+                (task.type === 'monthly' && task.startDate <= today && task.endDate >= today)
+            ) {
+                todayTasks.push({ ...task, source: 'scheduled' });
+            }
+        });
+
+        // Deduplicate tasks by taskId
+        const uniqueTasks = [];
+        const taskIds = new Set();
+        todayTasks.forEach(task => {
+            if (!taskIds.has(task.id)) {
+                taskIds.add(task.id);
+                uniqueTasks.push(task);
+            }
+        });
+
+        if (uniqueTasks.length === 0) return null;
 
         return (
             <div className="today-task-display">
-                <h3>Today's Task</h3>
-                <div className={`task-content ${todayTask.status}`}>
-                    <div className="task-header">
-                        <h4>Today's Assignment</h4>
-                        <span className={`task-status ${todayTask.status}`}>
-                            {todayTask.status === 'pending' ? 'Not Started' :
-                                todayTask.status === 'in-progress' ? 'In Progress' : 'Completed'}
-                        </span>
+                <h3>Today's Tasks</h3>
+                {uniqueTasks.map((task) => (
+                    <div key={task.id} className={`task-content ${task.status}`}>
+                        <div className="task-header">
+                            <h4>{task.source === 'project' ? 'Project Task' : `${task.type.charAt(0).toUpperCase() + task.type.slice(1)} Task`}</h4>
+                            <span className={`task-status ${task.status}`}>
+                                {task.status === 'pending' ? 'Not Started' :
+                                    task.status === 'in-progress' ? 'In Progress' : 'Completed'}
+                            </span>
+                        </div>
+                        <p>{task.task}</p>
+                        <div className="task-meta">
+                            <span>Assigned: {new Date(task.assignedOn).toLocaleTimeString()}</span>
+                            <span>By: {task.assignedBy || 'Admin'}</span>
+                            {task.type !== 'daily' && task.source === 'scheduled' && (
+                                <span>Period: {task.startDate} to {task.endDate}</span>
+                            )}
+                        </div>
+                        <div className="task-actions">
+                            {task.status === 'pending' && (
+                                <button
+                                    onClick={() => handleTaskStatusUpdate(task.id, 'in-progress')}
+                                    className="status-btn in-progress-btn"
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? 'Updating...' : 'Start Working'}
+                                </button>
+                            )}
+                            {task.status !== 'completed' && (
+                                <button
+                                    onClick={() => handleTaskStatusUpdate(task.id, 'completed')}
+                                    className="status-btn complete-btn"
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? 'Updating...' : 'Mark as Completed'}
+                                </button>
+                            )}
+                            {task.status === 'in-progress' && (
+                                <div className="status-message">
+                                    <Clock size={16} /> You're currently working on this task
+                                </div>
+                            )}
+                            {task.status === 'completed' && (
+                                <div className="status-message completed">
+                                    <CheckCircle size={16} /> You've completed this task
+                                    {task.lastUpdated && (
+                                        <span className="completion-time">
+                                            at {new Date(task.lastUpdated).toLocaleTimeString()}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
-                    <p>{todayTask.task}</p>
-                    <div className="task-meta">
-                        <span>Assigned: {new Date(todayTask.assignedOn).toLocaleTimeString()}</span>
-                        <span>By: {todayTask.assignedBy || 'Admin'}</span>
-                    </div>
-
-                    {/* Status Update Buttons */}
-                    <div className="task-actions">
-                        {todayTask.status === 'pending' && (
-                            <button
-                                onClick={() => handleTaskStatusUpdate('in-progress')}
-                                className="status-btn in-progress-btn"
-                                disabled={isLoading}
-                            >
-                                {isLoading ? 'Updating...' : 'Start Working'}
-                            </button>
-                        )}
-
-                        {todayTask.status !== 'completed' && (
-                            <button
-                                onClick={() => handleTaskStatusUpdate('completed')}
-                                className="status-btn complete-btn"
-                                disabled={isLoading}
-                            >
-                                {isLoading ? 'Updating...' : 'Mark as Completed'}
-                            </button>
-                        )}
-
-                        {todayTask.status === 'in-progress' && (
-                            <div className="status-message">
-                                <Clock size={16} /> You're currently working on this task
-                            </div>
-                        )}
-
-                        {todayTask.status === 'completed' && (
-                            <div className="status-message completed">
-                                <CheckCircle size={16} /> You've completed this task
-                                {todayTask.lastUpdated && (
-                                    <span className="completion-time">
-                                        at {new Date(todayTask.lastUpdated).toLocaleTimeString()}
-                                    </span>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
+                ))}
             </div>
         );
     };
@@ -411,8 +449,6 @@ const EmployeePanel = () => {
     const handleSaveWorkStatus = async (projectId, assignmentIndex) => {
         try {
             const statusUpdate = workStatusUpdates[`${projectId}-${assignmentIndex}`] || '';
-
-            // Make sure the status includes "Completed" to trigger visual cues
             const finalStatus = statusUpdate.toLowerCase().includes('complete')
                 ? statusUpdate
                 : `Completed: ${statusUpdate}`;
@@ -438,9 +474,7 @@ const EmployeePanel = () => {
                 };
             }
 
-            await update(projectRef, {
-                assignments: currentAssignments
-            });
+            await update(projectRef, { assignments: currentAssignments });
 
             setWorkStatusUpdates(prev => ({
                 ...prev,
@@ -457,7 +491,6 @@ const EmployeePanel = () => {
     const handleSignOut = () => {
         const currentEmployee = JSON.parse(sessionStorage.getItem('currentEmployee'));
         if (currentEmployee) {
-            // Ensure employee is checked out when signing out
             const attendanceRef = ref(database, `attendance/${currentEmployee.employeeId}/current`);
             set(attendanceRef, null);
         }
@@ -491,7 +524,6 @@ const EmployeePanel = () => {
         if (!project.assignments || !Array.isArray(project.assignments)) {
             return [];
         }
-
         return [...project.assignments]
             .filter(assignment => assignment && assignment.assignee)
             .sort((a, b) => {
@@ -563,7 +595,6 @@ const EmployeePanel = () => {
                     View History
                 </button>
             </div>
-
             <div className="attendance-actions">
                 {attendanceStatus === 'out' ? (
                     <button

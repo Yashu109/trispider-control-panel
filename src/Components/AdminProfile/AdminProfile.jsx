@@ -24,7 +24,7 @@ import SidebarNav from './Sidebar';
 import AdminPanel from '../AdminPanel/Adminpanel';
 import PDFViewer from '../PDFviewer/PDFviewer';
 import EmployeeManagement from '../EmployeeManagement/EmployeeManagement';
-import Invoice from '../InVoice/InVoice'
+import Invoice from '../InVoice/InVoice';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -57,15 +57,20 @@ const AdminDashboard = () => {
     });
     const [showInvoiceModal, setShowInvoiceModal] = useState(false);
     const [selectedInvoiceProject, setSelectedInvoiceProject] = useState(null);
-    const [attendanceHistory, setAttendanceHistory] = useState({}); // State for all employees' attendance history
-    const [selectedEmployee, setSelectedEmployee] = useState(''); // State for selected employee
+    const [attendanceHistory, setAttendanceHistory] = useState({});
+    const [selectedEmployee, setSelectedEmployee] = useState('');
+    const [todayTask, setTodayTask] = useState('');
+    const [selectedEmployeeForTask, setSelectedEmployeeForTask] = useState('');
+    const [taskScheduleType, setTaskScheduleType] = useState('today'); // New state for schedule type
+    const [taskScheduleDate, setTaskScheduleDate] = useState(''); // New state for specific date
+    const [taskScheduleWeek, setTaskScheduleWeek] = useState(''); // New state for week
+    const [taskScheduleMonth, setTaskScheduleMonth] = useState(''); // New state for month
+    const [scheduledTasks, setScheduledTasks] = useState([]); // New state for scheduled tasks
 
     const [detailsModal, setDetailsModal] = useState({
         show: false,
         assignment: null
     });
-    const [todayTask, setTodayTask] = useState('');
-    const [selectedEmployeeForTask, setSelectedEmployeeForTask] = useState('');
 
     // Query Monitoring Effect
     useEffect(() => {
@@ -173,14 +178,12 @@ const AdminDashboard = () => {
                 });
                 setEmployees(employeeData);
 
-                // Fetch current and history attendance for each employee
                 const attendanceData = {};
                 employeeData.forEach(employee => {
                     const currentRef = ref(db, `attendance/${employee.id}/current`);
                     const historyRef = ref(db, `attendance/${employee.id}/history`);
                     const todayTaskRef = ref(db, `attendance/${employee.id}/todayTask`);
 
-                    // Fetch current attendance
                     onValue(currentRef, (currentSnapshot) => {
                         if (currentSnapshot.exists()) {
                             attendanceData[employee.id] = {
@@ -196,7 +199,6 @@ const AdminDashboard = () => {
                         setAttendanceHistory({ ...attendanceData });
                     }, { onlyOnce: false });
 
-                    // Fetch history attendance
                     onValue(historyRef, (historySnapshot) => {
                         if (historySnapshot.exists()) {
                             const history = Object.entries(historySnapshot.val()).map(([key, value]) => ({
@@ -219,7 +221,6 @@ const AdminDashboard = () => {
                         setAttendanceHistory({ ...attendanceData });
                     }, { onlyOnce: false });
 
-                    // Fetch today's task
                     onValue(todayTaskRef, (taskSnapshot) => {
                         if (taskSnapshot.exists()) {
                             attendanceData[employee.id] = {
@@ -253,6 +254,30 @@ const AdminDashboard = () => {
 
         return () => unsubscribe();
     }, [navigate, loading]);
+
+    // Fetch Scheduled Tasks Effect
+    useEffect(() => {
+        const db = getDatabase();
+        const scheduledTasksRef = ref(db, 'scheduledTasks');
+
+        const unsubscribe = onValue(scheduledTasksRef, (snapshot) => {
+            if (snapshot.exists()) {
+                const tasksData = [];
+                snapshot.forEach((childSnapshot) => {
+                    const task = childSnapshot.val();
+                    tasksData.push({
+                        id: childSnapshot.key,
+                        ...task,
+                    });
+                });
+                setScheduledTasks(tasksData);
+            } else {
+                setScheduledTasks([]);
+            }
+        });
+
+        return () => unsubscribe();
+    }, []);
 
     // Handler Functions
     const handleEdit = (project) => {
@@ -308,7 +333,6 @@ const AdminDashboard = () => {
         const database = getDatabase();
 
         if (action === 'accepted') {
-            // First, update the Accepted_Queries for this specific project
             const projectRef = ref(database, `Accepted_Queries/${query.parentKey}`);
             const newAcceptedQuery = {
                 queryStatus: 'Your query has been accepted and will be addressed soon.',
@@ -317,10 +341,8 @@ const AdminDashboard = () => {
                 queryType: query.queryType
             };
 
-            // Push as a new entry instead of updating the whole node
             push(projectRef, newAcceptedQuery)
                 .then(() => {
-                    // After successfully adding to accepted queries, remove from pending
                     const queryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
                     return remove(queryRef);
                 })
@@ -329,7 +351,6 @@ const AdminDashboard = () => {
                 })
                 .catch(error => console.error('Acceptance error:', error));
         } else if (action === 'rejected') {
-            // Just remove the query if rejected
             const queryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
             remove(queryRef)
                 .then(() => {
@@ -353,59 +374,112 @@ const AdminDashboard = () => {
             }
 
             const employeeId = selectedEmployeeData.id;
-            const todayDate = new Date().toISOString().split('T')[0];
             const db = getDatabase();
+            const todayDate = new Date().toISOString().split('T')[0];
 
-            // Find projects assigned to this employee
-            const employeeProjects = projects.filter(project => {
-                if (!project.assignments) return false;
+            let scheduleDetails = {};
+            if (taskScheduleType === 'today') {
+                scheduleDetails = {
+                    date: todayDate,
+                    type: 'daily',
+                };
+            } else if (taskScheduleType === 'date') {
+                if (!taskScheduleDate) {
+                    alert('Please select a date for the task.');
+                    return;
+                }
+                scheduleDetails = {
+                    date: taskScheduleDate,
+                    type: 'daily',
+                };
+            } else if (taskScheduleType === 'week') {
+                if (!taskScheduleWeek) {
+                    alert('Please select a week for the task.');
+                    return;
+                }
+                const [year, week] = taskScheduleWeek.split('-W');
+                const startDate = new Date(year, 0, 1 + (week - 1) * 7);
+                const endDate = new Date(startDate);
+                endDate.setDate(endDate.getDate() + 6);
+                scheduleDetails = {
+                    startDate: startDate.toISOString().split('T')[0],
+                    endDate: endDate.toISOString().split('T')[0],
+                    type: 'weekly',
+                };
+            } else if (taskScheduleType === 'month') {
+                if (!taskScheduleMonth) {
+                    alert('Please select a month for the task.');
+                    return;
+                }
+                const [year, month] = taskScheduleMonth.split('-');
+                const startDate = new Date(year, month - 1, 1);
+                const endDate = new Date(year, month, 0);
+                scheduleDetails = {
+                    startDate: startDate.toISOString().split('T')[0],
+                    endDate: endDate.toISOString().split('T')[0],
+                    type: 'monthly',
+                };
+            }
 
-                return project.assignments.some(assignment =>
-                    assignment.assignee === selectedEmployeeForTask
-                );
-            });
+            const employeeProjects = projects.filter(project =>
+                project.assignments?.some(assignment => assignment.assignee === selectedEmployeeForTask)
+            );
 
-            if (employeeProjects.length === 0) {
-                alert('No projects assigned to this employee. Please assign a project first.');
+            if (employeeProjects.length === 0 && taskScheduleType === 'today') {
+                alert('No projects assigned to this employee for today’s task.');
                 return;
             }
 
-            // Update the task for each project this employee is assigned to
-            for (const project of employeeProjects) {
-                const assignments = [...project.assignments];
-
-                // Update each assignment for this employee
-                for (let i = 0; i < assignments.length; i++) {
-                    if (assignments[i].assignee === selectedEmployeeForTask) {
-                        assignments[i] = {
-                            ...assignments[i],
-                            todayTask: {
-                                task: todayTask,
-                                assignedOn: new Date().toISOString(),
-                                status: 'pending',
-                                date: todayDate
-                            }
-                        };
-                    }
-                }
-
-                // Update the project with the new assignments
-                const projectRef = ref(database, `projects/${project.id}`);
-                await update(projectRef, { assignments });
-            }
-
-            // Store in attendance for reference
-            await update(ref(db, `attendance/${employeeId}/todayTask`), {
+            const taskData = {
                 task: todayTask,
                 assignedOn: new Date().toISOString(),
                 assignedBy: 'Admin',
                 status: 'pending',
-                date: todayDate
-            });
+                employeeId,
+                employeeName: selectedEmployeeForTask,
+                ...scheduleDetails,
+            };
+
+            const scheduledTasksRef = ref(db, 'scheduledTasks');
+            const newTaskRef = await push(scheduledTasksRef, taskData);
+
+            if (taskScheduleType === 'today') {
+                for (const project of employeeProjects) {
+                    const assignments = [...project.assignments];
+                    for (let i = 0; i < assignments.length; i++) {
+                        if (assignments[i].assignee === selectedEmployeeForTask) {
+                            assignments[i] = {
+                                ...assignments[i],
+                                todayTask: {
+                                    task: todayTask,
+                                    assignedOn: new Date().toISOString(),
+                                    status: 'pending',
+                                    date: todayDate,
+                                    taskId: newTaskRef.key,
+                                },
+                            };
+                        }
+                    }
+                    const projectRef = ref(db, `projects/${project.id}`);
+                    await update(projectRef, { assignments });
+                }
+
+                await update(ref(db, `attendance/${employeeId}/todayTask`), {
+                    task: todayTask,
+                    assignedOn: new Date().toISOString(),
+                    assignedBy: 'Admin',
+                    status: 'pending',
+                    date: todayDate,
+                    taskId: newTaskRef.key,
+                });
+            }
 
             alert(`Task assigned to ${selectedEmployeeForTask} successfully!`);
             setTodayTask('');
             setSelectedEmployeeForTask('');
+            setTaskScheduleDate('');
+            setTaskScheduleWeek('');
+            setTaskScheduleMonth('');
         } catch (error) {
             console.error('Error assigning task:', error);
             alert('Failed to assign task. Please try again.');
@@ -420,7 +494,6 @@ const AdminDashboard = () => {
             update(projectRef, {
                 queryStatus: 'Your query has been reviewed and updated.',
                 queryText: query.queryText,
-                // queryType: query.queryType,
             })
                 .then(() => {
                     const oldQueryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
@@ -465,30 +538,25 @@ const AdminDashboard = () => {
         }).length;
     };
 
-    // Get all today's tasks for employees
     const getTodayTasks = () => {
         const todayTasksData = [];
+        const today = new Date().toISOString().split('T')[0];
 
         employees.forEach(employee => {
-            // Check if this employee has attendance data and a today's task
             const employeeAttendance = attendanceHistory[employee.id] || {};
 
-            // Get projects this employee is assigned to
-            const employeeProjects = projects.filter(project => {
-                return project.assignments && project.assignments.some(assignment =>
+            const employeeProjects = projects.filter(project =>
+                project.assignments?.some(assignment =>
                     assignment.assignee === employee.name &&
                     assignment.todayTask &&
-                    new Date(assignment.todayTask.date).toISOString().split('T')[0] === new Date().toISOString().split('T')[0]
-                );
-            });
+                    assignment.todayTask.date === today
+                )
+            );
 
-            // Get today's task data from project assignments
             if (employeeProjects.length > 0) {
-                const project = employeeProjects[0]; // Take first project with task data
+                const project = employeeProjects[0];
                 const assignment = project.assignments.find(a =>
-                    a.assignee === employee.name &&
-                    a.todayTask &&
-                    new Date(a.todayTask.date).toISOString().split('T')[0] === new Date().toISOString().split('T')[0]
+                    a.assignee === employee.name && a.todayTask && a.todayTask.date === today
                 );
 
                 if (assignment && assignment.todayTask) {
@@ -500,14 +568,14 @@ const AdminDashboard = () => {
                         assignedOn: assignment.todayTask.assignedOn,
                         lastUpdated: assignment.todayTask.lastUpdated,
                         projectId: project.id,
-                        projectTitle: project.title || project.projectId
+                        projectTitle: project.title || project.projectId,
+                        taskId: assignment.todayTask.taskId,
                     });
                 }
-            }
-
-            // If no project-based task found, check attendance record
-            else if (employeeAttendance.todayTask &&
-                new Date(employeeAttendance.todayTask.date).toISOString().split('T')[0] === new Date().toISOString().split('T')[0]) {
+            } else if (
+                employeeAttendance.todayTask &&
+                employeeAttendance.todayTask.date === today
+            ) {
                 todayTasksData.push({
                     employeeId: employee.id,
                     employeeName: employee.name,
@@ -516,7 +584,28 @@ const AdminDashboard = () => {
                     assignedOn: employeeAttendance.todayTask.assignedOn,
                     lastUpdated: employeeAttendance.todayTask.lastUpdated,
                     projectId: 'N/A',
-                    projectTitle: 'General Task'
+                    projectTitle: 'General Task',
+                    taskId: employeeAttendance.todayTask.taskId,
+                });
+            }
+        });
+
+        scheduledTasks.forEach(task => {
+            if (
+                (task.type === 'daily' && task.date === today) ||
+                (task.type === 'weekly' && task.startDate <= today && task.endDate >= today) ||
+                (task.type === 'monthly' && task.startDate <= today && task.endDate >= today)
+            ) {
+                todayTasksData.push({
+                    employeeId: task.employeeId,
+                    employeeName: task.employeeName,
+                    task: task.task,
+                    status: task.status || 'pending',
+                    assignedOn: task.assignedOn,
+                    lastUpdated: task.lastUpdated,
+                    projectId: 'Scheduled',
+                    projectTitle: `Scheduled ${task.type} Task`,
+                    taskId: task.id,
                 });
             }
         });
@@ -524,7 +613,6 @@ const AdminDashboard = () => {
         return todayTasksData;
     };
 
-    // Filtering Logic
     let filteredProjects = projects.filter(project => {
         const searchLower = searchQuery.toLowerCase();
 
@@ -574,7 +662,6 @@ const AdminDashboard = () => {
         );
     });
 
-    // Filter by tab
     filteredProjects = filteredProjects.filter(project => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -594,7 +681,6 @@ const AdminDashboard = () => {
                 return timeDifference >= 0 && timeDifference <= 10;
             }
             case 'tasks': {
-                // No filtering needed for tasks; we'll use attendanceHistory directly
                 return true;
             }
             default: {
@@ -649,7 +735,6 @@ const AdminDashboard = () => {
         setSortConfig({ key, direction });
     };
 
-    // Add this function to get the sort icon
     const getSortIcon = (columnKey) => {
         if (sortConfig.key !== columnKey) {
             return <ArrowUpDown size={16} className="sort-icon" />;
@@ -659,19 +744,16 @@ const AdminDashboard = () => {
             <ArrowDown size={16} className="sort-icon active" />;
     };
 
-    // Add this sorting logic before rendering the table for projects
     const sortedProjects = [...filteredProjects].sort((a, b) => {
         if (!sortConfig.key) return 0;
 
         const aValue = a[sortConfig.key];
         const bValue = b[sortConfig.key];
 
-        // Handle null/undefined values
         if (!aValue && !bValue) return 0;
         if (!aValue) return 1;
         if (!bValue) return -1;
 
-        // Special handling for dates
         if (sortConfig.key === 'timeline' || sortConfig.key === 'timestamp') {
             const dateA = new Date(aValue);
             const dateB = new Date(bValue);
@@ -680,7 +762,6 @@ const AdminDashboard = () => {
                 dateB - dateA;
         }
 
-        // Regular string comparison
         return sortConfig.direction === 'asc' ?
             aValue.toString().localeCompare(bValue.toString()) :
             bValue.toString().localeCompare(aValue.toString());
@@ -688,7 +769,6 @@ const AdminDashboard = () => {
 
     const handleTabChange = (tab) => {
         setActiveTab(tab);
-        // Close Admin Panel if the tab is not 'new'
         if (tab !== 'new') {
             setShowAdminPanel(false);
         }
@@ -812,7 +892,6 @@ const AdminDashboard = () => {
         }
 
         if (activeTab === 'tasks') {
-            // Display only attendance data for the selected employee
             const selectedEmployeeData = employees.find(emp => emp.name === selectedEmployee);
             let attendanceData = [];
 
@@ -820,7 +899,6 @@ const AdminDashboard = () => {
                 const employeeId = selectedEmployeeData.id;
                 const employeeAttendance = attendanceHistory[employeeId] || { current: null, history: [] };
 
-                // Add current attendance if exists
                 if (employeeAttendance.current) {
                     attendanceData.push({
                         type: 'attendance',
@@ -836,7 +914,6 @@ const AdminDashboard = () => {
                     });
                 }
 
-                // Add historical attendance
                 (employeeAttendance.history || []).forEach(record => {
                     attendanceData.push({
                         type: 'attendance',
@@ -853,16 +930,14 @@ const AdminDashboard = () => {
                 });
             }
 
-            // Sort by date (newest first)
             attendanceData.sort((a, b) => new Date(b.date) - new Date(a.date));
 
             return (
                 <div className="attendance-history">
-                    <h2>Employee Attendance for {selectedEmployee || 'Selected Employee'}</h2>
+                    <h2>Employee Tasks & Attendance</h2>
 
-                    {/* Today's Task Assignment Section */}
                     <div className="today-task-section">
-                        <h3>Assign Today's Task</h3>
+                        <h3>Assign New Task</h3>
                         <div className="task-assignment-form">
                             <select
                                 value={selectedEmployeeForTask}
@@ -878,23 +953,54 @@ const AdminDashboard = () => {
                             </select>
 
                             <textarea
-                                placeholder="Enter today's task details..."
+                                placeholder="Enter task details..."
                                 value={todayTask}
                                 onChange={(e) => setTodayTask(e.target.value)}
                                 className="task-input"
                                 rows="3"
                             />
 
-                            <button
-                                onClick={assignTodayTask}
-                                className="assign-task-btn"
-                            >
+                            <div className="schedule-options">
+                                <label>Schedule Type:</label>
+                                <select
+                                    value={taskScheduleType}
+                                    onChange={(e) => setTaskScheduleType(e.target.value)}
+                                >
+                                    <option value="today">Today</option>
+                                    <option value="date">Specific Date</option>
+                                    <option value="week">Week</option>
+                                    <option value="month">Month</option>
+                                </select>
+
+                                {taskScheduleType === 'date' && (
+                                    <input
+                                        type="date"
+                                        value={taskScheduleDate}
+                                        onChange={(e) => setTaskScheduleDate(e.target.value)}
+                                        min={new Date().toISOString().split('T')[0]}
+                                    />
+                                )}
+                                {taskScheduleType === 'week' && (
+                                    <input
+                                        type="week"
+                                        value={taskScheduleWeek}
+                                        onChange={(e) => setTaskScheduleWeek(e.target.value)}
+                                    />
+                                )}
+                                {taskScheduleType === 'month' && (
+                                    <input
+                                        type="month"
+                                        value={taskScheduleMonth}
+                                        onChange={(e) => setTaskScheduleMonth(e.target.value)}
+                                    />
+                                )}
+                            </div>
+
+                            <button onClick={assignTodayTask} className="assign-task-btn">
                                 Assign Task
                             </button>
                         </div>
                     </div>
-
-                    {/* Today's Tasks Overview Section */}
 
                     <div className="today-tasks-overview">
                         <h3>Today's Tasks Overview</h3>
@@ -905,80 +1011,105 @@ const AdminDashboard = () => {
                                         <div className="task-card-header">
                                             <h4>{taskData.employeeName}</h4>
                                             <span className={`status-badge ${taskData.status}`}>
-                                                {taskData.status === 'pending' ? 'Not Started' :
-                                                    taskData.status === 'in-progress' ? 'In Progress' : 'Completed'}
+                                                {taskData.status === 'pending'
+                                                    ? 'Not Started'
+                                                    : taskData.status === 'in-progress'
+                                                    ? 'In Progress'
+                                                    : 'Completed'}
                                             </span>
                                         </div>
-
                                         <div className="task-card-content">
                                             <p>{taskData.task}</p>
-
                                             <div className="status-timeline">
                                                 <div className="timeline-item">
                                                     <div className="timeline-icon assigned">📋</div>
                                                     <div className="timeline-content">
                                                         <div className="timeline-title">Assigned</div>
-                                                        <div className="timeline-time">{new Date(taskData.assignedOn).toLocaleTimeString()}</div>
+                                                        <div className="timeline-time">
+                                                            {new Date(taskData.assignedOn).toLocaleTimeString()}
+                                                        </div>
                                                     </div>
                                                 </div>
-
                                                 {taskData.status !== 'pending' && (
                                                     <div className="timeline-item">
                                                         <div className="timeline-icon started">▶️</div>
                                                         <div className="timeline-content">
-                                                            <div className="timeline-title">Started Working</div>
+                                                            <div className="timeline-title">Started</div>
                                                             <div className="timeline-time">
-                                                                {taskData.startedOn ?
-                                                                    new Date(taskData.startedOn).toLocaleTimeString() :
-                                                                    new Date(taskData.lastUpdated || taskData.assignedOn).toLocaleTimeString()}
+                                                                {taskData.startedOn
+                                                                    ? new Date(taskData.startedOn).toLocaleTimeString()
+                                                                    : new Date(taskData.lastUpdated || taskData.assignedOn).toLocaleTimeString()}
                                                             </div>
                                                         </div>
                                                     </div>
                                                 )}
-
                                                 {taskData.status === 'completed' && (
                                                     <div className="timeline-item">
                                                         <div className="timeline-icon completed">✓</div>
                                                         <div className="timeline-content">
                                                             <div className="timeline-title">Completed</div>
-                                                            <div className="timeline-time">{new Date(taskData.lastUpdated).toLocaleTimeString()}</div>
+                                                            <div className="timeline-time">
+                                                                {new Date(taskData.lastUpdated).toLocaleTimeString()}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
-
                                         <div className="task-card-footer">
                                             <div className="task-meta">
                                                 <div>
                                                     <small>Project:</small> {taskData.projectTitle || taskData.projectId}
                                                 </div>
-
-                                                {taskData.lastUpdated && (
-                                                    <div className="status-update-alert">
-                                                        <span className="update-icon">
-                                                            {taskData.status === 'in-progress' ? '🔄' : '✅'}
-                                                        </span>
-                                                        <span className="update-message">
-                                                            {taskData.status === 'in-progress' ?
-                                                                'Employee started working on this task' :
-                                                                'Task has been completed'}
-                                                        </span>
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <div className="no-tasks-message">
-                                    No tasks have been assigned for today.
-                                </div>
+                                <div className="no-tasks-message">No tasks assigned for today.</div>
                             )}
                         </div>
                     </div>
 
-                    {/* Attendance Filter */}
+                    <div className="scheduled-tasks-overview">
+                        <h3>Scheduled Tasks</h3>
+                        <table className="scheduled-tasks-table">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Task</th>
+                                    <th>Type</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {scheduledTasks.map((task) => (
+                                    <tr key={task.id}>
+                                        <td>{task.employeeName}</td>
+                                        <td>{task.task}</td>
+                                        <td>{task.type}</td>
+                                        <td>{task.date || task.startDate}</td>
+                                        <td>{task.type === 'daily' ? '-' : task.endDate}</td>
+                                        <td>
+                                            <span className={`status-badge ${task.status}`}>
+                                                {task.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {scheduledTasks.length === 0 && (
+                                    <tr>
+                                        <td colSpan="6" className="no-records">
+                                            No scheduled tasks found.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
                     <div className="tasks-filter">
                         <select
                             value={selectedEmployee}
@@ -994,7 +1125,6 @@ const AdminDashboard = () => {
                         </select>
                     </div>
 
-                    {/* Attendance Table */}
                     <div className="history-table-container">
                         <table className="history-table">
                             <thead>
@@ -1255,7 +1385,6 @@ const AdminDashboard = () => {
         );
     };
 
-    // Loading State
     if (loading || !authChecked) {
         return (
             <div className="loading-container">
@@ -1265,7 +1394,6 @@ const AdminDashboard = () => {
         );
     }
 
-    // Error State
     if (error) {
         return (
             <div className="error-container">
@@ -1274,7 +1402,6 @@ const AdminDashboard = () => {
         );
     }
 
-    // Main Render
     return (
         <div className="dashboard-container">
             <aside className="sidebar">
@@ -1296,7 +1423,6 @@ const AdminDashboard = () => {
                 </div>
             </main>
 
-            {/* Edit Modal */}
             {showEditModal && editingProject && (
                 <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -1444,7 +1570,6 @@ const AdminDashboard = () => {
                                                 const updatedAssignments = [...(editingProject.assignments || [])];
 
                                                 if (field === 'taskOrder') {
-                                                    // Clear any existing assignment with this order
                                                     updatedAssignments.forEach((a, i) => {
                                                         if (i !== index && a.taskOrder === value) {
                                                             a.taskOrder = '';
@@ -1503,7 +1628,6 @@ const AdminDashboard = () => {
                                                     });
                                                 }
 
-                                                // Reorder remaining assignments if needed
                                                 updatedAssignments = updatedAssignments.map(a => ({
                                                     ...a,
                                                     taskOrder: a.taskOrder > index ? (parseInt(a.taskOrder) - 1).toString() : a.taskOrder
@@ -1587,111 +1711,106 @@ const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* PDF Viewer */}
-            {
-                viewingPDF.show && (
-                    <PDFViewer
-                        pdfUrl={viewingPDF.url}
-                        projectId={viewingPDF.projectId}
-                        onClose={() => setViewingPDF({ show: false, url: null, projectId: null })}
-                    />
-                )
-            }
+            {viewingPDF.show && (
+                <PDFViewer
+                    pdfUrl={viewingPDF.url}
+                    projectId={viewingPDF.projectId}
+                    onClose={() => setViewingPDF({ show: false, url: null, projectId: null })}
+                />
+            )}
 
-            {/* Queries Modal */}
-            {
-                showQueriesModal && (
-                    <div className="modal-overlay">
-                        <div className="modal-content queries-modal">
-                            <div className="modal-header">
-                                <h2>Pending Queries ({queriesCount})</h2>
-                                <button onClick={() => setShowQueriesModal(false)} className="close-button">
-                                    <X size={20} />
-                                </button>
-                            </div>
-                            <div className="queries-list">
-                                {queries.map((query) => (
-                                    <div key={query.id} className="query-item">
-                                        <div className="query-info">
-                                            <div className="dashboard-form-group">
-                                                <label>Project ID:</label>
-                                                <input
-                                                    type="text"
-                                                    value={query.parentKey}
-                                                />
-                                            </div>
-                                            <div className="dashboard-form-group">
-                                                <label>Timestamp:</label>
-                                                <input
-                                                    type="text"
-                                                    value={new Date(query.timestamp).toLocaleString()}
-                                                />
-                                            </div>
-                                            <div className="dashboard-form-group">
-                                                <label>Query:</label>
-                                                <textarea
-                                                    rows="4"
-                                                    value={query.queryText}
-                                                />
-                                            </div>
-                                        </div>
+            {showQueriesModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content queries-modal">
+                        <div className="modal-header">
+                            <h2>Pending Queries ({queriesCount})</h2>
+                            <button onClick={() => setShowQueriesModal(false)} className="close-button">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="queries-list">
+                            {queries.map((query) => (
+                                <div key={query.id} className="query-item">
+                                    <div className="query-info">
                                         <div className="dashboard-form-group">
-                                            <label>Query Type:</label>
+                                            <label>Project ID:</label>
                                             <input
                                                 type="text"
-                                                value={query.queryType || 'N/A'}
-                                                readOnly
+                                                value={query.parentKey}
                                             />
                                         </div>
-                                        <div className="query-actions">
-                                            {!isEditing ? (
-                                                <>
-                                                    <button
-                                                        onClick={() => handleQueryAction(query, 'accepted')}
-                                                        className="btn-accept"
-                                                    >
-                                                        Accept
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleQueryAction(query, 'rejected')}
-                                                        className="btn-reject"
-                                                    >
-                                                        Reject
-                                                    </button>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <textarea
-                                                        value={editableQueryText}
-                                                        onChange={(e) => setEditableQueryText(e.target.value)}
-                                                        rows="4"
-                                                        placeholder="Edit query text"
-                                                    />
-                                                    <button
-                                                        onClick={() => handleSendEditedQuery(query)}
-                                                        className="btn-send"
-                                                    >
-                                                        Send Updated Query
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setIsEditing(false)}
-                                                        className="btn-cancel"
-                                                    >
-                                                        Cancel
-                                                    </button>
-                                                </>
-                                            )}
+                                        <div className="dashboard-form-group">
+                                            <label>Timestamp:</label>
+                                            <input
+                                                type="text"
+                                                value={new Date(query.timestamp).toLocaleString()}
+                                            />
+                                        </div>
+                                        <div className="dashboard-form-group">
+                                            <label>Query:</label>
+                                            <textarea
+                                                rows="4"
+                                                value={query.queryText}
+                                            />
                                         </div>
                                     </div>
-                                ))}
-                                {queries.length === 0 && (
-                                    <div className="no-queries">No pending queries</div>
-                                )}
-                            </div>
+                                    <div className="dashboard-form-group">
+                                        <label>Query Type:</label>
+                                        <input
+                                            type="text"
+                                            value={query.queryType || 'N/A'}
+                                            readOnly
+                                        />
+                                    </div>
+                                    <div className="query-actions">
+                                        {!isEditing ? (
+                                            <>
+                                                <button
+                                                    onClick={() => handleQueryAction(query, 'accepted')}
+                                                    className="btn-accept"
+                                                >
+                                                    Accept
+                                                </button>
+                                                <button
+                                                    onClick={() => handleQueryAction(query, 'rejected')}
+                                                    className="btn-reject"
+                                                >
+                                                    Reject
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <textarea
+                                                    value={editableQueryText}
+                                                    onChange={(e) => setEditableQueryText(e.target.value)}
+                                                    rows="4"
+                                                    placeholder="Edit query text"
+                                                />
+                                                <button
+                                                    onClick={() => handleSendEditedQuery(query)}
+                                                    className="btn-send"
+                                                >
+                                                    Send Updated Query
+                                                </button>
+                                                <button
+                                                    onClick={() => setIsEditing(false)}
+                                                    className="btn-cancel"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                            {queries.length === 0 && (
+                                <div className="no-queries">No pending queries</div>
+                            )}
                         </div>
                     </div>
-                )
-            }
+                </div>
+            )}
+
             {showInvoiceModal && selectedInvoiceProject && (
                 <Invoice
                     project={selectedInvoiceProject}
@@ -1702,7 +1821,6 @@ const AdminDashboard = () => {
                 />
             )}
 
-            {/* Assignment Details Modal */}
             {detailsModal.show && detailsModal.assignment && (
                 <div className="modal-overlay" onClick={() => setDetailsModal({ show: false, assignment: null })}>
                     <div className="modal-content assignment-details-modal" onClick={e => e.stopPropagation()}>

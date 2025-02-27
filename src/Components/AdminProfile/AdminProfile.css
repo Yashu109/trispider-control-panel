@@ -1462,3 +1462,22 @@ tr:hover {
     background-color: #f8f9fa;
     border-radius: 6px;
 }
+.scheduled-tasks-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+.scheduled-tasks-table th, .scheduled-tasks-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+.schedule-options {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.schedule-options label {
+    font-weight: bold;
+}
