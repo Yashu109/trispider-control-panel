@@ -597,3 +597,92 @@
 .cancel-summary-btn:hover {
   background-color: #dc2626;
 }
+.today-task-display {
+  background-color: #fff3cd;
+  border-left: 4px solid #ffc107;
+  border-radius: 4px;
+  padding: 15px;
+  margin: 20px 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.today-task-display h3 {
+  margin-top: 0;
+  color: #856404;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.task-content {
+  background-color: #ffffff;
+  padding: 15px;
+  border-radius: 4px;
+  border: 1px solid #ffeeba;
+}
+
+.task-content p {
+  margin-top: 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.task-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+/* Additional style for the task column in admin table */
+.history-table td:nth-child(7) {
+  max-width: 200px;
+  white-space: normal;
+  word-break: break-word;
+}
+.status-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.status-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.3);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%, -50%);
+  transform-origin: 50% 50%;
+}
+
+.status-btn:focus:not(:active)::after {
+  animation: ripple 1s ease-out;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0, 0);
+    opacity: 0.5;
+  }
+  20% {
+    transform: scale(25, 25);
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(40, 40);
+  }
+}
+
+.task-content.in-progress {
+  animation: workingPulse 3s infinite alternate;
+}
+
+@keyframes workingPulse {
+  from { box-shadow: 0 2px 6px rgba(23, 162, 184, 0.1); }
+  to { box-shadow: 0 5px 15px rgba(23, 162, 184, 0.3); }
+}
