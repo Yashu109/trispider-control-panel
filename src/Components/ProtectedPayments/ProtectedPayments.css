@@ -1,4 +1,3 @@
-/* src/Components/AdminProfile/ProtectedPayments.css */
 .protected-payments {
     min-height: 100vh;
     display: flex;
@@ -8,7 +7,6 @@
     padding: 20px;
 }
 
-/* Password Form Container */
 .password-container {
     background: #ffffff;
     padding: 40px;
@@ -50,7 +48,6 @@
     transform: translateY(-2px);
 }
 
-/* Password Form Header */
 .password-header {
     text-align: center;
     margin-bottom: 30px;
@@ -79,7 +76,6 @@
     line-height: 1.5;
 }
 
-/* Password Form */
 .password-form {
     display: flex;
     flex-direction: column;
@@ -88,8 +84,13 @@
 
 .password-input-group {
     position: relative;
+    display: flex;
 }
-
+.restict-input-icon{
+    display: flex;
+    margin-left: -10%;
+    margin-top: 4%;
+}
 .password-input {
     width: 100%;
     padding: 14px 45px 14px 16px;
@@ -226,14 +227,12 @@
     width: 70px;
     height: 25px;   
 }
-/* Dashboard Content */
 .payments-dashboard {
     padding: 30px;
     background-color: #f8fafc;
     height: 100vh;
 }
 
-/* Summary Cards */
 .summary-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
@@ -285,7 +284,6 @@
     color: #7c3aed;
 }
 
-/* Payments Table */
 .payments-table-container {
     background: #ffffff;
     border-radius: 12px;
@@ -345,7 +343,6 @@
     border-bottom: none;
 }
 
-/* Status Badges */
 .status-badge {
     padding: 6px 12px;
     border-radius: 20px;
@@ -437,7 +434,6 @@
     color: white;
 }
 
-/* Spend Card Styles */
 .clickable {
     cursor: pointer;
     position: relative;
@@ -497,20 +493,12 @@
     color: #666;
 }
 
-/* Spend Page Styles */
 .spend-page {
     padding: 20px;
-    /* max-width: 1200px; */
     margin: 0 auto;
 }
 
-/* .spend-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-    flex-wrap: wrap;
-} */
+
 
 .spend-header h1 {
     margin: 0;
@@ -615,7 +603,6 @@
     padding: 20px;
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
     .protected-payments {
         padding: 15px;
@@ -649,7 +636,6 @@
     }
 }
 
-/* Print Styles */
 @media print {
     .protected-payments {
         min-height: auto;
@@ -713,7 +699,6 @@
     }
 }
 
-/* Additional Styles */
 .loading-container {
     display: flex;
     flex-direction: column;
@@ -779,7 +764,6 @@
     display: flex;
 }
 
-/* Toast Notifications */
 .toast-notification {
     position: fixed;
     bottom: 20px;
@@ -921,7 +905,6 @@
     font-style: italic;
 }
 
-/* Status badge styles */
 .status-badge {
     padding: 4px 8px;
     border-radius: 12px;
@@ -944,7 +927,6 @@
     color: #1e40af;
 }
 
-/* Amount display styles */
 .amount-breakdown {
     display: flex;
     flex-direction: column;
@@ -961,7 +943,6 @@
     color: #666;
 }
 
-/* Action button styles */
 .action-button {
     display: flex;
     align-items: center;
@@ -995,7 +976,6 @@
     background-color: #dc2626;
 }
 
-/* Payment edit container styles */
 .payment-edit-container {
     display: flex;
     gap: 8px;
@@ -1034,6 +1014,8 @@
     display: flex;
     margin: 0 0 10px 0;
     font-size: 18px;
+    justify-content: center;
+
   }
   
   .date-filter-controls {
@@ -1041,6 +1023,7 @@
     flex-wrap: wrap;
     gap: 15px;
     align-items: center;
+    justify-content: center;
   }
   
   .preset-buttons {

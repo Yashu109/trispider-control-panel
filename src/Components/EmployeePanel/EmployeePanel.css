@@ -157,7 +157,10 @@
   animation: spin 1s linear infinite;
   margin-bottom: 15px;
 }
-
+.attendance-actions .spinner{
+  width: 30px;
+  height: 30px;
+}
 @keyframes spin {
   0% {
     transform: rotate(0deg);
@@ -726,4 +729,285 @@
 .status-message {
   font-size: 0.9em;
   color: #555;
+}
+/* Add these styles to your EmployeePanel.css file */
+
+.today-task-section {
+  margin: 20px 0;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+}
+
+.today-task-section h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+  color: #333;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.tasks-table-container {
+  overflow-x: auto;
+}
+
+.tasks-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.tasks-table th, 
+.tasks-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tasks-table th {
+  background-color: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+}
+
+.task-row {
+  transition: background-color 0.2s;
+}
+
+.task-row:hover {
+  background-color: #f9fafb;
+}
+
+.task-row.completed {
+  background-color: #ffffff;
+}
+
+.task-row.in-progress {
+  background-color: #ebf5ff;
+}
+
+.table-status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.table-status-badge.pending {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.table-status-badge.in-progress {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.table-status-badge.completed {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.table-status-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-right: 5px;
+  transition: background-color 0.2s;
+}
+
+.table-status-btn.in-progress-btn {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.table-status-btn.in-progress-btn:hover {
+  background-color: #2563eb;
+}
+
+.table-status-btn.complete-btn {
+  background-color: #10b981;
+  color: white;
+}
+
+.table-status-btn.complete-btn:hover {
+  background-color: #059669;
+}
+
+.table-status-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.table-status-message {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.table-status-message svg {
+  margin-right: 4px;
+}
+
+.task-type-cell {
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.description-cell {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+}
+
+.assigned-cell {
+  font-size: 12px;
+}
+
+.assigned-by {
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.period-cell {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.actions-cell {
+  width: 160px;
+  white-space: nowrap;
+}
+
+/* Responsive styling */
+@media (max-width: 768px) {
+  .tasks-table th:nth-child(5),
+  .tasks-table td:nth-child(5) {
+    display: none;
+  }
+  
+  .description-cell {
+    max-width: 150px;
+  }
+}
+
+@media (max-width: 640px) {
+  .tasks-table th:nth-child(1),
+  .tasks-table td:nth-child(1),
+  .tasks-table th:nth-child(4),
+  .tasks-table td:nth-child(4) {
+    display: none;
+  }
+  
+  .description-cell {
+    max-width: 120px;
+  }
+  
+  .table-status-btn {
+    padding: 4px 8px;
+  }
+}
+/* Rejection styling for the employee panel */
+
+/* Task rows */
+.task-row.rejected {
+  background-color: #fff5f5;
+  border-left: 3px solid #e53935;
+}
+
+/* Status badges */
+.table-status-badge.rejected {
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef5350;
+}
+
+/* Rejection reason */
+.rejection-reason {
+  margin-top: 5px;
+  padding: 5px 8px;
+  font-size: 12px;
+  background-color: #ffebee;
+  border-left: 2px solid #e53935;
+  color: #c62828;
+  border-radius: 0 3px 3px 0;
+}
+
+.rejection-time {
+  font-size: 11px;
+  color: #616161;
+  margin-top: 3px;
+  font-style: italic;
+}
+
+/* Rejected status container */
+.rejected-status {
+  padding: 8px;
+  background-color: #fff8f8;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  border: 1px solid #ffcdd2;
+}
+
+.rejected-status .status-text {
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  color: #c62828;
+}
+
+.rejection-badge {
+  margin-right: 5px;
+  font-size: 16px;
+}
+
+.rejection-details {
+  margin: 8px 0;
+  padding: 5px;
+  font-size: 12px;
+  background-color: #fff5f5;
+  border-radius: 3px;
+}
+
+/* Resubmit button */
+.resubmit-btn {
+  background: linear-gradient(to bottom, #ff7043, #e64a19);
+  color: white;
+}
+
+.resubmit-btn:hover {
+  background: linear-gradient(to bottom, #f4511e, #d84315);
+  box-shadow: 0 2px 4px rgba(230, 74, 25, 0.3);
+}
+
+/* Animation for rejection */
+@keyframes pulseRed {
+  0% { box-shadow: 0 0 0 0 rgba(198, 40, 40, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(198, 40, 40, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(198, 40, 40, 0); }
+}
+
+.newly-rejected {
+  animation: pulseRed 1.5s infinite;
+}
+
+/* Small adjustments for mobile */
+@media (max-width: 768px) {
+  .rejection-reason, 
+  .rejection-details {
+    font-size: 11px;
+    padding: 4px 6px;
+  }
+  
+  .rejected-status {
+    padding: 6px;
+  }
 }

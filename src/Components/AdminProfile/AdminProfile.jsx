@@ -1,21 +1,11 @@
 import { useState, useEffect } from 'react';
 import { database, auth } from '../../firebase';
-import { ref, onValue, update, remove, getDatabase, push } from 'firebase/database';
+import { ref, onValue, update, remove, getDatabase, push, get } from 'firebase/database';
 import { useNavigate } from 'react-router-dom';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import {
-    Loader2,
-    Pencil,
-    Trash2,
-    X,
-    Bell,
-    Eye,
-    ArrowUpDown,
-    ArrowUp,
-    ArrowDown,
-    FileText,
-    Clock,
-    CheckCircle
+    Loader2, Pencil, Trash2, X, Bell, Eye, ArrowUpDown,
+    ArrowUp, ArrowDown, FileText, Clock, CheckCircle
 } from "lucide-react";
 import './AdminProfile.css';
 import ProtectedPayments from '../ProtectedPayments/ProtectedPayments';
@@ -26,53 +16,89 @@ import PDFViewer from '../PDFviewer/PDFviewer';
 import EmployeeManagement from '../EmployeeManagement/EmployeeManagement';
 import Invoice from '../InVoice/InVoice';
 
-const AdminDashboard = () => {
-    const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('profile');
+// Custom hooks to separate concerns
+const useAuth = (navigate) => {
+    const [authChecked, setAuthChecked] = useState(false);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                navigate('/');
+            }
+            setAuthChecked(true);
+        });
+
+        return () => unsubscribe();
+    }, [navigate]);
+
+    const handleSignOut = async () => {
+        try {
+            await signOut(auth);
+            navigate('/');
+        } catch (error) {
+            console.error('Error signing out:', error);
+        }
+    };
+
+    return { authChecked, handleSignOut };
+};
+
+const useProjects = (authChecked) => {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [filterField, setFilterField] = useState('all');
-    const [authChecked, setAuthChecked] = useState(false);
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [editingProject, setEditingProject] = useState(null);
-    const [showAdminPanel, setShowAdminPanel] = useState(false);
-    const projectStatuses = ['Start', 'PartiallyComplete', 'Complete'];
+
+    useEffect(() => {
+        if (!authChecked || !auth.currentUser) {
+            setLoading(false);
+            return () => { };
+        }
+
+        const projectsRef = ref(database, 'projects');
+
+        const unsubscribe = onValue(projectsRef, (snapshot) => {
+            try {
+                if (snapshot.exists()) {
+                    const projectsData = [];
+                    snapshot.forEach((childSnapshot) => {
+                        const project = childSnapshot.val();
+                        const assignments = Array.isArray(project.assignments) ? project.assignments : [];
+
+                        projectsData.push({
+                            id: childSnapshot.key,
+                            ...project,
+                            assignments
+                        });
+                    });
+
+                    projectsData.sort((a, b) => {
+                        const dateA = a.timeline ? new Date(a.timeline) : new Date(0);
+                        const dateB = b.timeline ? new Date(b.timeline) : new Date(0);
+                        return dateB - dateA;
+                    });
+
+                    setProjects(projectsData);
+                } else {
+                    setProjects([]);
+                }
+            } catch (error) {
+                console.error('Error processing projects:', error);
+                setError('Error loading projects');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        return () => unsubscribe();
+    }, [authChecked]);
+
+    return { projects, loading, error, setError };
+};
+
+const useQueries = () => {
     const [queries, setQueries] = useState([]);
-    const [showQueriesModal, setShowQueriesModal] = useState(false);
     const [queriesCount, setQueriesCount] = useState(0);
-    const [editableQueryText, setEditableQueryText] = useState('');
-    const [isEditing, setIsEditing] = useState(false);
-    const [viewingPDF, setViewingPDF] = useState({
-        show: false,
-        url: null,
-        projectId: null
-    });
-    const [employees, setEmployees] = useState([]);
-    const [employeesLoading, setEmployeesLoading] = useState(true);
-    const [sortConfig, setSortConfig] = useState({
-        key: null,
-        direction: null
-    });
-    const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-    const [selectedInvoiceProject, setSelectedInvoiceProject] = useState(null);
-    const [attendanceHistory, setAttendanceHistory] = useState({});
-    const [selectedEmployee, setSelectedEmployee] = useState('');
-    const [todayTask, setTodayTask] = useState('');
-    const [selectedEmployeeForTask, setSelectedEmployeeForTask] = useState('');
-    const [taskScheduleType, setTaskScheduleType] = useState('today'); // New state for schedule type
-    const [taskScheduleDate, setTaskScheduleDate] = useState(''); // New state for specific date
-    const [taskScheduleWeek, setTaskScheduleWeek] = useState(''); // New state for week
-    const [taskScheduleMonth, setTaskScheduleMonth] = useState(''); // New state for month
-    const [scheduledTasks, setScheduledTasks] = useState([]); // New state for scheduled tasks
 
-    const [detailsModal, setDetailsModal] = useState({
-        show: false,
-        assignment: null
-    });
-
-    // Query Monitoring Effect
     useEffect(() => {
         const queriesRef = ref(database, 'queries');
 
@@ -110,58 +136,104 @@ const AdminDashboard = () => {
         return () => unsubscribe();
     }, []);
 
-    // Projects Loading Effect
-    useEffect(() => {
-        if (!authChecked) return;
+    const handleQueryAction = (query, action) => {
+        const database = getDatabase();
 
-        if (!auth.currentUser) {
-            setLoading(false);
-            return;
+        if (action === 'accepted') {
+            const projectRef = ref(database, `Accepted_Queries/${query.parentKey}`);
+            const newAcceptedQuery = {
+                queryStatus: 'Your query has been accepted and will be addressed soon.',
+                queryText: query.queryText,
+                timestamp: new Date().toISOString(),
+                queryType: query.queryType
+            };
+
+            push(projectRef, newAcceptedQuery)
+                .then(() => {
+                    const queryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
+                    return remove(queryRef);
+                })
+                .catch(error => console.error('Acceptance error:', error));
+        } else if (action === 'rejected') {
+            const queryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
+            remove(queryRef)
+                .catch(error => console.error('Rejection error:', error));
+        }
+    };
+
+    return { queries, queriesCount, handleQueryAction };
+};
+const handleTaskVerification = async (taskId, projectId, employeeName, action) => {
+    try {
+        const now = new Date().toISOString();
+        const taskRef = ref(database, `scheduledTasks/${taskId}`);
+        const taskSnapshot = await get(taskRef);
+
+        if (!taskSnapshot.exists()) {
+            throw new Error('Task not found');
         }
 
-        const projectsRef = ref(database, 'projects');
+        const taskData = taskSnapshot.val();
 
-        const unsubscribe = onValue(projectsRef, (snapshot) => {
-            try {
-                if (snapshot.exists()) {
-                    const projectsData = [];
-                    snapshot.forEach((childSnapshot) => {
-                        const project = childSnapshot.val();
-                        const assignments = Array.isArray(project.assignments)
-                            ? project.assignments
-                            : [];
+        if (action === 'verify') {
+            const updatedTask = {
+                ...taskData,
+                status: 'completed',
+                verifiedBy: 'Admin',
+                verifiedAt: now,
+                lastUpdated: now
+            };
 
-                        projectsData.push({
-                            id: childSnapshot.key,
-                            ...project,
-                            assignments
-                        });
+            await update(taskRef, updatedTask);
+
+            // Update project assignment if applicable
+            if (projectId) {
+                const projectRef = ref(database, `projects/${projectId}`);
+                const projectSnapshot = await get(projectRef);
+                if (projectSnapshot.exists()) {
+                    const projectData = projectSnapshot.val();
+                    const updatedAssignments = projectData.assignments.map(assignment => {
+                        if (assignment.assignee === employeeName && assignment.todayTask?.taskId === taskId) {
+                            return {
+                                ...assignment,
+                                taskCompleted: 'Complete',
+                                todayTask: {
+                                    ...assignment.todayTask,
+                                    status: 'completed',
+                                    lastUpdated: now
+                                }
+                            };
+                        }
+                        return assignment;
                     });
-
-                    projectsData.sort((a, b) => {
-                        const dateA = a.timeline ? new Date(a.timeline) : new Date(0);
-                        const dateB = b.timeline ? new Date(b.timeline) : new Date(0);
-                        return dateB - dateA;
-                    });
-
-                    setProjects(projectsData);
-                } else {
-                    setProjects([]);
+                    await update(projectRef, { assignments: updatedAssignments });
                 }
-            } catch (error) {
-                console.error('Error processing projects:', error);
-                setError('Error loading projects');
-            } finally {
-                setLoading(false);
             }
-        });
 
-        return () => unsubscribe();
-    }, [authChecked]);
+            alert('Task verified and marked as completed!');
+        } else if (action === 'reject') {
+            const updatedTask = {
+                ...taskData,
+                status: 'in-progress', // Revert to in-progress or pending if rejected
+                completionRequest: null,
+                lastUpdated: now
+            };
+            await update(taskRef, updatedTask);
+            alert('Task completion rejected. Employee must continue work.');
+        }
+    } catch (error) {
+        console.error('Error verifying task:', error);
+        alert('Failed to verify task. Please try again.');
+    }
+};
+const useEmployees = (authChecked) => {
+    const [employees, setEmployees] = useState([]);
+    const [employeesLoading, setEmployeesLoading] = useState(true);
+    const [attendanceHistory, setAttendanceHistory] = useState({});
+    const [scheduledTasks, setScheduledTasks] = useState([]);
 
-    // Employees and Attendance History Loading Effect
     useEffect(() => {
-        if (!authChecked) return;
+        if (!authChecked) return () => { };
 
         const db = getDatabase();
         const employeesRef = ref(db, 'employeesList/employees');
@@ -240,27 +312,9 @@ const AdminDashboard = () => {
             setEmployeesLoading(false);
         });
 
-        return () => unsubscribeEmployees();
-    }, [authChecked]);
-
-    // Auth Check Effect
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (!user && !loading) {
-                navigate('/');
-            }
-            setAuthChecked(true);
-        });
-
-        return () => unsubscribe();
-    }, [navigate, loading]);
-
-    // Fetch Scheduled Tasks Effect
-    useEffect(() => {
-        const db = getDatabase();
+        // Fetch Scheduled Tasks
         const scheduledTasksRef = ref(db, 'scheduledTasks');
-
-        const unsubscribe = onValue(scheduledTasksRef, (snapshot) => {
+        const unsubscribeTasks = onValue(scheduledTasksRef, (snapshot) => {
             if (snapshot.exists()) {
                 const tasksData = [];
                 snapshot.forEach((childSnapshot) => {
@@ -276,10 +330,129 @@ const AdminDashboard = () => {
             }
         });
 
-        return () => unsubscribe();
-    }, []);
+        return () => {
+            unsubscribeEmployees();
+            unsubscribeTasks();
+        };
+    }, [authChecked]);
 
-    // Handler Functions
+    return { employees, employeesLoading, attendanceHistory, scheduledTasks };
+};
+
+// Utility components
+const AssignmentRow = ({ assignment, index, totalAssignments, employees, employeesLoading, updateAssignment, removeAssignment }) => (
+    <div className={`assignment-row ${assignment.taskOrder ? 'has-order' : ''}`}>
+        {assignment.taskCompleted && (
+            <div className="task-completed-display">
+                <strong>Task Status:</strong> {assignment.taskCompleted}
+            </div>
+        )}
+        <div className="assignment-inputs">
+            <div className="assignment-main-inputs">
+                <select
+                    value={assignment.assignee || ''}
+                    onChange={(e) => updateAssignment(index, 'assignee', e.target.value)}
+                    className="assignee-input"
+                    disabled={employeesLoading}
+                >
+                    <option value="">Select Employee</option>
+                    {employees.map((employee) => (
+                        <option key={employee.id} value={employee.name}>
+                            {employee.name}
+                        </option>
+                    ))}
+                </select>
+
+                {assignment.assignee && (
+                    <select
+                        value={assignment.taskOrder || ''}
+                        onChange={(e) => updateAssignment(index, 'taskOrder', e.target.value)}
+                        className={`task-order-select ${!assignment.taskOrder ? 'required' : ''}`}
+                    >
+                        <option value="">Select Task Order *</option>
+                        {[...Array(totalAssignments)].map((_, i) => (
+                            <option key={i + 1} value={i + 1}>
+                                {i === 0 ? '1st - Do First' :
+                                    i === 1 ? '2nd - Do Second' :
+                                        i === 2 ? '3rd - Do Third' :
+                                            `${i + 1}th - Do ${i + 1}th`}
+                            </option>
+                        ))}
+                    </select>
+                )}
+            </div>
+
+            <textarea
+                placeholder="Task description"
+                value={assignment.description || ''}
+                onChange={(e) => updateAssignment(index, 'description', e.target.value)}
+                className="description-input"
+                rows="3"
+            />
+
+            <div className="task-info">
+                <div className="percentage-display">
+                    Percentage: {assignment.percentage}%
+                </div>
+                {assignment.taskOrder && (
+                    <div className="order-display">
+                        Task Order: #{assignment.taskOrder}
+                    </div>
+                )}
+            </div>
+
+            {index > 0 && (
+                <button
+                    type="button"
+                    onClick={() => removeAssignment(index)}
+                    className="remove-assignment-btn"
+                >
+                    Remove
+                </button>
+            )}
+        </div>
+    </div>
+);
+
+// Main component
+const AdminDashboard = () => {
+    const navigate = useNavigate();
+    const { authChecked, handleSignOut } = useAuth(navigate);
+    const { projects, loading, error, setError } = useProjects(authChecked);
+    const { queries, queriesCount, handleQueryAction } = useQueries();
+    const { employees, employeesLoading, attendanceHistory, scheduledTasks } = useEmployees(authChecked);
+
+    // UI state
+    const [activeTab, setActiveTab] = useState('profile');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterField, setFilterField] = useState('all');
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
+
+    // Modal state
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [showAdminPanel, setShowAdminPanel] = useState(false);
+    const [showQueriesModal, setShowQueriesModal] = useState(false);
+    const [editingProject, setEditingProject] = useState(null);
+    const [editableQueryText, setEditableQueryText] = useState('');
+    const [isEditing, setIsEditing] = useState(false);
+    const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+    const [selectedInvoiceProject, setSelectedInvoiceProject] = useState(null);
+
+    // Tasks state
+    const [viewingPDF, setViewingPDF] = useState({ show: false, url: null, projectId: null });
+    const [detailsModal, setDetailsModal] = useState({ show: false, assignment: null });
+    const [selectedEmployee, setSelectedEmployee] = useState('');
+    const [todayTask, setTodayTask] = useState('');
+    const [selectedEmployeeForTask, setSelectedEmployeeForTask] = useState('');
+    const [taskScheduleType, setTaskScheduleType] = useState('today');
+    const [taskScheduleDate, setTaskScheduleDate] = useState('');
+    const [taskScheduleWeek, setTaskScheduleWeek] = useState('');
+    const [taskScheduleMonth, setTaskScheduleMonth] = useState('');
+
+    // Constants
+    const projectStatuses = ['Start', 'PartiallyComplete', 'Complete'];
+
+    // Event handlers
     const handleEdit = (project) => {
         setEditingProject({ ...project });
         setShowEditModal(true);
@@ -314,49 +487,37 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleSignOut = async () => {
-        try {
-            await signOut(auth);
-            navigate('/');
-        } catch (error) {
-            console.error('Error signing out:', error);
-            setError('Failed to sign out');
-        }
-    };
-
     const handleClearFilters = () => {
         setSearchQuery('');
         setFilterField('all');
     };
 
-    const handleQueryAction = (query, action) => {
-        const database = getDatabase();
-
-        if (action === 'accepted') {
+    const handleSendEditedQuery = (query) => {
+        if (editableQueryText.trim()) {
+            const database = getDatabase();
             const projectRef = ref(database, `Accepted_Queries/${query.parentKey}`);
-            const newAcceptedQuery = {
-                queryStatus: 'Your query has been accepted and will be addressed soon.',
-                queryText: query.queryText,
-                timestamp: new Date().toISOString(),
-                queryType: query.queryType
-            };
 
-            push(projectRef, newAcceptedQuery)
+            update(projectRef, {
+                queryStatus: 'Your query has been reviewed and updated.',
+                queryText: query.queryText,
+            })
                 .then(() => {
-                    const queryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
-                    return remove(queryRef);
+                    const oldQueryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
+                    return remove(oldQueryRef);
                 })
                 .then(() => {
+                    const newQueryRef = ref(database, `queries/${query.parentKey}`);
+                    return push(newQueryRef, {
+                        queryText: editableQueryText,
+                        timestamp: new Date().toISOString(),
+                        status: 'pending'
+                    });
+                })
+                .then(() => {
+                    setIsEditing(false);
                     setShowQueriesModal(false);
                 })
-                .catch(error => console.error('Acceptance error:', error));
-        } else if (action === 'rejected') {
-            const queryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
-            remove(queryRef)
-                .then(() => {
-                    setShowQueriesModal(false);
-                })
-                .catch(error => console.error('Rejection error:', error));
+                .catch(error => console.error('Edit and send error:', error));
         }
     };
 
@@ -379,19 +540,13 @@ const AdminDashboard = () => {
 
             let scheduleDetails = {};
             if (taskScheduleType === 'today') {
-                scheduleDetails = {
-                    date: todayDate,
-                    type: 'daily',
-                };
+                scheduleDetails = { date: todayDate, type: 'daily' };
             } else if (taskScheduleType === 'date') {
                 if (!taskScheduleDate) {
                     alert('Please select a date for the task.');
                     return;
                 }
-                scheduleDetails = {
-                    date: taskScheduleDate,
-                    type: 'daily',
-                };
+                scheduleDetails = { date: taskScheduleDate, type: 'daily' };
             } else if (taskScheduleType === 'week') {
                 if (!taskScheduleWeek) {
                     alert('Please select a week for the task.');
@@ -426,7 +581,7 @@ const AdminDashboard = () => {
             );
 
             if (employeeProjects.length === 0 && taskScheduleType === 'today') {
-                alert('No projects assigned to this employee for today’s task.');
+                alert('No projects assigned to this employee for todays task.');
                 return;
             }
 
@@ -486,36 +641,38 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleSendEditedQuery = (query) => {
-        if (editableQueryText.trim()) {
-            const database = getDatabase();
-            const projectRef = ref(database, `Accepted_Queries/${query.parentKey}`);
-
-            update(projectRef, {
-                queryStatus: 'Your query has been reviewed and updated.',
-                queryText: query.queryText,
-            })
-                .then(() => {
-                    const oldQueryRef = ref(database, `queries/${query.parentKey}/${query.id}`);
-                    return remove(oldQueryRef);
-                })
-                .then(() => {
-                    const newQueryRef = ref(database, `queries/${query.parentKey}`);
-                    return push(newQueryRef, {
-                        queryText: editableQueryText,
-                        timestamp: new Date().toISOString(),
-                        status: 'pending'
-                    });
-                })
-                .then(() => {
-                    setIsEditing(false);
-                    setShowQueriesModal(false);
-                })
-                .catch(error => console.error('Edit and send error:', error));
+    const handleViewPDF = async (projectId) => {
+        try {
+            const storage = getStorage();
+            const pdfRef = storageRef(storage, `quotations/${projectId}.pdf`);
+            const url = await getDownloadURL(pdfRef);
+            setViewingPDF({
+                show: true,
+                url: url,
+                projectId: projectId
+            });
+        } catch (error) {
+            console.error('Error viewing PDF:', error);
+            alert('Error viewing PDF. Please try again.');
         }
     };
 
-    // Helper Functions
+    const handleSort = (key) => {
+        let direction = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+        if (tab !== 'new') {
+            setShowAdminPanel(false);
+        }
+    };
+
+    // Utility functions
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-IN', {
             style: 'currency',
@@ -613,128 +770,6 @@ const AdminDashboard = () => {
         return todayTasksData;
     };
 
-    let filteredProjects = projects.filter(project => {
-        const searchLower = searchQuery.toLowerCase();
-
-        if (filterField === 'referredBy' && searchLower) {
-            return (
-                (project.referredBy && project.referredBy.toLowerCase().includes(searchLower)) ||
-                (project.clientName && project.clientName.toLowerCase() === searchLower)
-            );
-        }
-
-        if (filterField === 'timeline') {
-            const projectDate = project.timeline ? new Date(project.timeline) : null;
-            if (!projectDate) return false;
-
-            const dateFormats = [
-                projectDate.toLocaleDateString(),
-                projectDate.toLocaleDateString('en-GB'),
-                projectDate.toLocaleDateString('en-US'),
-                projectDate.toISOString().split('T')[0],
-            ];
-
-            return dateFormats.some(format =>
-                format.toLowerCase().includes(searchLower)
-            );
-        }
-
-        if (filterField !== 'all') {
-            const fieldValue = String(project[filterField] || '').toLowerCase();
-            return fieldValue.includes(searchLower);
-        }
-
-        const searchFields = [
-            project.projectId,
-            project.timestamp,
-            project.clientName,
-            project.title,
-            project.collegeName,
-            project.email,
-            project.phoneNumber,
-            project.whatsappNumber,
-            project.referredBy,
-            project.timeline ? new Date(project.timeline).toLocaleDateString() : ''
-        ];
-
-        return searchFields.some(field =>
-            String(field || '').toLowerCase().includes(searchLower)
-        );
-    });
-
-    filteredProjects = filteredProjects.filter(project => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        switch (activeTab) {
-            case 'ready': {
-                return project.projectStatus === 'Complete';
-            }
-            case 'progress': {
-                return project.projectStatus === 'PartiallyComplete';
-            }
-            case 'nearby': {
-                if (!project.timeline) return false;
-                const projectDate = new Date(project.timeline);
-                projectDate.setHours(0, 0, 0, 0);
-                const timeDifference = Math.floor((projectDate - today) / (1000 * 3600 * 24));
-                return timeDifference >= 0 && timeDifference <= 10;
-            }
-            case 'tasks': {
-                return true;
-            }
-            default: {
-                return true;
-            }
-        }
-    });
-
-    const handleViewPDF = async (projectId) => {
-        try {
-            const storage = getStorage();
-            const pdfRef = storageRef(storage, `quotations/${projectId}.pdf`);
-            const url = await getDownloadURL(pdfRef);
-            setViewingPDF({
-                show: true,
-                url: url,
-                projectId: projectId
-            });
-        } catch (error) {
-            console.error('Error viewing PDF:', error);
-            alert('Error viewing PDF. Please try again.');
-        }
-    };
-
-    useEffect(() => {
-        const db = getDatabase();
-        const employeesRef = ref(db, 'employeesList/employees');
-
-        const unsubscribe = onValue(employeesRef, (snapshot) => {
-            if (snapshot.exists()) {
-                const employeeData = [];
-                snapshot.forEach((childSnapshot) => {
-                    const employee = childSnapshot.val();
-                    employeeData.push({
-                        id: employee.employeeId,
-                        name: employee.name
-                    });
-                });
-                setEmployees(employeeData);
-            }
-            setEmployeesLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, []);
-
-    const handleSort = (key) => {
-        let direction = 'asc';
-        if (sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc';
-        }
-        setSortConfig({ key, direction });
-    };
-
     const getSortIcon = (columnKey) => {
         if (sortConfig.key !== columnKey) {
             return <ArrowUpDown size={16} className="sort-icon" />;
@@ -744,59 +779,461 @@ const AdminDashboard = () => {
             <ArrowDown size={16} className="sort-icon active" />;
     };
 
-    const sortedProjects = [...filteredProjects].sort((a, b) => {
-        if (!sortConfig.key) return 0;
+    // Filter and sort projects
+    const getFilteredProjects = () => {
+        let filtered = projects.filter(project => {
+            const searchLower = searchQuery.toLowerCase();
 
-        const aValue = a[sortConfig.key];
-        const bValue = b[sortConfig.key];
+            if (filterField === 'referredBy' && searchLower) {
+                return (
+                    (project.referredBy && project.referredBy.toLowerCase().includes(searchLower)) ||
+                    (project.clientName && project.clientName.toLowerCase() === searchLower)
+                );
+            }
 
-        if (!aValue && !bValue) return 0;
-        if (!aValue) return 1;
-        if (!bValue) return -1;
+            if (filterField === 'timeline') {
+                const projectDate = project.timeline ? new Date(project.timeline) : null;
+                if (!projectDate) return false;
 
-        if (sortConfig.key === 'timeline' || sortConfig.key === 'timestamp') {
-            const dateA = new Date(aValue);
-            const dateB = new Date(bValue);
-            return sortConfig.direction === 'asc' ?
-                dateA - dateB :
-                dateB - dateA;
+                const dateFormats = [
+                    projectDate.toLocaleDateString(),
+                    projectDate.toLocaleDateString('en-GB'),
+                    projectDate.toLocaleDateString('en-US'),
+                    projectDate.toISOString().split('T')[0],
+                ];
+
+                return dateFormats.some(format => format.toLowerCase().includes(searchLower));
+            }
+
+            if (filterField !== 'all') {
+                const fieldValue = String(project[filterField] || '').toLowerCase();
+                return fieldValue.includes(searchLower);
+            }
+
+            const searchFields = [
+                project.projectId,
+                project.timestamp,
+                project.clientName,
+                project.title,
+                project.collegeName,
+                project.email,
+                project.phoneNumber,
+                project.whatsappNumber,
+                project.referredBy,
+                project.timeline ? new Date(project.timeline).toLocaleDateString() : ''
+            ];
+
+            return searchFields.some(field => String(field || '').toLowerCase().includes(searchLower));
+        });
+
+        filtered = filtered.filter(project => {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            switch (activeTab) {
+                case 'ready':
+                    return project.projectStatus === 'Complete';
+                case 'progress':
+                    return project.projectStatus === 'PartiallyComplete';
+                case 'nearby': {
+                    if (!project.timeline) return false;
+                    const projectDate = new Date(project.timeline);
+                    projectDate.setHours(0, 0, 0, 0);
+                    const timeDifference = Math.floor((projectDate - today) / (1000 * 3600 * 24));
+                    return timeDifference >= 0 && timeDifference <= 10;
+                }
+                case 'tasks':
+                    return true;
+                default:
+                    return true;
+            }
+        });
+
+        if (sortConfig.key) {
+            filtered.sort((a, b) => {
+                const aValue = a[sortConfig.key];
+                const bValue = b[sortConfig.key];
+
+                if (!aValue && !bValue) return 0;
+                if (!aValue) return 1;
+                if (!bValue) return -1;
+
+                if (sortConfig.key === 'timeline' || sortConfig.key === 'timestamp') {
+                    const dateA = new Date(aValue);
+                    const dateB = new Date(bValue);
+                    return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
+                }
+
+                return sortConfig.direction === 'asc' ?
+                    aValue.toString().localeCompare(bValue.toString()) :
+                    bValue.toString().localeCompare(aValue.toString());
+            });
         }
 
-        return sortConfig.direction === 'asc' ?
-            aValue.toString().localeCompare(bValue.toString()) :
-            bValue.toString().localeCompare(aValue.toString());
-    });
+        return filtered;
+    };
 
-    const handleTabChange = (tab) => {
-        setActiveTab(tab);
-        if (tab !== 'new') {
-            setShowAdminPanel(false);
+    const filteredProjects = getFilteredProjects();
+
+    // Render components
+    const renderTableHeader = () => (
+        <div className="table-header">
+            <h2>
+                {activeTab === 'new' ? 'Total Orders' :
+                    activeTab === 'orders' ? 'Total Orders' :
+                        activeTab === 'ready' ? 'Ready to Deliver' :
+                            activeTab === 'progress' ? 'In Progress' :
+                                'Nearby Submissions'}
+            </h2>
+            <div className="filters-container">
+                <div className="search-controls">
+                    <select
+                        value={filterField}
+                        onChange={(e) => setFilterField(e.target.value)}
+                        className="filter-select"
+                    >
+                        <option value="all">All Fields</option>
+                        <option value="createdtime">Created Time</option>
+                        <option value="projectId">Project ID</option>
+                        <option value="clientName">Client Name</option>
+                        <option value="collegeName">College</option>
+                        <option value="title">Project Name</option>
+                        <option value="email">Email</option>
+                        <option value="phoneNumber">Phone</option>
+                        <option value="referredBy">Referred By</option>
+                        <option value="timeline">Timeline</option>
+                    </select>
+
+                    <div className="search-input-container">
+                        <input
+                            type="text"
+                            placeholder={filterField === 'timeline'
+                                ? "Search date (e.g., 08/02/2025)"
+                                : filterField === 'referredBy'
+                                    ? "Enter referrer name..."
+                                    : "Search projects..."}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="search-input"
+                        />
+                        {searchQuery && (
+                            <button
+                                className="clear-search"
+                                onClick={() => setSearchQuery('')}
+                            >
+                                ×
+                            </button>
+                        )}
+                    </div>
+
+                    {searchQuery && (
+                        <button
+                            className="clear-filters"
+                            onClick={handleClearFilters}
+                        >
+                            Clear Filters
+                        </button>
+                    )}
+                </div>
+            </div>
+            <div className='notification-record'>
+                <div className="notification-icon">
+                    <button onClick={() => setShowQueriesModal(true)} className="bell-button">
+                        <Bell />
+                        {queriesCount > 0 && <span className="notification-badge">{queriesCount}</span>}
+                    </button>
+                </div>
+                <div className="record-count">
+                    {filteredProjects.length} {filteredProjects.length === 1 ? 'Record' : 'Records'}
+                </div>
+            </div>
+        </div>
+    );
+
+    const renderProjectsTable = () => (
+        <div className="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th onClick={() => handleSort('projectId')} className="sortable-header">
+                            Project ID {getSortIcon('projectId')}
+                        </th>
+                        <th onClick={() => handleSort('timestamp')} className="sortable-header">
+                            Created Time {getSortIcon('timestamp')}
+                        </th>
+                        <th onClick={() => handleSort('clientName')} className="sortable-header">
+                            Client Name {getSortIcon('clientName')}
+                        </th>
+                        <th onClick={() => handleSort('title')} className="sortable-header">
+                            Project Name {getSortIcon('title')}
+                        </th>
+                        <th onClick={() => handleSort('collegeName')} className="sortable-header">
+                            College {getSortIcon('collegeName')}
+                        </th>
+                        <th onClick={() => handleSort('email')} className="sortable-header">
+                            Email {getSortIcon('email')}
+                        </th>
+                        <th onClick={() => handleSort('phoneNumber')} className="sortable-header">
+                            Phone Number {getSortIcon('phoneNumber')}
+                        </th>
+                        <th onClick={() => handleSort('whatsappNumber')} className="sortable-header">
+                            WhatsApp Number {getSortIcon('whatsappNumber')}
+                        </th>
+                        <th onClick={() => handleSort('referredBy')} className="sortable-header">
+                            Referred By {getSortIcon('referredBy')}
+                        </th>
+                        <th onClick={() => handleSort('timeline')} className="sortable-header">
+                            Timeline {getSortIcon('timeline')}
+                        </th>
+                        <th onClick={() => handleSort('projectStatus')} className="sortable-header">
+                            Project Status {getSortIcon('projectStatus')}
+                        </th>
+                        <th onClick={() => handleSort('Assign_To')} className="sortable-header">
+                            Assign To {getSortIcon('Assign_To')}
+                        </th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {filteredProjects.map((project) => (
+                        <tr key={project.id}>
+                            <td>{project.projectId}</td>
+                            <td>{project.timestamp}</td>
+                            <td className="truncate-cell" data-full-text={project.clientName}>{project.clientName}</td>
+                            <td className="truncate-cell" data-full-text={project.title}>{project.title}</td>
+                            <td className="truncate-cell" data-full-text={project.collegeName}>{project.collegeName}</td>
+                            <td className="truncate-cell email-cell" data-full-text={project.email}>{project.email}</td>
+                            <td>{project.phoneNumber}</td>
+                            <td>{project.whatsappNumber}</td>
+                            <td className="truncate-cell" data-full-text={project.referredBy}>{project.referredBy}</td>
+                            <td>{project.timeline ? new Date(project.timeline).toLocaleDateString() : 'Not set'}</td>
+                            <td>{project.projectStatus || 'Start'}</td>
+                            <td className="assignee-cell">
+                                {project.assignments && project.assignments.length > 0 ? (
+                                    <div className="assignments-container">
+                                        {[...project.assignments]
+                                            .filter((assignment) => assignment.assignee && assignment.assignee.trim() !== '')
+                                            .sort((a, b) => Number(a.taskOrder) - Number(b.taskOrder))
+                                            .map((assignment, index) => (
+                                                <div key={index} className={`assignment-badge ${assignment.taskCompleted?.toLowerCase().includes('complete') ? 'completed-assignment' : ''}`}>
+                                                    <div className="assignment-summary">
+                                                        <button
+                                                            className="details-btn"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setDetailsModal({
+                                                                    show: true,
+                                                                    assignment: assignment
+                                                                });
+                                                            }}
+                                                        >
+                                                            {assignment.taskCompleted?.toLowerCase().includes('complete') && (
+                                                                <span className="completion-checkmark">✓</span>
+                                                            )}
+                                                            {assignment.taskCompleted?.includes('Pending Verification') && (
+                                                                <span className="pending-verification">⏳</span>
+                                                            )}
+                                                            <span className="task-order">#{assignment.taskOrder}</span>
+                                                            <span className="assignee-name">{assignment.assignee}</span>
+                                                            <span className="percentage-badge">{assignment.percentage}%</span>
+                                                            {assignment.taskCompleted && (
+                                                                <span className="task-status">
+                                                                    {assignment.taskCompleted}
+                                                                </span>
+                                                            )}
+                                                            <span className="details-icon">ⓘ</span>
+                                                        </button>
+                                                        {assignment.taskCompleted?.includes('Pending Verification') && (
+                                                            <div className="verification-actions">
+                                                                <button
+                                                                    onClick={() => handleProjectAssignmentVerification(project.id, assignment, assignment.assignee, 'verify')}
+                                                                    className="verify-btn"
+                                                                >
+                                                                    Verify
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleProjectAssignmentVerification(project.id, assignment, assignment.assignee, 'reject')}
+                                                                    className="reject-btn"
+                                                                >
+                                                                    Reject
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                    </div>
+                                ) : null}
+                            </td>
+                            <td className="actions-column">
+                                <button onClick={() => handleEdit(project)} className="action-button edit" title="Edit project">
+                                    <Pencil size={16} />
+                                </button>
+                                <button onClick={() => handleDelete(project.id)} className="action-button delete" title="Delete project">
+                                    <Trash2 size={16} />
+                                </button>
+                                <button onClick={() => handleViewPDF(project.projectId)} className="action-button view" title="View PDF">
+                                    <Eye size={16} />
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setSelectedInvoiceProject(project);
+                                        setShowInvoiceModal(true);
+                                    }}
+                                    className="action-button invoice"
+                                    title="Generate Invoice"
+                                >
+                                    <FileText size={16} />
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+
+
+   
+    const handleProjectAssignmentVerification = async (projectId, assignment, employeeName, action) => {
+        try {
+            const now = new Date().toISOString();
+            const projectRef = ref(database, `projects/${projectId}`);
+            const projectSnapshot = await get(projectRef);
+
+            if (!projectSnapshot.exists()) {
+                throw new Error('Project not found');
+            }
+
+            const projectData = projectSnapshot.val();
+            const updatedAssignments = projectData.assignments.map(a => {
+                if (a.assignee === employeeName && a.taskOrder === assignment.taskOrder) {
+                    if (action === 'verify') {
+                        return {
+                            ...a,
+                            taskCompleted: 'Complete',
+                            completedTimestamp: now,
+                            completionRequest: null
+                        };
+                    } else if (action === 'reject') {
+                        // Prompt for rejection reason
+                        const rejectionReason = window.prompt("Please provide a reason for rejection:", "");
+
+                        return {
+                            ...a,
+                            taskCompleted: 'Rejected',  // Clear indicator that it was rejected
+                            completedTimestamp: null,
+                            completionRequest: null,
+                            rejected: true,  // Add explicit rejection flag
+                            rejectionReason: rejectionReason || "No reason provided", // Store the reason
+                            rejectionTimestamp: now
+                        };
+                    }
+                }
+                return a;
+            });
+
+            await update(projectRef, { assignments: updatedAssignments });
+
+            // If this is a scheduled task, also update that record
+            if (assignment.todayTask && assignment.todayTask.taskId) {
+                const taskRef = ref(database, `scheduledTasks/${assignment.todayTask.taskId}`);
+                const taskSnapshot = await get(taskRef);
+
+                if (taskSnapshot.exists()) {
+                    const taskData = taskSnapshot.val();
+
+                    if (action === 'verify') {
+                        await update(taskRef, {
+                            status: 'completed',
+                            verifiedBy: 'Admin',
+                            verifiedAt: now,
+                            lastUpdated: now
+                        });
+                    } else if (action === 'reject') {
+                        await update(taskRef, {
+                            status: 'rejected',
+                            rejectedBy: 'Admin',
+                            rejectedAt: now,
+                            lastUpdated: now,
+                            rejected: true,
+                            rejectionReason: rejectionReason || "No reason provided"
+                        });
+                    }
+                }
+            }
+
+            alert(action === 'verify'
+                ? 'Assignment verified and marked as completed!'
+                : 'Assignment has been rejected. Employee will be notified.');
+        } catch (error) {
+            console.error('Error verifying project assignment:', error);
+            alert('Failed to verify assignment. Please try again.');
         }
     };
 
-    const AssignmentRow = ({
-        assignment,
-        index,
-        totalAssignments,
-        employees,
-        employeesLoading,
-        updateAssignment,
-        removeAssignment
-    }) => {
+    const renderTasksTab = () => {
+        const selectedEmployeeData = employees.find(emp => emp.name === selectedEmployee);
+        let attendanceData = [];
+        const todayTasks = getTodayTasks();
+        const pendingVerificationTasks = scheduledTasks.filter(task => task.status === 'pending-verification');
+        const pendingProjectAssignments = projects.flatMap(project =>
+            project.assignments
+                ?.filter(assignment => assignment.taskCompleted?.includes('Pending Verification') && assignment.completionRequest)
+                .map(assignment => ({
+                    projectId: project.id,
+                    assignment,
+                    employeeName: assignment.assignee
+                })) || []
+        );
+        if (selectedEmployeeData) {
+            const employeeId = selectedEmployeeData.id;
+            const employeeAttendance = attendanceHistory[employeeId] || { current: null, history: [] };
+
+            if (employeeAttendance.current) {
+                attendanceData.push({
+                    type: 'attendance',
+                    employeeName: selectedEmployeeData.name,
+                    date: employeeAttendance.current.date,
+                    checkIn: employeeAttendance.current.clockIn,
+                    checkOut: employeeAttendance.current.clockOut || '-',
+                    duration: employeeAttendance.current.duration || '0.00',
+                    status: employeeAttendance.current.status || 'active',
+                    checkInSummary: employeeAttendance.current.checkInSummary || '-',
+                    checkOutSummary: employeeAttendance.current.checkOutSummary || '-',
+                    todayTask: employeeAttendance.todayTask || null
+                });
+            }
+
+            (employeeAttendance.history || []).forEach(record => {
+                attendanceData.push({
+                    type: 'attendance',
+                    employeeName: selectedEmployeeData.name,
+                    date: record.date,
+                    checkIn: record.clockIn,
+                    checkOut: record.clockOut || '-',
+                    duration: record.duration || '0.00',
+                    status: record.status || 'completed',
+                    checkInSummary: record.checkInSummary || '-',
+                    checkOutSummary: record.checkOutSummary || '-',
+                    todayTask: record.todayTask || null
+                });
+            });
+        }
+
+        attendanceData.sort((a, b) => new Date(b.date) - new Date(a.date));
+
         return (
-            <div className={`assignment-row ${assignment.taskOrder ? 'has-order' : ''}`}>
-                {assignment.taskCompleted && (
-                    <div className="task-completed-display">
-                        <strong>Task Status:</strong> {assignment.taskCompleted}
-                    </div>
-                )}
-                <div className="assignment-inputs">
-                    <div className="assignment-main-inputs">
+            <div className="attendance-history">
+                <h2>Employee Tasks & Attendance</h2>
+
+                <div className="today-task-section">
+                    <h3>Assign New Task</h3>
+                    <div className="task-assignment-form">
                         <select
-                            value={assignment.assignee || ''}
-                            onChange={(e) => updateAssignment(index, 'assignee', e.target.value)}
-                            className="assignee-input"
-                            disabled={employeesLoading}
+                            value={selectedEmployeeForTask}
+                            onChange={(e) => setSelectedEmployeeForTask(e.target.value)}
+                            className="employee-select"
                         >
                             <option value="">Select Employee</option>
                             {employees.map((employee) => (
@@ -806,53 +1243,278 @@ const AdminDashboard = () => {
                             ))}
                         </select>
 
-                        {assignment.assignee && (
+                        <textarea
+                            placeholder="Enter task details..."
+                            value={todayTask}
+                            onChange={(e) => setTodayTask(e.target.value)}
+                            className="task-input"
+                            rows="3"
+                        />
+
+                        <div className="schedule-options">
+                            <label>Schedule Type:</label>
                             <select
-                                value={assignment.taskOrder || ''}
-                                onChange={(e) => updateAssignment(index, 'taskOrder', e.target.value)}
-                                className={`task-order-select ${!assignment.taskOrder ? 'required' : ''}`}
+                                value={taskScheduleType}
+                                onChange={(e) => setTaskScheduleType(e.target.value)}
                             >
-                                <option value="">Select Task Order *</option>
-                                {[...Array(totalAssignments)].map((_, i) => (
-                                    <option key={i + 1} value={i + 1}>
-                                        {i === 0 ? '1st - Do First' :
-                                            i === 1 ? '2nd - Do Second' :
-                                                i === 2 ? '3rd - Do Third' :
-                                                    `${i + 1}th - Do ${i + 1}th`}
-                                    </option>
-                                ))}
+                                <option value="today">Today</option>
+                                <option value="date">Specific Date</option>
+                                <option value="week">Week</option>
+                                <option value="month">Month</option>
                             </select>
-                        )}
-                    </div>
 
-                    <textarea
-                        placeholder="Task description"
-                        value={assignment.description || ''}
-                        onChange={(e) => updateAssignment(index, 'description', e.target.value)}
-                        className="description-input"
-                        rows="3"
-                    />
-
-                    <div className="task-info">
-                        <div className="percentage-display">
-                            Percentage: {assignment.percentage}%
+                            {taskScheduleType === 'date' && (
+                                <input
+                                    type="date"
+                                    value={taskScheduleDate}
+                                    onChange={(e) => setTaskScheduleDate(e.target.value)}
+                                    min={new Date().toISOString().split('T')[0]}
+                                />
+                            )}
+                            {taskScheduleType === 'week' && (
+                                <input
+                                    type="week"
+                                    value={taskScheduleWeek}
+                                    onChange={(e) => setTaskScheduleWeek(e.target.value)}
+                                />
+                            )}
+                            {taskScheduleType === 'month' && (
+                                <input
+                                    type="month"
+                                    value={taskScheduleMonth}
+                                    onChange={(e) => setTaskScheduleMonth(e.target.value)}
+                                />
+                            )}
                         </div>
-                        {assignment.taskOrder && (
-                            <div className="order-display">
-                                Task Order: #{assignment.taskOrder}
-                            </div>
+
+                        <button onClick={assignTodayTask} className="assign-task-btn">
+                            Assign Task
+                        </button>
+                    </div>
+                </div>
+
+                <div className="today-tasks-overview">
+                    <h3>Today's Tasks Overview</h3>
+                    <div className="tasks-cards-container">
+                        {getTodayTasks().length > 0 ? (
+                            getTodayTasks().map((taskData, index) => (
+                                <div key={index} className={`task-card ${taskData.status}`}>
+                                    <div className="task-card-header">
+                                        <h4>{taskData.employeeName}</h4>
+                                        <span className={`status-badge ${taskData.status}`}>
+                                            {taskData.status === 'pending'
+                                                ? 'Not Started'
+                                                : taskData.status === 'in-progress'
+                                                    ? 'In Progress'
+                                                    : 'Completed'}
+                                        </span>
+                                    </div>
+                                    <div className="task-card-content">
+                                        <p>{taskData.task}</p>
+                                        <div className="status-timeline">
+                                            <div className="timeline-item">
+                                                <div className="timeline-icon assigned">📋</div>
+                                                <div className="timeline-content">
+                                                    <div className="timeline-title">Assigned</div>
+                                                    <div className="timeline-time">
+                                                        {new Date(taskData.assignedOn).toLocaleTimeString()}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {taskData.status !== 'pending' && (
+                                                <div className="timeline-item">
+                                                    <div className="timeline-icon started">▶️</div>
+                                                    <div className="timeline-content">
+                                                        <div className="timeline-title">Started</div>
+                                                        <div className="timeline-time">
+                                                            {taskData.startedOn
+                                                                ? new Date(taskData.startedOn).toLocaleTimeString()
+                                                                : new Date(taskData.lastUpdated || taskData.assignedOn).toLocaleTimeString()}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {taskData.status === 'completed' && (
+                                                <div className="timeline-item">
+                                                    <div className="timeline-icon completed">✓</div>
+                                                    <div className="timeline-content">
+                                                        <div className="timeline-title">Completed</div>
+                                                        <div className="timeline-time">
+                                                            {new Date(taskData.lastUpdated).toLocaleTimeString()}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="task-card-footer">
+                                        <div className="task-meta">
+                                            <div>
+                                                <small>Project:</small> {taskData.projectTitle || taskData.projectId}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="no-tasks-message">No tasks assigned for today.</div>
                         )}
                     </div>
+                </div>
+                <div className="pending-verification-section">
+                    <h3>Tasks Pending Verification</h3>
+                    <table className="pending-tasks-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Task</th>
+                                <th>Requested At</th>
+                                <th>Note</th>
+                                <th>Project ID</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {pendingVerificationTasks.map(task => (
+                                <tr key={task.id}>
+                                    <td>{task.employeeName}</td>
+                                    <td>{task.task}</td>
+                                    <td>{new Date(task.completionRequest.requestedAt).toLocaleString()}</td>
+                                    <td>{task.completionRequest.completionNote}</td>
+                                    <td>{task.projectId || 'N/A'}</td>
+                                    <td>
+                                        <button
+                                            onClick={() => handleTaskVerification(task.id, task.projectId, task.employeeName, 'verify')}
+                                            className="verify-btn"
+                                        >
+                                            Verify
+                                        </button>
+                                        <button
+                                            onClick={() => handleTaskVerification(task.id, task.projectId, task.employeeName, 'reject')}
+                                            className="reject-btn"
+                                        >
+                                            Reject
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {pendingProjectAssignments.map(({ projectId, assignment, employeeName }, index) => (
+                                <tr key={`${projectId}-${index}`}>
+                                    <td>{employeeName}</td>
+                                    <td>{assignment.description || 'Project Assignment'}</td>
+                                    <td>{assignment.completionRequest && new Date(assignment.completionRequest.requestedAt).toLocaleString() || 'N/A'}</td>
+                                    <td>{assignment.completionRequest && assignment.completionRequest.completionNote || 'N/A'}</td>
+                                    <td>{projectId}</td>
+                                    <td>
+                                        <button
+                                            onClick={() => handleProjectAssignmentVerification(projectId, assignment, employeeName, 'verify')}
+                                            className="verify-btn"
+                                        >
+                                            Verify
+                                        </button>
+                                        <button
+                                            onClick={() => handleProjectAssignmentVerification(projectId, assignment, employeeName, 'reject')}
+                                            className="reject-btn"
+                                        >
+                                            Reject
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {pendingVerificationTasks.length === 0 && pendingProjectAssignments.length === 0 && (
+                                <tr>
+                                    <td colSpan="6">No tasks or assignments pending verification</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+                <div className="scheduled-tasks-overview">
+                    <h3>Scheduled Tasks</h3>
+                    <table className="scheduled-tasks-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Task</th>
+                                <th>Type</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {scheduledTasks.map((task) => (
+                                <tr key={task.id}>
+                                    <td>{task.employeeName}</td>
+                                    <td>{task.task}</td>
+                                    <td>{task.type}</td>
+                                    <td>{task.date || task.startDate}</td>
+                                    <td>{task.type === 'daily' ? '-' : task.endDate}</td>
+                                    <td>
+                                        <span className={`status-badge ${task.status}`}>
+                                            {task.status}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                            {scheduledTasks.length === 0 && (
+                                <tr>
+                                    <td colSpan="6" className="no-records">
+                                        No scheduled tasks found.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
 
-                    {index > 0 && (
-                        <button
-                            type="button"
-                            onClick={() => removeAssignment(index)}
-                            className="remove-assignment-btn"
-                        >
-                            Remove
-                        </button>
-                    )}
+                <div className="tasks-filter">
+                    <select
+                        value={selectedEmployee}
+                        onChange={(e) => setSelectedEmployee(e.target.value)}
+                        className="employee-select"
+                    >
+                        <option value="">Select Employee</option>
+                        {employees.map((employee) => (
+                            <option key={employee.id} value={employee.name}>
+                                {employee.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="history-table-container">
+                    <table className="history-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Check In</th>
+                                <th>Check Out</th>
+                                <th>Duration (hrs)</th>
+                                <th>Check-In Summary</th>
+                                <th>Check-Out Summary</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {attendanceData.map((record, index) => (
+                                <tr key={index}>
+                                    <td>{new Date(record.date).toLocaleDateString()}</td>
+                                    <td>{new Date(record.checkIn).toLocaleTimeString()}</td>
+                                    <td>{record.checkOut === '-' ? '-' : new Date(record.checkOut).toLocaleTimeString()}</td>
+                                    <td>{record.duration}</td>
+                                    <td>{record.checkInSummary}</td>
+                                    <td>{record.checkOutSummary}</td>
+                                    <td><span className={`status-badge ${record.status.toLowerCase()}`}>{record.status}</span></td>
+                                </tr>
+                            ))}
+                            {attendanceData.length === 0 && (
+                                <tr>
+                                    <td colSpan="7" className="no-records">No attendance records found for selected employee</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         );
@@ -892,495 +1554,13 @@ const AdminDashboard = () => {
         }
 
         if (activeTab === 'tasks') {
-            const selectedEmployeeData = employees.find(emp => emp.name === selectedEmployee);
-            let attendanceData = [];
-
-            if (selectedEmployeeData) {
-                const employeeId = selectedEmployeeData.id;
-                const employeeAttendance = attendanceHistory[employeeId] || { current: null, history: [] };
-
-                if (employeeAttendance.current) {
-                    attendanceData.push({
-                        type: 'attendance',
-                        employeeName: selectedEmployeeData.name,
-                        date: employeeAttendance.current.date,
-                        checkIn: employeeAttendance.current.clockIn,
-                        checkOut: employeeAttendance.current.clockOut || '-',
-                        duration: employeeAttendance.current.duration || '0.00',
-                        status: employeeAttendance.current.status || 'active',
-                        checkInSummary: employeeAttendance.current.checkInSummary || '-',
-                        checkOutSummary: employeeAttendance.current.checkOutSummary || '-',
-                        todayTask: employeeAttendance.todayTask || null
-                    });
-                }
-
-                (employeeAttendance.history || []).forEach(record => {
-                    attendanceData.push({
-                        type: 'attendance',
-                        employeeName: selectedEmployeeData.name,
-                        date: record.date,
-                        checkIn: record.clockIn,
-                        checkOut: record.clockOut || '-',
-                        duration: record.duration || '0.00',
-                        status: record.status || 'completed',
-                        checkInSummary: record.checkInSummary || '-',
-                        checkOutSummary: record.checkOutSummary || '-',
-                        todayTask: record.todayTask || null
-                    });
-                });
-            }
-
-            attendanceData.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            return (
-                <div className="attendance-history">
-                    <h2>Employee Tasks & Attendance</h2>
-
-                    <div className="today-task-section">
-                        <h3>Assign New Task</h3>
-                        <div className="task-assignment-form">
-                            <select
-                                value={selectedEmployeeForTask}
-                                onChange={(e) => setSelectedEmployeeForTask(e.target.value)}
-                                className="employee-select"
-                            >
-                                <option value="">Select Employee</option>
-                                {employees.map((employee) => (
-                                    <option key={employee.id} value={employee.name}>
-                                        {employee.name}
-                                    </option>
-                                ))}
-                            </select>
-
-                            <textarea
-                                placeholder="Enter task details..."
-                                value={todayTask}
-                                onChange={(e) => setTodayTask(e.target.value)}
-                                className="task-input"
-                                rows="3"
-                            />
-
-                            <div className="schedule-options">
-                                <label>Schedule Type:</label>
-                                <select
-                                    value={taskScheduleType}
-                                    onChange={(e) => setTaskScheduleType(e.target.value)}
-                                >
-                                    <option value="today">Today</option>
-                                    <option value="date">Specific Date</option>
-                                    <option value="week">Week</option>
-                                    <option value="month">Month</option>
-                                </select>
-
-                                {taskScheduleType === 'date' && (
-                                    <input
-                                        type="date"
-                                        value={taskScheduleDate}
-                                        onChange={(e) => setTaskScheduleDate(e.target.value)}
-                                        min={new Date().toISOString().split('T')[0]}
-                                    />
-                                )}
-                                {taskScheduleType === 'week' && (
-                                    <input
-                                        type="week"
-                                        value={taskScheduleWeek}
-                                        onChange={(e) => setTaskScheduleWeek(e.target.value)}
-                                    />
-                                )}
-                                {taskScheduleType === 'month' && (
-                                    <input
-                                        type="month"
-                                        value={taskScheduleMonth}
-                                        onChange={(e) => setTaskScheduleMonth(e.target.value)}
-                                    />
-                                )}
-                            </div>
-
-                            <button onClick={assignTodayTask} className="assign-task-btn">
-                                Assign Task
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="today-tasks-overview">
-                        <h3>Today's Tasks Overview</h3>
-                        <div className="tasks-cards-container">
-                            {getTodayTasks().length > 0 ? (
-                                getTodayTasks().map((taskData, index) => (
-                                    <div key={index} className={`task-card ${taskData.status}`}>
-                                        <div className="task-card-header">
-                                            <h4>{taskData.employeeName}</h4>
-                                            <span className={`status-badge ${taskData.status}`}>
-                                                {taskData.status === 'pending'
-                                                    ? 'Not Started'
-                                                    : taskData.status === 'in-progress'
-                                                    ? 'In Progress'
-                                                    : 'Completed'}
-                                            </span>
-                                        </div>
-                                        <div className="task-card-content">
-                                            <p>{taskData.task}</p>
-                                            <div className="status-timeline">
-                                                <div className="timeline-item">
-                                                    <div className="timeline-icon assigned">📋</div>
-                                                    <div className="timeline-content">
-                                                        <div className="timeline-title">Assigned</div>
-                                                        <div className="timeline-time">
-                                                            {new Date(taskData.assignedOn).toLocaleTimeString()}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                {taskData.status !== 'pending' && (
-                                                    <div className="timeline-item">
-                                                        <div className="timeline-icon started">▶️</div>
-                                                        <div className="timeline-content">
-                                                            <div className="timeline-title">Started</div>
-                                                            <div className="timeline-time">
-                                                                {taskData.startedOn
-                                                                    ? new Date(taskData.startedOn).toLocaleTimeString()
-                                                                    : new Date(taskData.lastUpdated || taskData.assignedOn).toLocaleTimeString()}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                                {taskData.status === 'completed' && (
-                                                    <div className="timeline-item">
-                                                        <div className="timeline-icon completed">✓</div>
-                                                        <div className="timeline-content">
-                                                            <div className="timeline-title">Completed</div>
-                                                            <div className="timeline-time">
-                                                                {new Date(taskData.lastUpdated).toLocaleTimeString()}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="task-card-footer">
-                                            <div className="task-meta">
-                                                <div>
-                                                    <small>Project:</small> {taskData.projectTitle || taskData.projectId}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="no-tasks-message">No tasks assigned for today.</div>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="scheduled-tasks-overview">
-                        <h3>Scheduled Tasks</h3>
-                        <table className="scheduled-tasks-table">
-                            <thead>
-                                <tr>
-                                    <th>Employee</th>
-                                    <th>Task</th>
-                                    <th>Type</th>
-                                    <th>Start Date</th>
-                                    <th>End Date</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {scheduledTasks.map((task) => (
-                                    <tr key={task.id}>
-                                        <td>{task.employeeName}</td>
-                                        <td>{task.task}</td>
-                                        <td>{task.type}</td>
-                                        <td>{task.date || task.startDate}</td>
-                                        <td>{task.type === 'daily' ? '-' : task.endDate}</td>
-                                        <td>
-                                            <span className={`status-badge ${task.status}`}>
-                                                {task.status}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {scheduledTasks.length === 0 && (
-                                    <tr>
-                                        <td colSpan="6" className="no-records">
-                                            No scheduled tasks found.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div className="tasks-filter">
-                        <select
-                            value={selectedEmployee}
-                            onChange={(e) => setSelectedEmployee(e.target.value)}
-                            className="employee-select"
-                        >
-                            <option value="">Select Employee</option>
-                            {employees.map((employee) => (
-                                <option key={employee.id} value={employee.name}>
-                                    {employee.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="history-table-container">
-                        <table className="history-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Check In</th>
-                                    <th>Check Out</th>
-                                    <th>Duration (hrs)</th>
-                                    <th>Check-In Summary</th>
-                                    <th>Check-Out Summary</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {attendanceData.map((record, index) => (
-                                    <tr key={index}>
-                                        <td>{new Date(record.date).toLocaleDateString()}</td>
-                                        <td>{new Date(record.checkIn).toLocaleTimeString()}</td>
-                                        <td>{record.checkOut === '-' ? '-' : new Date(record.checkOut).toLocaleTimeString()}</td>
-                                        <td>{record.duration}</td>
-                                        <td>{record.checkInSummary}</td>
-                                        <td>{record.checkOutSummary}</td>
-                                        <td><span className={`status-badge ${record.status.toLowerCase()}`}>{record.status}</span></td>
-                                    </tr>
-                                ))}
-                                {attendanceData.length === 0 && (
-                                    <tr>
-                                        <td colSpan="7" className="no-records">No attendance records found for selected employee</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            );
+            return renderTasksTab();
         }
 
         return (
             <>
-                <div className="table-header">
-                    <h2>
-                        {activeTab === 'new' ? 'Total Orders' :
-                            activeTab === 'orders' ? 'Total Orders' :
-                                activeTab === 'ready' ? 'Ready to Deliver' :
-                                    activeTab === 'progress' ? 'In Progress' :
-                                        'Nearby Submissions'}
-                    </h2>
-                    <div className="filters-container">
-                        <div className="search-controls">
-                            <select
-                                value={filterField}
-                                onChange={(e) => setFilterField(e.target.value)}
-                                className="filter-select"
-                            >
-                                <option value="all">All Fields</option>
-                                <option value="createdtime">Created Time</option>
-                                <option value="projectId">Project ID</option>
-                                <option value="clientName">Client Name</option>
-                                <option value="collegeName">College</option>
-                                <option value="title">Project Name</option>
-                                <option value="email">Email</option>
-                                <option value="phoneNumber">Phone</option>
-                                <option value="referredBy">Referred By</option>
-                                <option value="timeline">Timeline</option>
-                            </select>
-
-                            <div className="search-input-container">
-                                <input
-                                    type="text"
-                                    placeholder={filterField === 'timeline'
-                                        ? "Search date (e.g., 08/02/2025)"
-                                        : filterField === 'referredBy'
-                                            ? "Enter referrer name..."
-                                            : "Search projects..."}
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="search-input"
-                                />
-                                {searchQuery && (
-                                    <button
-                                        className="clear-search"
-                                        onClick={() => setSearchQuery('')}
-                                    >
-                                        ×
-                                    </button>
-                                )}
-                            </div>
-
-                            {searchQuery && (
-                                <button
-                                    className="clear-filters"
-                                    onClick={handleClearFilters}
-                                >
-                                    Clear Filters
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                    <div className='notification-record'>
-                        <div className="notification-icon">
-                            <button onClick={() => setShowQueriesModal(true)} className="bell-button">
-                                <Bell />
-                                {queriesCount > 0 && <span className="notification-badge">{queriesCount}</span>}
-                            </button>
-                        </div>
-                        <div className="record-count">
-                            {filteredProjects.length} {filteredProjects.length === 1 ? 'Record' : 'Records'}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th onClick={() => handleSort('projectId')} className="sortable-header">
-                                    Project ID {getSortIcon('projectId')}
-                                </th>
-                                <th onClick={() => handleSort('timestamp')} className="sortable-header">
-                                    Created Time {getSortIcon('timestamp')}
-                                </th>
-                                <th onClick={() => handleSort('clientName')} className="sortable-header">
-                                    Client Name {getSortIcon('clientName')}
-                                </th>
-                                <th onClick={() => handleSort('title')} className="sortable-header">
-                                    Project Name {getSortIcon('title')}
-                                </th>
-                                <th onClick={() => handleSort('collegeName')} className="sortable-header">
-                                    College {getSortIcon('collegeName')}
-                                </th>
-                                <th onClick={() => handleSort('email')} className="sortable-header">
-                                    Email {getSortIcon('email')}
-                                </th>
-                                <th onClick={() => handleSort('phoneNumber')} className="sortable-header">
-                                    Phone Number {getSortIcon('phoneNumber')}
-                                </th>
-                                <th onClick={() => handleSort('whatsappNumber')} className="sortable-header">
-                                    WhatsApp Number {getSortIcon('whatsappNumber')}
-                                </th>
-                                <th onClick={() => handleSort('referredBy')} className="sortable-header">
-                                    Referred By {getSortIcon('referredBy')}
-                                </th>
-                                <th onClick={() => handleSort('timeline')} className="sortable-header">
-                                    Timeline {getSortIcon('timeline')}
-                                </th>
-                                <th onClick={() => handleSort('projectStatus')} className="sortable-header">
-                                    Project Status {getSortIcon('projectStatus')}
-                                </th>
-                                <th onClick={() => handleSort('Assign_To')} className="sortable-header">
-                                    Assign To {getSortIcon('Assign_To')}
-                                </th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {sortedProjects.map((project) => (
-                                <tr key={project.id}>
-                                    <td>{project.projectId}</td>
-                                    <td>{project.timestamp}</td>
-                                    <td className="truncate-cell" data-full-text={project.clientName}>{project.clientName}</td>
-                                    <td className="truncate-cell" data-full-text={project.title}>{project.title}</td>
-                                    <td className="truncate-cell" data-full-text={project.collegeName}>{project.collegeName}</td>
-                                    <td className="truncate-cell email-cell" data-full-text={project.email}>{project.email}</td>
-                                    <td>{project.phoneNumber}</td>
-                                    <td>{project.whatsappNumber}</td>
-                                    <td className="truncate-cell" data-full-text={project.referredBy}>{project.referredBy}</td>
-                                    <td>{project.timeline ? new Date(project.timeline).toLocaleDateString() : 'Not set'}</td>
-                                    <td>{project.projectStatus || 'Start'}</td>
-                                    <td className="assignee-cell">
-                                        {project.assignments && project.assignments.length > 0 ? (
-                                            <div className="assignments-container">
-                                                {[...project.assignments]
-                                                    .filter((assignment) => assignment.assignee && assignment.assignee.trim() !== '')
-                                                    .sort((a, b) => Number(a.taskOrder) - Number(b.taskOrder))
-                                                    .map((assignment, index) => (
-                                                        <div key={index} className={`assignment-badge ${assignment.taskCompleted?.toLowerCase().includes('complete') ? 'completed-assignment' : ''}`}>
-                                                            <div className="assignment-summary">
-                                                                <button
-                                                                    className="details-btn"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setDetailsModal({
-                                                                            show: true,
-                                                                            assignment: assignment
-                                                                        });
-                                                                    }}
-                                                                >
-                                                                    {assignment.taskCompleted?.toLowerCase().includes('complete') && (
-                                                                        <span className="completion-checkmark">✓</span>
-                                                                    )}
-                                                                    <span className="task-order">#{assignment.taskOrder}</span>
-                                                                    <span className="assignee-name">{assignment.assignee}</span>
-                                                                    <span className="percentage-badge">{assignment.percentage}%</span>
-
-                                                                    {assignment.todayTask &&
-                                                                        new Date(assignment.todayTask.date).toISOString().split('T')[0] === new Date().toISOString().split('T')[0] && (
-                                                                            <span className={`today-task-indicator ${assignment.todayTask.status}`} title={assignment.todayTask.task}>
-                                                                                {assignment.todayTask.status === 'completed' ? '✓' : '⏱'}
-                                                                            </span>
-                                                                        )}
-
-                                                                    <span className="details-icon">ⓘ</span>
-                                                                </button>
-                                                            </div>
-                                                            {assignment.taskCompleted && (
-                                                                <div className="status-indicator">
-                                                                    <span
-                                                                        className={`status-dot ${assignment.taskCompleted.toLowerCase().includes('complete') ? 'complete' : 'in-progress'}`}
-                                                                        title={assignment.taskCompleted}
-                                                                    ></span>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    ))
-                                                }
-                                            </div>
-                                        ) : null}
-                                    </td>
-                                    <td className="actions-column">
-                                        <button
-                                            onClick={() => handleEdit(project)}
-                                            className="action-button edit"
-                                            title="Edit project"
-                                        >
-                                            <Pencil size={16} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(project.id)}
-                                            className="action-button delete"
-                                            title="Delete project"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleViewPDF(project.projectId)}
-                                            className="action-button view"
-                                            title="View PDF"
-                                        >
-                                            <Eye size={16} />
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setSelectedInvoiceProject(project);
-                                                setShowInvoiceModal(true);
-                                            }}
-                                            className="action-button invoice"
-                                            title="Generate Invoice"
-                                        >
-                                            <FileText size={16} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                {renderTableHeader()}
+                {renderProjectsTable()}
             </>
         );
     };
@@ -1423,6 +1603,7 @@ const AdminDashboard = () => {
                 </div>
             </main>
 
+            {/* Edit Modal */}
             {showEditModal && editingProject && (
                 <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -1711,6 +1892,7 @@ const AdminDashboard = () => {
                 </div>
             )}
 
+            {/* View PDF Modal */}
             {viewingPDF.show && (
                 <PDFViewer
                     pdfUrl={viewingPDF.url}
@@ -1719,6 +1901,7 @@ const AdminDashboard = () => {
                 />
             )}
 
+            {/* Queries Modal */}
             {showQueriesModal && (
                 <div className="modal-overlay">
                     <div className="modal-content queries-modal">
@@ -1734,33 +1917,20 @@ const AdminDashboard = () => {
                                     <div className="query-info">
                                         <div className="dashboard-form-group">
                                             <label>Project ID:</label>
-                                            <input
-                                                type="text"
-                                                value={query.parentKey}
-                                            />
+                                            <input type="text" value={query.parentKey} readOnly />
                                         </div>
                                         <div className="dashboard-form-group">
                                             <label>Timestamp:</label>
-                                            <input
-                                                type="text"
-                                                value={new Date(query.timestamp).toLocaleString()}
-                                            />
+                                            <input type="text" value={new Date(query.timestamp).toLocaleString()} readOnly />
                                         </div>
                                         <div className="dashboard-form-group">
                                             <label>Query:</label>
-                                            <textarea
-                                                rows="4"
-                                                value={query.queryText}
-                                            />
+                                            <textarea rows="4" value={query.queryText} readOnly />
                                         </div>
                                     </div>
                                     <div className="dashboard-form-group">
                                         <label>Query Type:</label>
-                                        <input
-                                            type="text"
-                                            value={query.queryType || 'N/A'}
-                                            readOnly
-                                        />
+                                        <input type="text" value={query.queryType || 'N/A'} readOnly />
                                     </div>
                                     <div className="query-actions">
                                         {!isEditing ? (
@@ -1811,6 +1981,7 @@ const AdminDashboard = () => {
                 </div>
             )}
 
+            {/* Invoice Modal */}
             {showInvoiceModal && selectedInvoiceProject && (
                 <Invoice
                     project={selectedInvoiceProject}
@@ -1821,6 +1992,7 @@ const AdminDashboard = () => {
                 />
             )}
 
+            {/* Assignment Details Modal */}
             {detailsModal.show && detailsModal.assignment && (
                 <div className="modal-overlay" onClick={() => setDetailsModal({ show: false, assignment: null })}>
                     <div className="modal-content assignment-details-modal" onClick={e => e.stopPropagation()}>
@@ -1854,18 +2026,7 @@ const AdminDashboard = () => {
                                     <strong>Description:</strong> {detailsModal.assignment.description}
                                 </div>
                             )}
-                            {detailsModal.assignment.todayTask &&
-                                new Date(detailsModal.assignment.todayTask.date).toISOString().split('T')[0] === new Date().toISOString().split('T')[0] && (
-                                    <div className="details-row today-task-details">
-                                        <strong>Today's Task:</strong> {detailsModal.assignment.todayTask.task}
-                                        <div className="task-status">
-                                            Status: <span className={`status-badge ${detailsModal.assignment.todayTask.status}`}>
-                                                {detailsModal.assignment.todayTask.status === 'pending' ? 'Not Started' :
-                                                    detailsModal.assignment.todayTask.status === 'in-progress' ? 'In Progress' : 'Completed'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )}
+
                         </div>
                     </div>
                 </div>

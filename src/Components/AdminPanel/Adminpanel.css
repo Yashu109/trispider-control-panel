@@ -1095,3 +1095,45 @@
 .admin-container { /* Your existing styles */ }
 .admin-panel-project-form { /* Your existing styles */ }
 /* Add other necessary styles from your original CSS */
+
+.assignment-badge {
+    position: relative;
+}
+
+.verification-status {
+    margin-top: 5px;
+    text-align: center;
+}
+
+.status-badge {
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.8em;
+}
+
+.status-badge.pending {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.status-badge.verified {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.status-badge.rejected {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.today-task-indicator.pending-verification {
+    background-color: #ffc107;
+}
+
+.today-task-indicator.verified {
+    background-color: #28a745;
+}
+
+.today-task-indicator.rejected {
+    background-color: #dc3545;
+}

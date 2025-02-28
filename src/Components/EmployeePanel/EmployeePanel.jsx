@@ -14,7 +14,6 @@ const EmployeePanel = () => {
     const [error, setError] = useState(null);
     const [employeeName, setEmployeeName] = useState('');
     const [employeeId, setEmployeeId] = useState('');
-    const [workStatusUpdates, setWorkStatusUpdates] = useState({});
     const [attendanceStatus, setAttendanceStatus] = useState('out');
     const [currentShift, setCurrentShift] = useState(null);
     const [attendanceHistory, setAttendanceHistory] = useState([]);
@@ -26,6 +25,7 @@ const EmployeePanel = () => {
     const [checkOutSummary, setCheckOutSummary] = useState('');
     const [todayTask, setTodayTask] = useState(null);
     const [scheduledTasks, setScheduledTasks] = useState([]);
+    const [workStatusUpdates, setWorkStatusUpdates] = useState({});
 
     useEffect(() => {
         const currentEmployee = JSON.parse(sessionStorage.getItem('currentEmployee'));
@@ -199,62 +199,52 @@ const EmployeePanel = () => {
         setIsLoading(true);
         try {
             const now = new Date().toISOString();
-            let updatedTask = todayTask && todayTask.taskId === taskId ? { ...todayTask } : scheduledTasks.find(t => t.id === taskId);
+            let updatedTask = todayTask && todayTask.taskId === taskId
+                ? { ...todayTask }
+                : scheduledTasks.find(t => t.id === taskId);
+
             if (!updatedTask) {
                 throw new Error('Task not found');
             }
 
-            updatedTask = {
-                ...updatedTask,
-                status: newStatus,
-                lastUpdated: now
-            };
+            if (newStatus === 'completed') {
+                updatedTask = {
+                    ...updatedTask,
+                    status: 'pending-verification',
+                    completionRequest: {
+                        employeeName: employeeName,
+                        requestedAt: now,
+                        completionNote: checkOutSummary || 'Task completed',
+                        lastUpdated: now
+                    },
+                    lastUpdated: now,
+                    rejected: false, // Clear any previous rejection
+                    rejectionReason: null
+                };
 
-            if (newStatus === 'in-progress') {
-                updatedTask.startedOn = now;
-            } else if (newStatus === 'completed') {
-                updatedTask.completedOn = now;
                 if (!updatedTask.startedOn) {
+                    updatedTask.startedOn = now;
+                }
+            } else {
+                updatedTask = {
+                    ...updatedTask,
+                    status: newStatus,
+                    lastUpdated: now
+                };
+
+                if (newStatus === 'in-progress') {
                     updatedTask.startedOn = now;
                 }
             }
 
-            // Update in attendance node if it’s the todayTask
-            if (todayTask && todayTask.taskId === taskId) {
-                await update(ref(database, `attendance/${employeeId}/todayTask`), updatedTask);
-                setTodayTask(updatedTask);
-            }
-
-            // Update in scheduledTasks
             if (taskId) {
                 await update(ref(database, `scheduledTasks/${taskId}`), updatedTask);
-            }
-
-            // Update in project assignments
-            const projectsToUpdate = assignedProjects.filter(project =>
-                project.assignments?.some(assignment =>
-                    assignment.assignee === employeeName &&
-                    assignment.todayTask?.taskId === taskId
-                )
-            );
-
-            for (const project of projectsToUpdate) {
-                const updatedAssignments = [...project.assignments];
-                for (let i = 0; i < updatedAssignments.length; i++) {
-                    if (updatedAssignments[i].assignee === employeeName && updatedAssignments[i].todayTask?.taskId === taskId) {
-                        updatedAssignments[i] = {
-                            ...updatedAssignments[i],
-                            todayTask: updatedTask
-                        };
-                    }
-                }
-                await update(ref(database, `projects/${project.id}`), { assignments: updatedAssignments });
             }
 
             if (newStatus === 'in-progress') {
                 alert('You have started working on this task!');
             } else if (newStatus === 'completed') {
-                alert('Task marked as completed successfully!');
+                alert('Task marked for verification. Awaiting admin approval.');
             }
         } catch (error) {
             console.error('Error updating task status:', error);
@@ -264,27 +254,83 @@ const EmployeePanel = () => {
         }
     };
 
+    // Updated handleSaveWorkStatus to handle resubmission of rejected assignments
+
+const handleSaveWorkStatus = async (projectId, assignmentIndex) => {
+    try {
+        const statusUpdate = workStatusUpdates[`${projectId}-${assignmentIndex}`] || '';
+        if (!statusUpdate.trim()) {
+            alert('Please enter a status update before saving.');
+            return;
+        }
+
+        setIsLoading(true);
+        const now = new Date().toISOString();
+        const projectRef = ref(database, `projects/${projectId}`);
+        const currentProject = assignedProjects.find(p => p.id === projectId);
+
+        if (!currentProject) {
+            throw new Error('Project not found');
+        }
+
+        const currentAssignments = currentProject.assignments
+            ? (Array.isArray(currentProject.assignments)
+                ? [...currentProject.assignments]
+                : Object.values(currentProject.assignments))
+            : [];
+
+        if (currentAssignments[assignmentIndex]) {
+            const wasRejected = currentAssignments[assignmentIndex].rejected || 
+                                currentAssignments[assignmentIndex].taskCompleted === 'Rejected';
+            
+            currentAssignments[assignmentIndex] = {
+                ...currentAssignments[assignmentIndex],
+                taskCompleted: `Pending Verification: ${statusUpdate}`,
+                completedTimestamp: now,
+                rejected: false, // Clear rejection flag
+                rejectionReason: null, // Clear rejection reason
+                rejectionTimestamp: null, // Clear rejection timestamp
+                completionRequest: {
+                    employeeName: employeeName,
+                    requestedAt: now,
+                    completionNote: statusUpdate,
+                    wasResubmission: wasRejected // Flag to indicate this was a resubmission
+                }
+            };
+        }
+
+        await update(projectRef, { assignments: currentAssignments });
+
+        setWorkStatusUpdates(prev => ({
+            ...prev,
+            [`${projectId}-${assignmentIndex}`]: ''
+        }));
+
+        alert(currentAssignments[assignmentIndex].rejected ? 
+              'Work resubmitted for admin verification!' : 
+              'Work status submitted for admin verification!');
+    } catch (error) {
+        console.error('Error updating work status:', error);
+        alert(`Failed to update work status: ${error.message}`);
+    } finally {
+        setIsLoading(false);
+    }
+};
+
+
+
     const TodayTaskDisplay = () => {
         const today = new Date().toISOString().split('T')[0];
         const todayTasks = [];
 
-        // Add todayTask if it exists
-        if (todayTask) {
-            todayTasks.push({ ...todayTask, source: 'project' });
-        }
-
-        // Add relevant scheduled tasks
         scheduledTasks.forEach(task => {
-            if (
-                (task.type === 'daily' && task.date === today) ||
+            if ((task.type === 'daily' && task.date === today) ||
                 (task.type === 'weekly' && task.startDate <= today && task.endDate >= today) ||
-                (task.type === 'monthly' && task.startDate <= today && task.endDate >= today)
-            ) {
+                (task.type === 'monthly' && task.startDate <= today && task.endDate >= today)) {
                 todayTasks.push({ ...task, source: 'scheduled' });
             }
         });
 
-        // Deduplicate tasks by taskId
         const uniqueTasks = [];
         const taskIds = new Set();
         todayTasks.forEach(task => {
@@ -297,65 +343,90 @@ const EmployeePanel = () => {
         if (uniqueTasks.length === 0) return null;
 
         return (
-            <div className="today-task-display">
-                <h3>Today's Tasks</h3>
-                {uniqueTasks.map((task) => (
-                    <div key={task.id} className={`task-content ${task.status}`}>
-                        <div className="task-header">
-                            <h4>{task.source === 'project' ? 'Project Task' : `${task.type.charAt(0).toUpperCase() + task.type.slice(1)} Task`}</h4>
-                            <span className={`task-status ${task.status}`}>
-                                {task.status === 'pending' ? 'Not Started' :
-                                    task.status === 'in-progress' ? 'In Progress' : 'Completed'}
-                            </span>
-                        </div>
-                        <p>{task.task}</p>
-                        <div className="task-meta">
-                            <span>Assigned: {new Date(task.assignedOn).toLocaleTimeString()}</span>
-                            <span>By: {task.assignedBy || 'Admin'}</span>
-                            {task.type !== 'daily' && task.source === 'scheduled' && (
-                                <span>Period: {task.startDate} to {task.endDate}</span>
-                            )}
-                        </div>
-                        <div className="task-actions">
-                            {task.status === 'pending' && (
-                                <button
-                                    onClick={() => handleTaskStatusUpdate(task.id, 'in-progress')}
-                                    className="status-btn in-progress-btn"
-                                    disabled={isLoading}
-                                >
-                                    {isLoading ? 'Updating...' : 'Start Working'}
-                                </button>
-                            )}
-                            {task.status !== 'completed' && (
-                                <button
-                                    onClick={() => handleTaskStatusUpdate(task.id, 'completed')}
-                                    className="status-btn complete-btn"
-                                    disabled={isLoading}
-                                >
-                                    {isLoading ? 'Updating...' : 'Mark as Completed'}
-                                </button>
-                            )}
-                            {task.status === 'in-progress' && (
-                                <div className="status-message">
-                                    <Clock size={16} /> You're currently working on this task
-                                </div>
-                            )}
-                            {task.status === 'completed' && (
-                                <div className="status-message completed">
-                                    <CheckCircle size={16} /> You've completed this task
-                                    {task.lastUpdated && (
-                                        <span className="completion-time">
-                                            at {new Date(task.lastUpdated).toLocaleTimeString()}
+            <div className="today-task-section">
+                <h3>Daily Tasks</h3>
+                <div className="tasks-table-container">
+                    <table className="tasks-table">
+                        <thead>
+                            <tr>
+                                <th>Task Type</th>
+                                <th>Status</th>
+                                <th>Description</th>
+                                <th>Assigned</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {uniqueTasks.map((task) => (
+                                <tr key={task.id} className={`task-row ${task.status} ${task.rejected ? 'rejected' : ''}`}>
+                                    <td className="task-type-cell">
+                                        {task.type === 'daily' ? 'Daily Task' : task.type === 'weekly' ? 'Weekly Task' : 'Monthly Task'}
+                                    </td>
+                                    <td className="status-cell">
+                                        <span className={`table-status-badge ${task.status} ${task.rejected ? 'rejected' : ''}`}>
+                                            {task.status === 'rejected' || task.rejected ? 'Rejected' :
+                                                task.status === 'pending' ? 'Not Started' :
+                                                    task.status === 'in-progress' ? 'In Progress' :
+                                                        task.status === 'pending-verification' ? 'Pending Verification' :
+                                                            'Completed'}
                                         </span>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                ))}
+                                    </td>
+                                    <td className="description-cell">
+                                        {task.task}
+                                        {(task.status === 'rejected' || task.rejected) && task.rejectionReason && (
+                                            <div className="rejection-reason">
+                                                <strong>Rejection reason:</strong> {task.rejectionReason}
+                                            </div>
+                                        )}
+                                    </td>
+                                    <td className="assigned-cell">
+                                        <div>{new Date(task.assignedOn).toLocaleTimeString()}</div>
+                                        <div className="assigned-by">By: {task.assignedBy || 'Admin'}</div>
+                                        {(task.status === 'rejected' || task.rejected) && task.rejectedAt && (
+                                            <div className="rejection-time">
+                                                Rejected: {new Date(task.rejectedAt).toLocaleTimeString()}
+                                            </div>
+                                        )}
+                                    </td>
+                                    <td className="actions-cell">
+                                        {(task.status === 'pending' || task.status === 'rejected' || task.rejected) && (
+                                            <button
+                                                onClick={() => handleTaskStatusUpdate(task.id, 'in-progress')}
+                                                className="table-status-btn in-progress-btn"
+                                                disabled={isLoading}
+                                            >
+                                                {isLoading ? 'Updating...' : 'Start'}
+                                            </button>
+                                        )}
+                                        {(task.status === 'in-progress' || task.status === 'rejected' || task.rejected) && (
+                                            <button
+                                                onClick={() => handleTaskStatusUpdate(task.id, 'completed')}
+                                                className="table-status-btn complete-btn"
+                                                disabled={isLoading}
+                                            >
+                                                {isLoading ? 'Updating...' : (task.status === 'rejected' || task.rejected) ? 'Resubmit' : 'Complete'}
+                                            </button>
+                                        )}
+                                        {task.status === 'pending-verification' && (
+                                            <div className="table-status-message">
+                                                Awaiting Admin Verification
+                                            </div>
+                                        )}
+                                        {task.status === 'completed' && !task.rejected && task.lastUpdated && (
+                                            <div className="table-status-message">
+                                                <CheckCircle size={16} /> Completed at {new Date(task.lastUpdated).toLocaleTimeString()}
+                                            </div>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         );
     };
+
 
     const handleClockIn = async () => {
         setShowCheckInSummary(true);
@@ -443,48 +514,6 @@ const EmployeePanel = () => {
             alert('Failed to clock out. Please try again.');
         } finally {
             setIsLoading(false);
-        }
-    };
-
-    const handleSaveWorkStatus = async (projectId, assignmentIndex) => {
-        try {
-            const statusUpdate = workStatusUpdates[`${projectId}-${assignmentIndex}`] || '';
-            const finalStatus = statusUpdate.toLowerCase().includes('complete')
-                ? statusUpdate
-                : `Completed: ${statusUpdate}`;
-
-            const projectRef = ref(database, `projects/${projectId}`);
-            const currentProject = assignedProjects.find(p => p.id === projectId);
-
-            if (!currentProject) {
-                throw new Error('Project not found');
-            }
-
-            const currentAssignments = currentProject.assignments
-                ? (Array.isArray(currentProject.assignments)
-                    ? [...currentProject.assignments]
-                    : Object.values(currentProject.assignments))
-                : [];
-
-            if (currentAssignments[assignmentIndex]) {
-                currentAssignments[assignmentIndex] = {
-                    ...currentAssignments[assignmentIndex],
-                    taskCompleted: finalStatus,
-                    completedTimestamp: new Date().toISOString()
-                };
-            }
-
-            await update(projectRef, { assignments: currentAssignments });
-
-            setWorkStatusUpdates(prev => ({
-                ...prev,
-                [`${projectId}-${assignmentIndex}`]: ''
-            }));
-
-            alert('Task marked as completed successfully!');
-        } catch (error) {
-            console.error('Error updating work status:', error);
-            alert(`Failed to update work status: ${error.message}`);
         }
     };
 
@@ -686,6 +715,120 @@ const EmployeePanel = () => {
         return null;
     };
 
+    const renderProjectRow = (project) => (
+        <tr key={project.id}>
+            <td>{project.id}</td>
+            <td className="employee-assignees-cell">
+                {getSortedAssignments(project).map((assignment, index) => (
+                    <div
+                        key={index}
+                        className={`assignee-row ${assignment.assignee.toLowerCase() === employeeName.toLowerCase() ? 'current-employee' : ''}`}
+                    >
+                        <span className="task-order">
+                            {assignment.taskOrder ? (
+                                assignment.taskOrder === '1' ? '1st Task: ' :
+                                    assignment.taskOrder === '2' ? '2nd Task: ' :
+                                        assignment.taskOrder === '3' ? '3rd Task: ' :
+                                            `${assignment.taskOrder}th Task: `
+                            ) : ''}
+                        </span>
+                        <span className="assignee-name">{assignment.assignee}</span>
+                        {assignment.percentage && (
+                            <span className="assignee-percentage">({assignment.percentage}%)</span>
+                        )}
+                    </div>
+                ))}
+            </td>
+            <td>{project.ProjectType || project.projectType || 'N/A'}</td>
+            <td>{formatDate(project.timeline)}</td>
+            <td>
+                {project.employeeAssignments.length > 0 ? (
+                    project.employeeAssignments.map((assignment) => (
+                        <textarea key={assignment.index} readOnly>{assignment.description}</textarea>
+                    ))
+                ) : 'N/A'}
+            </td>
+            <td>
+                {project.employeeAssignments.map((assignment) => (
+                    <div key={assignment.index} className="work-status-section">
+                        {assignment.taskCompleted === 'Rejected' || assignment.rejected ? (
+                            <div className="rejected-status">
+                                <div className="status-text">
+                                    <span className="rejection-badge">⚠️</span>
+                                    <span>Status: Rejected by Admin</span>
+                                </div>
+                                {(assignment.rejectionReason || assignment.rejectionTimestamp) && (
+                                    <div className="rejection-details">
+                                        {assignment.rejectionReason && (
+                                            <div className="rejection-reason">
+                                                Reason: {assignment.rejectionReason}
+                                            </div>
+                                        )}
+                                        {assignment.rejectionTimestamp && (
+                                            <div className="rejection-time">
+                                                Rejected on: {new Date(assignment.rejectionTimestamp).toLocaleString()}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                                <textarea
+                                    placeholder="Enter updated work details to resubmit..."
+                                    value={workStatusUpdates[`${project.id}-${assignment.index}`] || ''}
+                                    onChange={(e) => setWorkStatusUpdates(prev => ({
+                                        ...prev,
+                                        [`${project.id}-${assignment.index}`]: e.target.value
+                                    }))}
+                                    rows={3}
+                                    className="work-status-textarea"
+                                />
+                                <button
+                                    onClick={() => handleSaveWorkStatus(project.id, assignment.index)}
+                                    className="save-status-btn resubmit-btn"
+                                    disabled={isLoading || !workStatusUpdates[`${project.id}-${assignment.index}`]}
+                                >
+                                    {isLoading ? 'Saving...' : 'Resubmit Work'}
+                                </button>
+                            </div>
+                        ) : assignment.taskCompleted ? (
+                            <div className="completed-status">
+                                <div className="status-text">
+                                    <span className="completion-badge">
+                                        {assignment.taskCompleted.includes('Pending Verification') ? '⏳' : '✓'}
+                                    </span>
+                                    Status: {assignment.taskCompleted}
+                                </div>
+                                <div className="completion-info">
+                                    Updated on: {assignment.completedTimestamp
+                                        ? new Date(assignment.completedTimestamp).toLocaleString()
+                                        : formatDate(new Date())}
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <textarea
+                                    placeholder="Enter work completed details..."
+                                    value={workStatusUpdates[`${project.id}-${assignment.index}`] || ''}
+                                    onChange={(e) => setWorkStatusUpdates(prev => ({
+                                        ...prev,
+                                        [`${project.id}-${assignment.index}`]: e.target.value
+                                    }))}
+                                    rows={3}
+                                    className="work-status-textarea"
+                                />
+                                <button
+                                    onClick={() => handleSaveWorkStatus(project.id, assignment.index)}
+                                    className="save-status-btn"
+                                    disabled={isLoading || !workStatusUpdates[`${project.id}-${assignment.index}`]}
+                                >
+                                    {isLoading ? 'Saving...' : 'Mark Complete'}
+                                </button>
+                            </>
+                        )}
+                    </div>
+                ))}
+            </td>
+        </tr>
+    );
     return (
         <div className="employee-dashboard-container">
             {showHistory ? (
@@ -719,97 +862,7 @@ const EmployeePanel = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {assignedProjects.map((project) => (
-                                            <tr key={project.id}>
-                                                <td>{project.id}</td>
-                                                <td className="employee-assignees-cell">
-                                                    {getSortedAssignments(project).map((assignment, index) => (
-                                                        <div
-                                                            key={index}
-                                                            className={`assignee-row ${assignment.assignee.toLowerCase() === employeeName.toLowerCase()
-                                                                ? 'current-employee'
-                                                                : ''
-                                                                }`}
-                                                        >
-                                                            <span className="task-order">
-                                                                {assignment.taskOrder ? (
-                                                                    assignment.taskOrder === '1' ? '1st Task: ' :
-                                                                        assignment.taskOrder === '2' ? '2nd Task: ' :
-                                                                            assignment.taskOrder === '3' ? '3rd Task: ' :
-                                                                                `${assignment.taskOrder}th Task: `
-                                                                ) : ''}
-                                                            </span>
-                                                            <span className="assignee-name">
-                                                                {assignment.assignee}
-                                                            </span>
-                                                            {assignment.percentage && (
-                                                                <span className="assignee-percentage">
-                                                                    ({assignment.percentage}%)
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                    {project.Assign_To &&
-                                                        !project.assignments?.some(a => a.assignee === project.Assign_To) && (
-                                                            <div className="assignee-row">
-                                                                {project.Assign_To}
-                                                            </div>
-                                                        )}
-                                                </td>
-                                                <td>{project.ProjectType || project.projectType || 'N/A'}</td>
-                                                <td>{formatDate(project.timeline)}</td>
-                                                <td>
-                                                    {project.employeeAssignments.length > 0 ? (
-                                                        project.employeeAssignments.map((assignment) => (
-                                                            <textarea key={assignment.index} readOnly>
-                                                                {assignment.description}
-                                                            </textarea>
-                                                        ))
-                                                    ) : (
-                                                        'N/A'
-                                                    )}
-                                                </td>
-                                                <td>
-                                                    {project.employeeAssignments.map((assignment) => (
-                                                        <div key={assignment.index} className="work-status-section">
-                                                            {assignment.taskCompleted ? (
-                                                                <div className="completed-status">
-                                                                    <div className="status-text">
-                                                                        <span className="completion-badge">✓</span>
-                                                                        Status: {assignment.taskCompleted}
-                                                                    </div>
-                                                                    <div className="completion-info">
-                                                                        Completed on: {assignment.completedTimestamp
-                                                                            ? new Date(assignment.completedTimestamp).toLocaleString()
-                                                                            : formatDate(new Date())}
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                <>
-                                                                    <textarea
-                                                                        placeholder="Enter work completed details..."
-                                                                        value={workStatusUpdates[`${project.id}-${assignment.index}`] || ''}
-                                                                        onChange={(e) => setWorkStatusUpdates(prev => ({
-                                                                            ...prev,
-                                                                            [`${project.id}-${assignment.index}`]: e.target.value
-                                                                        }))}
-                                                                        rows={3}
-                                                                        className="work-status-textarea"
-                                                                    />
-                                                                    <button
-                                                                        onClick={() => handleSaveWorkStatus(project.id, assignment.index)}
-                                                                        className="save-status-btn"
-                                                                        disabled={!workStatusUpdates[`${project.id}-${assignment.index}`]}
-                                                                    >
-                                                                        Mark Complete
-                                                                    </button>
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        {assignedProjects.map(renderProjectRow)}
                                     </tbody>
                                 </table>
                             </div>

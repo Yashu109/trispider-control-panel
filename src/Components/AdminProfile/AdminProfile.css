@@ -965,7 +965,7 @@ tr:hover {
 
 .assignee-cell {
     /* display: flex; */
-    max-width: 250px;
+    /* max-width: 250px; */
     flex-direction: column;
 }
 /* .assignment-details:last-child {
@@ -1481,3 +1481,200 @@ tr:hover {
 .schedule-options label {
     font-weight: bold;
 }
+/* Tasks Pending Verification Section */
+.pending-verification-section {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.pending-verification-section h3 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.pending-tasks-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.pending-tasks-table th,
+.pending-tasks-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.pending-tasks-table th {
+    background-color: #f4f4f4;
+    color: #555;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+}
+
+.pending-tasks-table td {
+    color: #333;
+    font-size: 0.95rem;
+}
+
+.pending-tasks-table tr:hover {
+    background-color: #f7f7f7;
+    transition: background-color 0.2s ease;
+}
+
+/* Action Buttons */
+.pending-tasks-table .verify-btn,
+.pending-tasks-table .reject-btn {
+    padding: 6px 12px;
+    margin-right: 8px;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.pending-tasks-table .verify-btn {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.pending-tasks-table .verify-btn:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+}
+
+.pending-tasks-table .reject-btn {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.pending-tasks-table .reject-btn:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .pending-verification-section {
+        padding: 15px;
+    }
+
+    .pending-tasks-table th,
+    .pending-tasks-table td {
+        padding: 10px;
+        font-size: 0.85rem;
+    }
+
+    .pending-tasks-table .verify-btn,
+    .pending-tasks-table .reject-btn {
+        padding: 5px 10px;
+        font-size: 0.85rem;
+        margin-right: 5px;
+    }
+}
+
+/* No Records Message */
+.pending-tasks-table tr td[colspan="6"] {
+    text-align: center;
+    padding: 20px;
+    color: #777;
+    font-style: italic;
+}
+/* Smaller Verification actions container */
+.verification-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 5px;
+    padding: 4px 5px;
+    align-items: center;
+    justify-content: flex-start;
+    flex-direction: column;
+    background: linear-gradient(to right, #f8f9fa, #f0f2f5);
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+  }
+  
+  /* Smaller Verify button */
+  .verify-btn {
+    background: linear-gradient(to bottom, #36d1dc, #5b86e5);
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(91, 134, 229, 0.2);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    min-width: 50px;
+    height: 24px;
+  }
+  
+  .verify-btn:hover {
+    background: linear-gradient(to bottom, #5b86e5, #36d1dc);
+    box-shadow: 0 2px 3px rgba(91, 134, 229, 0.3);
+  }
+  
+  .verify-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 1px rgba(91, 134, 229, 0.2);
+  }
+  
+  /* Smaller Reject button */
+  .reject-btn {
+    background: linear-gradient(to bottom, #ff416c, #ff4b2b);
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(255, 65, 108, 0.2);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    min-width: 50px;
+    height: 24px;
+  }
+  
+  .reject-btn:hover {
+    background: linear-gradient(to bottom, #ff4b2b, #ff416c);
+    box-shadow: 0 2px 3px rgba(255, 65, 108, 0.3);
+  }
+  
+  .reject-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 1px rgba(255, 65, 108, 0.2);
+  }
+  
+  /* Optional: Simple icon indicators instead of text prefix */
+  .verify-btn::before {
+    content: "✓";
+    font-size: 11px;
+    margin-right: 3px;
+  }
+  
+  .reject-btn::before {
+    content: "✕";
+    font-size: 11px;
+    margin-right: 3px;
+  }

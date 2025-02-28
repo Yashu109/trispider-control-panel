@@ -1,0 +1,51 @@
+[debug] [2025-02-28T11:07:06.112Z] ----------------------------------------------------------------------
+[debug] [2025-02-28T11:07:06.124Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\ADMIN\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init
+[debug] [2025-02-28T11:07:06.125Z] CLI Version:   13.29.3
+[debug] [2025-02-28T11:07:06.126Z] Platform:      win32
+[debug] [2025-02-28T11:07:06.126Z] Node Version:  v22.13.1
+[debug] [2025-02-28T11:07:06.127Z] Time:          Fri Feb 28 2025 16:37:06 GMT+0530 (India Standard Time)
+[debug] [2025-02-28T11:07:06.128Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-02-28T11:07:06.880Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-02-28T11:07:06.882Z] > authorizing via signed-in user (trispiderinternal@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  C:\Users\ADMIN\Desktop\Trispider_control_panel
+
+Before we get started, keep in mind:
+
+  * You are initializing within an existing Firebase project directory
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] but for now we'll just set up a default project.
+[info] 
+[debug] [2025-02-28T11:07:54.637Z] Using project from CLI flag: trispider-control-panel-fad3b
+[debug] [2025-02-28T11:07:54.641Z] Checked if tokens are valid: true, expires at: 1740744372090
+[debug] [2025-02-28T11:07:54.641Z] Checked if tokens are valid: true, expires at: 1740744372090
+[debug] [2025-02-28T11:07:54.644Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/trispider-control-panel-fad3b [none]
+[debug] [2025-02-28T11:07:55.475Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/trispider-control-panel-fad3b 200
+[debug] [2025-02-28T11:07:55.476Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/trispider-control-panel-fad3b {"projectId":"trispider-control-panel-fad3b","projectNumber":"1016700832719","displayName":"Trispider-control-panel","name":"projects/trispider-control-panel-fad3b","resources":{"hostingSite":"trispider-control-panel-fad3b","realtimeDatabaseInstance":"trispider-control-panel-fad3b-default-rtdb"},"state":"ACTIVE","etag":"1_add74b3a-0e4d-496b-8562-fbf38414508d"}
+[info] i  Using project trispider-control-panel-fad3b (Trispider-control-panel) 
+[info] 
+=== Hosting Setup
+[debug] [2025-02-28T11:07:55.521Z] Checked if tokens are valid: true, expires at: 1740744372090
+[debug] [2025-02-28T11:07:55.522Z] Checked if tokens are valid: true, expires at: 1740744372090
+[debug] [2025-02-28T11:07:55.522Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/trispider-control-panel-fad3b [none]
+[debug] [2025-02-28T11:07:55.968Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/trispider-control-panel-fad3b 200
+[debug] [2025-02-28T11:07:55.968Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/trispider-control-panel-fad3b {"projectId":"trispider-control-panel-fad3b","projectNumber":"1016700832719","displayName":"Trispider-control-panel","name":"projects/trispider-control-panel-fad3b","resources":{"hostingSite":"trispider-control-panel-fad3b","realtimeDatabaseInstance":"trispider-control-panel-fad3b-default-rtdb"},"state":"ACTIVE","etag":"1_add74b3a-0e4d-496b-8562-fbf38414508d"}
+[info] 
+[info] Your public directory is the folder (relative to your project directory) that
+[info] will contain Hosting assets to be uploaded with firebase deploy. If you
+[info] have a build process for your assets, use your build's output directory.
+[info] 
