@@ -195,33 +195,35 @@ const EmployeePanel = () => {
 
     const handleTaskStatusUpdate = async (taskId, newStatus) => {
         if (!employeeId) return;
-
+    
         setIsLoading(true);
         try {
             const now = new Date().toISOString();
             let updatedTask = todayTask && todayTask.taskId === taskId
                 ? { ...todayTask }
                 : scheduledTasks.find(t => t.id === taskId);
-
+    
             if (!updatedTask) {
                 throw new Error('Task not found');
             }
-
+    
             if (newStatus === 'completed') {
+                const completionNote = workStatusUpdates[taskId] || checkOutSummary || 'Task completed';
                 updatedTask = {
                     ...updatedTask,
                     status: 'pending-verification',
                     completionRequest: {
                         employeeName: employeeName,
                         requestedAt: now,
-                        completionNote: checkOutSummary || 'Task completed',
+                        completionNote: completionNote,
                         lastUpdated: now
                     },
                     lastUpdated: now,
-                    rejected: false, // Clear any previous rejection
-                    rejectionReason: null
+                    rejected: false,
+                    rejectionReason: null,
+                    rejectedAt: null
                 };
-
+    
                 if (!updatedTask.startedOn) {
                     updatedTask.startedOn = now;
                 }
@@ -231,20 +233,21 @@ const EmployeePanel = () => {
                     status: newStatus,
                     lastUpdated: now
                 };
-
+    
                 if (newStatus === 'in-progress') {
                     updatedTask.startedOn = now;
                 }
             }
-
+    
             if (taskId) {
                 await update(ref(database, `scheduledTasks/${taskId}`), updatedTask);
             }
-
+    
             if (newStatus === 'in-progress') {
                 alert('You have started working on this task!');
             } else if (newStatus === 'completed') {
                 alert('Task marked for verification. Awaiting admin approval.');
+                setWorkStatusUpdates(prev => ({ ...prev, [taskId]: '' })); // Clear textarea after submission
             }
         } catch (error) {
             console.error('Error updating task status:', error);
@@ -253,84 +256,88 @@ const EmployeePanel = () => {
             setIsLoading(false);
         }
     };
+    const handleSaveWorkStatus = async (projectId, assignmentIndex) => {
+        try {
+            const statusUpdate = workStatusUpdates[`${projectId}-${assignmentIndex}`] || '';
+            if (!statusUpdate.trim()) {
+                alert('Please enter a status update before saving.');
+                return;
+            }
 
-    // Updated handleSaveWorkStatus to handle resubmission of rejected assignments
+            setIsLoading(true);
+            const now = new Date().toISOString();
+            const projectRef = ref(database, `projects/${projectId}`);
+            const currentProject = assignedProjects.find(p => p.id === projectId);
 
-const handleSaveWorkStatus = async (projectId, assignmentIndex) => {
-    try {
-        const statusUpdate = workStatusUpdates[`${projectId}-${assignmentIndex}`] || '';
-        if (!statusUpdate.trim()) {
-            alert('Please enter a status update before saving.');
-            return;
+            if (!currentProject) {
+                throw new Error('Project not found');
+            }
+
+            const currentAssignments = currentProject.assignments
+                ? (Array.isArray(currentProject.assignments)
+                    ? [...currentProject.assignments]
+                    : Object.values(currentProject.assignments))
+                : [];
+
+            if (currentAssignments[assignmentIndex]) {
+                const wasRejected = currentAssignments[assignmentIndex].rejected ||
+                    currentAssignments[assignmentIndex].taskCompleted === 'Rejected';
+
+                currentAssignments[assignmentIndex] = {
+                    ...currentAssignments[assignmentIndex],
+                    taskCompleted: `Pending Verification: ${statusUpdate}`,
+                    // taskCompleted: `Pending Verification: ${statusUpdate}`,
+                    completedTimestamp: now,
+                    rejected: false, // Clear rejection flag
+                    rejectionReason: null, // Clear rejection reason
+                    rejectionTimestamp: null, // Clear rejection timestamp
+                    completionRequest: {
+                        employeeName: employeeName,
+                        requestedAt: now,
+                        completionNote: statusUpdate,
+                        wasResubmission: wasRejected // Flag to indicate this was a resubmission
+                    }
+                };
+            }
+
+            await update(projectRef, { assignments: currentAssignments });
+
+            setWorkStatusUpdates(prev => ({
+                ...prev,
+                [`${projectId}-${assignmentIndex}`]: ''
+            }));
+
+            alert(currentAssignments[assignmentIndex].rejected ?
+                'Work resubmitted for admin verification!' :
+                'Work status submitted for admin verification!');
+        } catch (error) {
+            console.error('Error updating work status:', error);
+            alert(`Failed to update work status: ${error.message}`);
+        } finally {
+            setIsLoading(false);
         }
-
-        setIsLoading(true);
-        const now = new Date().toISOString();
-        const projectRef = ref(database, `projects/${projectId}`);
-        const currentProject = assignedProjects.find(p => p.id === projectId);
-
-        if (!currentProject) {
-            throw new Error('Project not found');
-        }
-
-        const currentAssignments = currentProject.assignments
-            ? (Array.isArray(currentProject.assignments)
-                ? [...currentProject.assignments]
-                : Object.values(currentProject.assignments))
-            : [];
-
-        if (currentAssignments[assignmentIndex]) {
-            const wasRejected = currentAssignments[assignmentIndex].rejected || 
-                                currentAssignments[assignmentIndex].taskCompleted === 'Rejected';
-            
-            currentAssignments[assignmentIndex] = {
-                ...currentAssignments[assignmentIndex],
-                taskCompleted: `Pending Verification: ${statusUpdate}`,
-                completedTimestamp: now,
-                rejected: false, // Clear rejection flag
-                rejectionReason: null, // Clear rejection reason
-                rejectionTimestamp: null, // Clear rejection timestamp
-                completionRequest: {
-                    employeeName: employeeName,
-                    requestedAt: now,
-                    completionNote: statusUpdate,
-                    wasResubmission: wasRejected // Flag to indicate this was a resubmission
-                }
-            };
-        }
-
-        await update(projectRef, { assignments: currentAssignments });
-
-        setWorkStatusUpdates(prev => ({
-            ...prev,
-            [`${projectId}-${assignmentIndex}`]: ''
-        }));
-
-        alert(currentAssignments[assignmentIndex].rejected ? 
-              'Work resubmitted for admin verification!' : 
-              'Work status submitted for admin verification!');
-    } catch (error) {
-        console.error('Error updating work status:', error);
-        alert(`Failed to update work status: ${error.message}`);
-    } finally {
-        setIsLoading(false);
-    }
-};
-
+    };
 
 
     const TodayTaskDisplay = () => {
         const today = new Date().toISOString().split('T')[0];
         const todayTasks = [];
-
+    
         scheduledTasks.forEach(task => {
-            if ((task.type === 'daily' && task.date === today) ||
-                (task.type === 'weekly' && task.startDate <= today && task.endDate >= today) ||
-                (task.type === 'monthly' && task.startDate <= today && task.endDate >= today)) {
+            console.log("Checking task:", task.id, task.type, task.task, 
+                        task.date, task.startDate, task.endDate);
+            
+            if (
+                (task.type === 'daily' && task.date === today) ||
+                (task.type === 'daily' && task.date > today) ||
+                (task.type === 'weekly') ||
+                (task.type === 'monthly' && task.startDate <= today && task.endDate >= today)
+            ) {
+                console.log("Task passed filter:", task.id, task.type);
                 todayTasks.push({ ...task, source: 'scheduled' });
             }
         });
-
+    
         const uniqueTasks = [];
         const taskIds = new Set();
         todayTasks.forEach(task => {
@@ -339,12 +346,12 @@ const handleSaveWorkStatus = async (projectId, assignmentIndex) => {
                 uniqueTasks.push(task);
             }
         });
-
+    
         if (uniqueTasks.length === 0) return null;
-
+    
         return (
             <div className="today-task-section">
-                <h3>Daily Tasks</h3>
+                <h3>Tasks Updates</h3>
                 <div className="tasks-table-container">
                     <table className="tasks-table">
                         <thead>
@@ -360,33 +367,47 @@ const handleSaveWorkStatus = async (projectId, assignmentIndex) => {
                             {uniqueTasks.map((task) => (
                                 <tr key={task.id} className={`task-row ${task.status} ${task.rejected ? 'rejected' : ''}`}>
                                     <td className="task-type-cell">
-                                        {task.type === 'daily' ? 'Daily Task' : task.type === 'weekly' ? 'Weekly Task' : 'Monthly Task'}
+                                        {task.type === 'daily' && task.date === today ? 'Daily Task' : 
+                                         task.type === 'daily' && task.date > today ? `Scheduled for ${new Date(task.date).toLocaleDateString()}` :
+                                         task.type === 'weekly' ? 
+                                            (task.startDate && task.endDate ? 
+                                                `Weekly (${new Date(task.startDate).toLocaleDateString()} - ${new Date(task.endDate).toLocaleDateString()})` : 
+                                                'Weekly Task') : 
+                                         task.type === 'monthly' ? 
+                                            (task.startDate && task.endDate ? 
+                                                `Monthly (${new Date(task.startDate).toLocaleDateString()} - ${new Date(task.endDate).toLocaleDateString()})` : 
+                                                'Monthly Task') :
+                                         'Task'}
                                     </td>
                                     <td className="status-cell">
                                         <span className={`table-status-badge ${task.status} ${task.rejected ? 'rejected' : ''}`}>
                                             {task.status === 'rejected' || task.rejected ? 'Rejected' :
-                                                task.status === 'pending' ? 'Not Started' :
-                                                    task.status === 'in-progress' ? 'In Progress' :
-                                                        task.status === 'pending-verification' ? 'Pending Verification' :
-                                                            'Completed'}
+                                             task.status === 'pending' ? 'Not Started' :
+                                             task.status === 'in-progress' ? 'In Progress' :
+                                             task.status === 'pending-verification' ? 'Pending Verification' :
+                                             'Completed'}
                                         </span>
                                     </td>
                                     <td className="description-cell">
                                         {task.task}
-                                        {(task.status === 'rejected' || task.rejected) && task.rejectionReason && (
-                                            <div className="rejection-reason">
-                                                <strong>Rejection reason:</strong> {task.rejectionReason}
+                                        {(task.status === 'rejected' || task.rejected) && (task.rejectionReason || task.rejectedAt) && (
+                                            <div className="rejection-details">
+                                                {task.rejectionReason && (
+                                                    <div className="rejection-reason">
+                                                        <strong>Rejection reason:</strong> {task.rejectionReason}
+                                                    </div>
+                                                )}
+                                                {task.rejectedAt && (
+                                                    <div className="rejection-time">
+                                                        Rejected: {new Date(task.rejectedAt).toLocaleString()}
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </td>
                                     <td className="assigned-cell">
                                         <div>{new Date(task.assignedOn).toLocaleTimeString()}</div>
                                         <div className="assigned-by">By: {task.assignedBy || 'Admin'}</div>
-                                        {(task.status === 'rejected' || task.rejected) && task.rejectedAt && (
-                                            <div className="rejection-time">
-                                                Rejected: {new Date(task.rejectedAt).toLocaleTimeString()}
-                                            </div>
-                                        )}
                                     </td>
                                     <td className="actions-cell">
                                         {(task.status === 'pending' || task.status === 'rejected' || task.rejected) && (
@@ -399,13 +420,26 @@ const handleSaveWorkStatus = async (projectId, assignmentIndex) => {
                                             </button>
                                         )}
                                         {(task.status === 'in-progress' || task.status === 'rejected' || task.rejected) && (
-                                            <button
-                                                onClick={() => handleTaskStatusUpdate(task.id, 'completed')}
-                                                className="table-status-btn complete-btn"
-                                                disabled={isLoading}
-                                            >
-                                                {isLoading ? 'Updating...' : (task.status === 'rejected' || task.rejected) ? 'Resubmit' : 'Complete'}
-                                            </button>
+                                            <>
+                                                <textarea
+                                                    placeholder="Enter updated work details to resubmit..."
+                                                    value={workStatusUpdates[task.id] || ''}
+                                                    onChange={(e) => setWorkStatusUpdates(prev => ({
+                                                        ...prev,
+                                                        [task.id]: e.target.value
+                                                    }))}
+                                                    rows={3}
+                                                    className="work-status-textarea"
+                                                    style={{ display: (task.status === 'rejected' || task.rejected) ? 'block' : 'none' }}
+                                                />
+                                                <button
+                                                    onClick={() => handleTaskStatusUpdate(task.id, 'completed')}
+                                                    className="table-status-btn complete-btn"
+                                                    disabled={isLoading || ((task.status === 'rejected' || task.rejected) && !workStatusUpdates[task.id])}
+                                                >
+                                                    {isLoading ? 'Updating...' : (task.status === 'rejected' || task.rejected) ? 'Resubmit' : 'Complete'}
+                                                </button>
+                                            </>
                                         )}
                                         {task.status === 'pending-verification' && (
                                             <div className="table-status-message">

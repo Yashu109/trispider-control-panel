@@ -347,89 +347,216 @@ const AdminPanel = () => {
         }
     };
 
-    // Modify the handleSubmit function in AdminPanel.js
-const handleSubmit = async (e) => {
-    e.preventDefault();
-    const errors = validateDetailsForm();
-    if (errors.length > 0) {
-        setMessage(errors.join('\n'));
-        return;
-    }
 
-    setIsLoading(true);
-    setMessage('');
+    // const handleSubmit = async (e) => {
+    //     e.preventDefault();
+    //     const errors = validateDetailsForm();
+    //     if (errors.length > 0) {
+    //         setMessage(errors.join('\n'));
+    //         return;
+    //     }
 
-    try {
-        const projectId = editingId || await generateProjectId();
-        const projectRef = ref(database, `projects/${projectId}`);
-        const timestamp = new Date().toISOString();
-        const validAssignments = assignments.filter(a => a.assignee.trim() !== '');
-        
-        // Create a copy of project data to modify before saving
-        const finalProjectData = { ...projectData, assignments: validAssignments, timestamp, projectId };
-        
-        // Fix the payment method handling
-        const advanceAmount = Number(finalProjectData.advancePayment) || 0;
-        
-        if (finalProjectData.advancePaymentMethod === 'cash') {
-            // If payment method is cash, store in cashAmount and set advancePayment to 0
-            finalProjectData.cashAmount = advanceAmount;
-            finalProjectData.advancePayment = 0;
-            finalProjectData.paymentMethod = 'cash'; // Set this for consistency
-        } else if (finalProjectData.advancePaymentMethod === 'upi') {
-            // If payment method is UPI, keep advancePayment as is and set cashAmount to 0
-            finalProjectData.cashAmount = 0;
-            // advancePayment already has the right value
-            finalProjectData.paymentMethod = 'upi'; // Set this for consistency
+    //     setIsLoading(true);
+    //     setMessage('');
+
+    //     try {
+    //         const projectId = editingId || await generateProjectId();
+    //         const projectRef = ref(database, `projects/${projectId}`);
+    //         const timestamp = new Date().toISOString();
+    //         const validAssignments = assignments.filter(a => a.assignee.trim() !== '');
+
+    //         // Create a copy of project data to modify before saving
+    //         const finalProjectData = { ...projectData, assignments: validAssignments, timestamp, projectId };
+
+    //         // Fix the payment method handling
+    //         const advanceAmount = Number(finalProjectData.advancePayment) || 0;
+
+    //         if (finalProjectData.advancePaymentMethod === 'cash') {
+    //             // If payment method is cash, store in cashAmount and set advancePayment to 0
+    //             finalProjectData.cashAmount = advanceAmount;
+    //             finalProjectData.advancePayment = 0;
+    //             finalProjectData.paymentMethod = 'cash'; // Set this for consistency
+    //         } else if (finalProjectData.advancePaymentMethod === 'upi') {
+    //             // If payment method is UPI, keep advancePayment as is and set cashAmount to 0
+    //             finalProjectData.cashAmount = 0;
+    //             // advancePayment already has the right value
+    //             finalProjectData.paymentMethod = 'upi'; // Set this for consistency
+    //         }
+
+    //         await set(projectRef, finalProjectData);
+
+    //         if (!quotationRef.current) throw new Error('Quotation component reference is missing');
+
+    //         try {
+    //             // Wait a moment for any state updates to reflect in the DOM
+    //             await new Promise(resolve => setTimeout(resolve, 100));
+
+    //             // Get the individual page elements
+    //             const page1Element = quotationRef.current.querySelector('.page');
+    //             const page2Element = quotationRef.current.querySelector('.page1');
+
+    //             if (!page1Element || !page2Element) {
+    //                 throw new Error('Could not find page elements in the quotation');
+    //             }
+
+    //             // Create PDF with A4 dimensions
+    //             const pdf = new jsPDF('p', 'mm', 'a4');
+    //             const pageWidth = 210; // A4 width
+
+    //             // Capture first page
+    //             const canvas1 = await html2canvas(page1Element, {
+    //                 scale: 2,
+    //                 useCORS: true,
+    //                 backgroundColor: '#ffffff'
+    //             });
+    //             const imgData1 = canvas1.toDataURL('image/png');
+    //             const imgHeight1 = canvas1.height * pageWidth / canvas1.width;
+    //             pdf.addImage(imgData1, 'PNG', 0, 0, pageWidth, imgHeight1);
+
+    //             // Add second page
+    //             pdf.addPage();
+    //             const canvas2 = await html2canvas(page2Element, {
+    //                 scale: 2,
+    //                 useCORS: true,
+    //                 backgroundColor: '#ffffff'
+    //             });
+    //             const imgData2 = canvas2.toDataURL('image/png');
+    //             const imgHeight2 = canvas2.height * pageWidth / canvas2.width;
+    //             pdf.addImage(imgData2, 'PNG', 0, 0, pageWidth, imgHeight2);
+
+    //             const pdfData = pdf.output('datauristring');
+
+    //             const pdfRef = storageRef(storage, `quotations/${projectId}.pdf`);
+    //             await uploadString(pdfRef, pdfData, 'data_url');
+
+    //             // Wait a moment for the upload to complete
+    //             await new Promise(resolve => setTimeout(resolve, 1000));
+
+    //             let attempts = 0;
+    //             const maxAttempts = 3;
+    //             let downloadUrl = null;
+
+    //             while (attempts < maxAttempts && !downloadUrl) {
+    //                 try {
+    //                     downloadUrl = await getDownloadURL(pdfRef);
+    //                 } catch (error) {
+    //                     attempts++;
+    //                     if (attempts === maxAttempts) throw error;
+    //                     await new Promise(resolve => setTimeout(resolve, 1000));
+    //                 }
+    //             }
+
+    //             setPdfUrl(downloadUrl);
+    //             alert(`Order ${projectId} created successfully! PDF is available for viewing.`);
+    //             setMessage('Order created successfully!');
+    //             setTimeout(() => {
+    //                 resetForm();
+    //                 setMessage('');
+    //             }, 2000);
+    //         } catch (pdfError) {
+    //             console.error('PDF generation/upload error:', pdfError);
+    //             setMessage('Order saved but PDF generation failed. Please try viewing the PDF later.');
+    //             alert(`Order ${projectId} created successfully, but PDF generation failed. You can try viewing it later.`);
+    //         }
+    //     } catch (error) {
+    //         console.error('Submission error:', error);
+    //         setMessage(`Error: ${error.message}`);
+    //         alert(`Failed to create order: ${error.message}`);
+    //     } finally {
+    //         setIsLoading(false);
+    //     }
+    // };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const errors = validateDetailsForm();
+        if (errors.length > 0) {
+            setMessage(errors.join('\n'));
+            return;
         }
-        
-        await set(projectRef, finalProjectData);
 
-        if (!quotationRef.current) throw new Error('Quotation component reference is missing');
+        setIsLoading(true);
+        setMessage('');
 
         try {
-            // Wait a moment for any state updates to reflect in the DOM
-            await new Promise(resolve => setTimeout(resolve, 100));
+            const projectId = editingId || await generateProjectId();
+            const projectRef = ref(database, `projects/${projectId}`);
+            const timestamp = new Date().toISOString();
+            const validAssignments = assignments.filter(a => a.assignee.trim() !== '');
 
-            // Get the individual page elements
-            const page1Element = quotationRef.current.querySelector('.page');
-            const page2Element = quotationRef.current.querySelector('.page1');
+            const finalProjectData = { ...projectData, assignments: validAssignments, timestamp, projectId };
 
-            if (!page1Element || !page2Element) {
-                throw new Error('Could not find page elements in the quotation');
+            // Handle payment method
+            const advanceAmount = Number(finalProjectData.advancePayment) || 0;
+            if (finalProjectData.advancePaymentMethod === 'cash') {
+                finalProjectData.cashAmount = advanceAmount;
+                finalProjectData.advancePayment = 0;
+                finalProjectData.paymentMethod = 'cash';
+            } else if (finalProjectData.advancePaymentMethod === 'upi') {
+                finalProjectData.cashAmount = 0;
+                finalProjectData.paymentMethod = 'upi';
+            }
+
+            await set(projectRef, finalProjectData);
+
+            if (!quotationRef.current) throw new Error('Quotation component reference is missing');
+
+            // Add the .pdf-export class to hide elements during PDF generation
+            quotationRef.current.classList.add('pdf-export');
+
+            // Wait for DOM updates
+            // In the handleSubmit function of AdminPanel.jsx, replace this section:
+
+            // Wait for DOM updates
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Get all page elements dynamically, but only select the direct children of the quotation container
+            // This prevents nested "page" elements from being selected twice
+            const pageElements = Array.from(quotationRef.current.querySelector('.quotation-container').children).filter(
+                el => el.className.includes('page')
+            );
+
+            if (pageElements.length === 0) {
+                throw new Error('No page elements found in the quotation');
             }
 
             // Create PDF with A4 dimensions
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pageWidth = 210; // A4 width
 
-            // Capture first page
-            const canvas1 = await html2canvas(page1Element, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: '#ffffff'
-            });
-            const imgData1 = canvas1.toDataURL('image/png');
-            const imgHeight1 = canvas1.height * pageWidth / canvas1.width;
-            pdf.addImage(imgData1, 'PNG', 0, 0, pageWidth, imgHeight1);
+            for (let i = 0; i < pageElements.length; i++) {
+                const pageElement = pageElements[i];
 
-            // Add second page
-            pdf.addPage();
-            const canvas2 = await html2canvas(page2Element, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: '#ffffff'
-            });
-            const imgData2 = canvas2.toDataURL('image/png');
-            const imgHeight2 = canvas2.height * pageWidth / canvas2.width;
-            pdf.addImage(imgData2, 'PNG', 0, 0, pageWidth, imgHeight2);
+                // Capture the page as an image
+                const canvas = await html2canvas(pageElement, {
+                    scale: 2,
+                    useCORS: true, // Enable CORS
+                    backgroundColor: '#ffffff',
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+
+                // Validate the image data
+                if (!imgData.startsWith('data:image/png')) {
+                    throw new Error('Invalid image data captured');
+                }
+
+                const imgHeight = canvas.height * pageWidth / canvas.width;
+
+                // Add the image to the PDF
+                if (i > 0) pdf.addPage(); // Add a new page for every page after the first
+                pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, imgHeight);
+            }
 
             const pdfData = pdf.output('datauristring');
 
             const pdfRef = storageRef(storage, `quotations/${projectId}.pdf`);
             await uploadString(pdfRef, pdfData, 'data_url');
 
-            // Wait a moment for the upload to complete
+            // Remove the .pdf-export class after PDF generation
+            quotationRef.current.classList.remove('pdf-export');
+
+            // Wait for the upload to complete
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             let attempts = 0;
@@ -453,19 +580,15 @@ const handleSubmit = async (e) => {
                 resetForm();
                 setMessage('');
             }, 2000);
-        } catch (pdfError) {
-            console.error('PDF generation/upload error:', pdfError);
-            setMessage('Order saved but PDF generation failed. Please try viewing the PDF later.');
-            alert(`Order ${projectId} created successfully, but PDF generation failed. You can try viewing it later.`);
+        } catch (error) {
+            console.error('Submission error:', error);
+            setMessage(`Error: ${error.message}`);
+            alert(`Failed to create order: ${error.message}`);
+        } finally {
+            setIsLoading(false);
         }
-    } catch (error) {
-        console.error('Submission error:', error);
-        setMessage(`Error: ${error.message}`);
-        alert(`Failed to create order: ${error.message}`);
-    } finally {
-        setIsLoading(false);
-    }
-};
+    };
+
     const handleViewPdf = () => {
         if (pdfUrl) window.open(pdfUrl, '_blank');
     };
@@ -580,7 +703,7 @@ const handleSubmit = async (e) => {
         else if (projectData.title.length < 3) errors.push('Project title must be at least 3 characters');
         if (!projectData.description.trim()) errors.push('Project description is required');
         else if (projectData.description.length < 10) errors.push('Project description must be at least 10 characters');
-        if (inputMode === 'keyboard' && !projectData.scopeOfWork.trim()) errors.push('Scope of work is required');
+        // if (inputMode === 'keyboard' && !projectData.scopeOfWork.trim()) errors.push('Scope of work is required');
         return errors;
     };
 
@@ -617,7 +740,7 @@ const handleSubmit = async (e) => {
         if (validAssignments.length === 0) {
             errors.push('At least one assignee is required');
         }
-        
+
         validAssignments.forEach(assignment => {
             if (!assignment.description || assignment.description.trim() === '') {
                 errors.push(`Task description is required for assignee ${assignment.assignee}`);
@@ -722,7 +845,60 @@ const handleSubmit = async (e) => {
 
     if (loading) return <select disabled className="assignee-dropdown"><option>Loading...</option></select>;
     if (error) return <select disabled className="assignee-dropdown"><option>{error}</option></select>;
-
+    const addPageBreakIndicators = () => {
+        if (editorRef.current && isEditingScope) {
+          // Approximate character count per page (adjust based on your font size and page dimensions)
+          const charsPerPage = 1500;
+          const content = editorRef.current.innerText;
+          
+          // Calculate approximate positions for page breaks
+          const pageBreakPositions = [];
+          for (let i = 1; i * charsPerPage < content.length; i++) {
+            pageBreakPositions.push(i * charsPerPage);
+          }
+          
+          // Add visual indicators if content is long enough
+          if (pageBreakPositions.length > 0) {
+            // Remove any existing indicators
+            const existingIndicators = editorRef.current.querySelectorAll('.page-break-indicator');
+            existingIndicators.forEach(el => el.remove());
+            
+            // Get the current selection to restore it later
+            const selection = window.getSelection();
+            const range = selection.getRangeAt(0);
+            
+            // Create visual indicators
+            const fragment = document.createDocumentFragment();
+            
+            pageBreakPositions.forEach(position => {
+              const indicator = document.createElement('div');
+              indicator.className = 'page-break-indicator';
+              indicator.innerHTML = '- Page Break -';
+              indicator.style.width = '100%';
+              indicator.style.textAlign = 'center';
+              indicator.style.color = '#999';
+              indicator.style.padding = '5px 0';
+              indicator.style.margin = '10px 0';
+              indicator.style.borderTop = '1px dashed #999';
+              indicator.style.borderBottom = '1px dashed #999';
+              indicator.style.backgroundColor = '#f8f8f8';
+              indicator.style.fontSize = '12px';
+              indicator.contentEditable = false;
+              
+              // You'll need a more sophisticated algorithm to insert at the right positions
+              // This is just a simplified example
+              fragment.appendChild(indicator);
+            });
+            
+            // Append the indicators
+            editorRef.current.appendChild(fragment);
+            
+            // Restore selection
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }
+        }
+      };
     return (
         <Splitslayout
             quotationPreview={<div ref={quotationRef}><Quotation {...projectData} counterpass={counterpass} /></div>}
@@ -770,7 +946,7 @@ const handleSubmit = async (e) => {
                                     rows="4"
                                 />
                             </div>
-                            <div className="form-group scope-of-work">
+                            {/* <div className="form-group scope-of-work">
                                 <label htmlFor="scopeOfWork">Scope of Work:</label>
                                 <div className="input-mode-toggle">
                                     <button
@@ -851,7 +1027,7 @@ const handleSubmit = async (e) => {
                                         )}
                                     </div>
                                 )}
-                            </div>
+                            </div> */}
                         </>
                     ) : (
                         <div className="scrollable-content">
@@ -1098,35 +1274,7 @@ const handleSubmit = async (e) => {
                                 <div className="part1">
                                     <label htmlFor="Assign_To">Task Assignments: <span className="assignment-info"></span></label>
                                     {assignments.map(assignment => (
-                                        // <div key={assignment.id} className="assignment-row">
-                                        //     <select
-                                        //         value={assignment.assignee}
-                                        //         onChange={e => handleAssignmentChange(assignment.id, 'assignee', e.target.value)}
-                                        //         className="assignee-dropdown"
-                                        //     >
-                                        //         <option value="">Select Assignee</option>
-                                        //         {employees.map(employee => (
-                                        //             <option key={employee.id} value={employee.name}>{employee.name}</option>
-                                        //         ))}
-                                        //     </select>
-                                        //     <textarea
-                                        //         placeholder="Task description"
-                                        //         value={assignment.description || ''}
-                                        //         onChange={e => handleAssignmentChange(assignment.id, 'description', e.target.value)}
-                                        //         className="description-input"
-                                        //         rows="3"
-                                        //     />
-                                        //     <div className="percentage-display">{assignment.percentage}%</div>
-                                        //     {assignments.length > 1 && (
-                                        //         <button
-                                        //             type="button"
-                                        //             onClick={() => handleRemoveAssignment(assignment.id)}
-                                        //             className="remove-assignment-btn"
-                                        //         >
-                                        //             Remove
-                                        //         </button>
-                                        //     )}
-                                        // </div>
+
                                         <div key={assignment.id} className="assignment-row">
                                             <div className="assignment-inputs">
                                                 <div className="assignment-main-inputs">

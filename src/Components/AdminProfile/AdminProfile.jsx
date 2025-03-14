@@ -1030,17 +1030,20 @@ const AdminDashboard = () => {
                                                             {assignment.taskCompleted?.toLowerCase().includes('complete') && (
                                                                 <span className="completion-checkmark">✓</span>
                                                             )}
-                                                            {assignment.taskCompleted?.includes('Pending Verification') && (
+                                                            {/* {assignment.taskCompleted?.includes('Pending Verification') && (
                                                                 <span className="pending-verification">⏳</span>
-                                                            )}
+                                                            )} */}
                                                             <span className="task-order">#{assignment.taskOrder}</span>
                                                             <span className="assignee-name">{assignment.assignee}</span>
                                                             <span className="percentage-badge">{assignment.percentage}%</span>
-                                                            {assignment.taskCompleted && (
+                                                            {assignment.taskCompleted?.includes('Pending Verification') && (
+                                                                <span className="pending-verification">⏳</span>
+                                                            )}
+                                                            {/* {assignment.taskCompleted && (
                                                                 <span className="task-status">
                                                                     {assignment.taskCompleted}
                                                                 </span>
-                                                            )}
+                                                            )} */}
                                                             <span className="details-icon">ⓘ</span>
                                                         </button>
                                                         {assignment.taskCompleted?.includes('Pending Verification') && (
@@ -1370,7 +1373,7 @@ const AdminDashboard = () => {
                                 <th>Task</th>
                                 <th>Requested At</th>
                                 <th>Note</th>
-                                <th>Project ID</th>
+                                {/* <th>Project ID</th> */}
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -1404,7 +1407,7 @@ const AdminDashboard = () => {
                                     <td>{assignment.description || 'Project Assignment'}</td>
                                     <td>{assignment.completionRequest && new Date(assignment.completionRequest.requestedAt).toLocaleString() || 'N/A'}</td>
                                     <td>{assignment.completionRequest && assignment.completionRequest.completionNote || 'N/A'}</td>
-                                    <td>{projectId}</td>
+                                    {/* <td>{projectId}</td> */}
                                     <td>
                                         <button
                                             onClick={() => handleProjectAssignmentVerification(projectId, assignment, employeeName, 'verify')}
@@ -1524,15 +1527,15 @@ const AdminDashboard = () => {
         if (showAdminPanel) {
             return (
                 <div className="admin-panel-container">
-                    <div className="admin-panel-header">
-                        <h2>Add New Order</h2>
+                    {/* <div className="admin-panel-header">
+                       <h2>Add New Order</h2>
                         <button
                             className="close-panel-btn"
                             onClick={() => setShowAdminPanel(false)}
                         >
                             Close
                         </button>
-                    </div>
+                    </div>  */}
                     <div className="admin-panel-content">
                         <AdminPanel onComplete={() => setShowAdminPanel(false)} />
                     </div>

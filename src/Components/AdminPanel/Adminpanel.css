@@ -1090,12 +1090,9 @@
 .editor-content:focus {
     border-color: #007bff;
 }
-
-/* Existing styles */
-.admin-container { /* Your existing styles */ }
-.admin-panel-project-form { /* Your existing styles */ }
-/* Add other necessary styles from your original CSS */
-
+.pdf-export .hide-in-pdf {
+    display: none !important;
+}
 .assignment-badge {
     position: relative;
 }
@@ -1110,7 +1107,10 @@
     border-radius: 3px;
     font-size: 0.8em;
 }
-
+.status-badge.in-progress{
+    background-color: #dbeafe;
+    color: #1e40af;
+}
 .status-badge.pending {
     background-color: #ffc107;
     color: #000;

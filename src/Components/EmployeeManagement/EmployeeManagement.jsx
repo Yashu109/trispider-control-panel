@@ -336,7 +336,7 @@ const EmployeeManagement = () => {
                             <th>Employee Name</th>
                             <th>Email</th>
                             <th>Password</th>
-                            <th className="actions-column">Actions</th>
+                            <th className="employee-actions-column">Actions</th>
                         </tr>
                     </thead>
                     <tbody>

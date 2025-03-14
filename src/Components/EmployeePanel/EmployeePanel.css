@@ -1011,3 +1011,21 @@
     padding: 6px;
   }
 }
+.rejection-details {
+  margin-top: 5px;
+  color: #d9534f;
+  font-size: 0.9em;
+}
+.rejection-reason {
+  font-style: italic;
+}
+.rejection-time {
+  margin-top: 2px;
+}
+.work-status-textarea {
+  width: 100%;
+  margin-top: 5px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
